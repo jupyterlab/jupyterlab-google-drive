@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "name": "jupyterlab_google_drive",
+  "version": "0.1.0",
+  "description": "Realtime collaboration with JupyterLab through Google Drive",
+  "author": "Ian Rose",
+  "main": "lib/plugin.js",
+  "keywords": [
+    "jupyter",
+    "jupyterlab"
+  ],
+  "scripts": {
+    "build:src": "tsc --project src && node scripts/copyfiles.js",
+    "build:extension": "node scripts/build_extension.js",
+    "build": "npm run build:src && npm run build:extension",
+    "clean": "rimraf lib && rimraf jupyterlab_google_drive/static",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "jupyterlab": "^0.11.2"
+  },
+  "devDependencies": {
+    "fs-extra": "^0.30.0",
+    "rimraf": "^2.5.4",
+    "@jupyterlab/extension-builder": "^0.10.0",
+    "typescript": "^2.0.3"
+  }
+}
