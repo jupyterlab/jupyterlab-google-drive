@@ -3,7 +3,7 @@
     "declaration": true,
     "noImplicitAny": true,
     "noEmitOnError": true,
-    "lib": ["es5", "dom", "es2015.promise"],
+    "lib": ["es5", "dom", "es2015.promise", "es2015.collection"],
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES5",

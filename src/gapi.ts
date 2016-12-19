@@ -5,7 +5,7 @@ import $ = require('jquery');
 
 import {
   showDialog
-} from '../dialog';
+} from 'jupyterlab/lib/dialog';
 
 declare let gapi : any;
 

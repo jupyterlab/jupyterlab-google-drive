@@ -24,19 +24,19 @@ import {
 
 import {
   IObservableString, ObservableString
-} from '../common/observablestring';
+} from 'jupyterlab/lib/common/observablestring';
 
 import {
   IObservableVector, ObservableVector
-} from '../common/observablevector';
+} from 'jupyterlab/lib/common/observablevector';
 
 import {
   IObservableUndoableVector,
-} from '../notebook/common/undo';
+} from 'jupyterlab/lib/notebook/common/undo';
 
 import {
   IRealtimeModel, IRealtimeHandler, ISynchronizable
-} from './realtime';
+} from 'jupyterlab/lib/realtime';
 
 declare let gapi : any;
 

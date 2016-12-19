@@ -7,22 +7,31 @@
   "main": "lib/plugin.js",
   "keywords": [
     "jupyter",
-    "jupyterlab"
+    "jupyterlab",
+    "google"
   ],
   "scripts": {
     "build:src": "tsc --project src && node scripts/copyfiles.js",
     "build:extension": "node scripts/build_extension.js",
     "build": "npm run build:src && npm run build:extension",
     "clean": "rimraf lib && rimraf jupyterlab_google_drive/static",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "watch": "watch \"npm run build\" src --wait 10 --ignoreDotFiles"
   },
   "dependencies": {
-    "jupyterlab": "^0.11.2"
+    "jupyterlab": "^0.11.2",
+    "phosphor": "^0.7.0",
+    "es6-promise": "^3.2.1",
+    "jquery": "^2.2.0",
+    "core-js": "^2.4.1"
   },
   "devDependencies": {
     "fs-extra": "^0.30.0",
     "rimraf": "^2.5.4",
+    "watch": "^0.17.1",
     "@jupyterlab/extension-builder": "^0.10.0",
-    "typescript": "^2.0.3"
+    "typescript": "^2.0.3",
+    "@types/google-drive-realtime-api": "^0.0.33",
+    "@types/jquery": "^2.0.32"
   }
 }

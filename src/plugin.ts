@@ -6,28 +6,28 @@ import {
 } from 'phosphor/lib/ui/menu';
 
 import {
-  JupyterLab, JupyterLabPlugin
-} from '../application';
-
-import {
-  IMainMenu
-} from '../mainmenu';
-
-import {
   Widget
 } from 'phosphor/lib/ui/widget';
 
 import {
+  JupyterLab, JupyterLabPlugin
+} from 'jupyterlab/lib/application';
+
+import {
+  IMainMenu
+} from 'jupyterlab/lib/mainmenu';
+
+import {
   IRealtime, IRealtimeModel
-} from './realtime';
+} from 'jupyterlab/lib/realtime';
 
 import {
   InstanceTracker
-} from '../common/instancetracker';
+} from 'jupyterlab/lib/common/instancetracker';
 
 import {
   showDialog, okButton
-} from '../dialog';
+} from 'jupyterlab/lib/dialog';
 
 import {
   GoogleRealtime

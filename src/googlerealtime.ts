@@ -11,12 +11,12 @@ import {
 
 import {
   showDialog
-} from '../dialog';
+} from 'jupyterlab/lib/dialog';
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
   ISynchronizable
-} from './realtime';
+} from 'jupyterlab/lib/realtime';
 
 import {
   authorize, createPermissions,
@@ -29,7 +29,7 @@ import {
 
 import {
   IObservableUndoableVector
-} from '../notebook/common/undo';
+} from 'jupyterlab/lib/notebook/common/undo';
 
 declare let gapi : any;
 
