@@ -2,4 +2,5 @@
 // Distributed under the terms of the Modified BSD License.
 
 export * from './googlerealtime';
-export * from './datastructures';
+export * from './realtimestring';
+export * from './realtimevector';

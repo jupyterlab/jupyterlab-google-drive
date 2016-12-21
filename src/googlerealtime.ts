@@ -24,8 +24,12 @@ import {
 } from './gapi';
 
 import {
-  GoogleRealtimeString, GoogleRealtimeVector
-} from './datastructures';
+  GoogleRealtimeString
+} from './realtimestring';
+
+import {
+  GoogleRealtimeVector
+} from './realtimevector';
 
 import {
   IObservableString
