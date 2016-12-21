@@ -28,6 +28,10 @@ import {
 } from './datastructures';
 
 import {
+  IObservableString
+} from 'jupyterlab/lib/common/observablestring';
+
+import {
   IObservableUndoableVector
 } from 'jupyterlab/lib/notebook/common/undo';
 
@@ -159,22 +163,34 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     });
   }
 
-  createString (initialValue?: string) : Promise<GoogleRealtimeString> {
-    return new Promise<GoogleRealtimeString>( (resolve,reject) => {
+  linkString (str: IObservableString) : Promise<void> {
+    return new Promise<void>( (resolve,reject) => {
+      //Fail if the string is not linkable.
+      if(!str.isLinkable) {
+        reject();
+      }
       this.ready.then( () => {
-        //Create the collaborativeString
-        resolve(new GoogleRealtimeString(
-          this._model, 'collabStr', initialValue||''));
+        //Create the collaborative string
+        let gstr = new GoogleRealtimeString(
+          this._model, 'collabStr', str.text);
+        str.link(gstr);
+        resolve();
       });
     });
   }
 
-  createVector<T extends ISynchronizable<T>>(factory: (value: JSONObject)=>T, initialValue?: IObservableUndoableVector<T>) : Promise<IObservableUndoableVector<T>> {
-    return new Promise<GoogleRealtimeVector<T>>( (resolve,reject) => {
+  linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>) : Promise<void> {
+    return new Promise<void>( (resolve,reject) => {
+      //Fail if the vector is not linkable.
+      if(!vec.isLinkable) {
+        reject();
+      }
       this.ready.then( () => {
-        //Create the collaborativeString
-        resolve(new GoogleRealtimeVector<T>(
-          factory, this._model, 'collabVec', initialValue));
+        //Create the collaborative string
+        let gvec = new GoogleRealtimeVector<T>
+          (vec.factory, this._model, 'collabVec', vec);
+        vec.link(gvec);
+        resolve();
       });
     });
   }

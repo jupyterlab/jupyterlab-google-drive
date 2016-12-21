@@ -83,6 +83,13 @@ class GoogleRealtimeString implements IObservableString {
   changed: ISignal<IObservableString, ObservableString.IChangedArgs>;
 
   /**
+   * Whether this string is linkable.
+   *
+   * @returns `false'
+   */
+  readonly isLinkable: boolean = false;
+
+  /**
    * Set the value of the string.
    */
   set text( value: string ) {
@@ -127,6 +134,21 @@ class GoogleRealtimeString implements IObservableString {
    */
   clear(): void {
     this.text = '';
+  }
+
+  /**
+   * Link the string to another string.
+   * Any changes to either are mirrored in the other.
+   *
+   * @param str: the parent string.
+   */
+  link(str: IObservableString): void {
+  }
+
+  /**
+   * Unlink the string from its parent string.
+   */
+  unlink(): void {
   }
 
   /**
@@ -241,6 +263,13 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   changed: ISignal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>;
 
   /**
+   * Whether this string is linkable.
+   *
+   * @returns `false'
+   */
+  readonly isLinkable: boolean = false;
+
+  /**
    * The length of the sequence.
    *
    * #### Notes
@@ -280,6 +309,13 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   }
 
   /**
+   * Get the factory object for deserialization.
+   */
+  get factory(): (value: JSONObject)=>T {
+    return this._factory;
+  }
+
+  /**
    * Begin a compound operation.
    *
    * @param isUndoAble - Whether the operation is undoable.
@@ -315,6 +351,21 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   clearUndo(): void {
     //no-op
+  }
+
+  /**
+   * Link the vector to another vector.
+   * Any changes to either are mirrored in the other.
+   *
+   * @param vec: the parent vector.
+   */
+  link(vec: IObservableVector<T>): void {
+  }
+
+  /**
+   * Unlink the vector from its parent vector.
+   */
+  unlink(): void {
   }
 
   /**
