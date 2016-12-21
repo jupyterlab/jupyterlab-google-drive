@@ -14,36 +14,37 @@ declare let gapi : any;
 export
 class GoogleRealtimeString implements IObservableString {
   constructor(model : any, id : string, initialValue?: string) {
-    let collabStr : gapi.drive.realtime.CollaborativeString = null;
-    collabStr = model.getRoot().get(id);
-    if(!collabStr) {
-      collabStr = model.createString(initialValue);
-      model.getRoot().set(id, collabStr);
+    this._str = model.getRoot().get(id);
+    if(!this._str) {
+      this._str = model.createString(initialValue);
+      model.getRoot().set(id, this._str);
     }
-
-    this._str = collabStr;
 
     //Add event listeners to the collaborativeString
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_INSERTED,
       (evt : any) => {
-        this.changed.emit({
-          type : 'insert',
-          start: evt.index,
-          end: evt.index + evt.text.length,
-          value: evt.text
-        });
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type : 'insert',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
       });
 
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_DELETED,
       (evt : any) => {
-        this.changed.emit({
-          type : 'remove',
-          start: evt.index,
-          end: evt.index + evt.text.length,
-          value: evt.text
-        });
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type : 'remove',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
     });
   }
 
@@ -87,6 +88,13 @@ class GoogleRealtimeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
+    this._str.insertString(index, text);
+    this.changed.emit({
+      type: 'insert',
+      start: index,
+      end: index + text.length,
+      value: text
+    });
   }
 
   /**
@@ -97,6 +105,14 @@ class GoogleRealtimeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
+    let oldValue: string = this.text.slice(start, end);
+    this._str.removeRange(start, end);
+    this.changed.emit({
+      type: 'remove',
+      start: start,
+      end: end,
+      value: oldValue
+    });
   }
 
   /**
@@ -113,12 +129,14 @@ class GoogleRealtimeString implements IObservableString {
    * @param str: the parent string.
    */
   link(str: IObservableString): void {
+    //no-op
   }
 
   /**
    * Unlink the string from its parent string.
    */
   unlink(): void {
+    //no-op
   }
 
   /**
