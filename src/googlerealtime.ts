@@ -2,14 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  clearSignalData, defineSignal, ISignal
-} from 'phosphor/lib/core/signaling';
-
-import {
-  JSONObject
-} from 'phosphor/lib/algorithm/json';
-
-import {
   Widget
 } from 'phosphor/lib/ui/widget';
 

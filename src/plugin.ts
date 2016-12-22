@@ -2,39 +2,16 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  Menu
-} from 'phosphor/lib/ui/menu';
-
-import {
-  Widget
-} from 'phosphor/lib/ui/widget';
-
-import {
   JupyterLab, JupyterLabPlugin
 } from 'jupyterlab/lib/application';
 
 import {
-  IMainMenu
-} from 'jupyterlab/lib/mainmenu';
-
-import {
-  IRealtime, IRealtimeModel
+  IRealtime
 } from 'jupyterlab/lib/realtime';
-
-import {
-  InstanceTracker
-} from 'jupyterlab/lib/common/instancetracker';
-
-import {
-  showDialog, okButton
-} from 'jupyterlab/lib/dialog';
 
 import {
   GoogleRealtime
 } from './googlerealtime';
-
-
-let trackerSet = new Set<[InstanceTracker<Widget>, (widget: Widget)=>IRealtimeModel, (widget: Widget)=>void]>();
 
 const plugin: JupyterLabPlugin<IRealtime> = {
   id: 'jupyter.services.realtime',
@@ -45,8 +22,7 @@ const plugin: JupyterLabPlugin<IRealtime> = {
 };
 
 function activateRealtime(app: JupyterLab): IRealtime {
-  let realtime = new GoogleRealtime();
-  return realtime;
+  return new GoogleRealtime();
 }
 
 export default plugin;
