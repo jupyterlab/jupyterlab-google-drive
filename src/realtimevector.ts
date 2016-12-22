@@ -218,12 +218,14 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * @param vec: the parent vector.
    */
   link(vec: IObservableVector<T>): void {
+    //no-op
   }
 
   /**
    * Unlink the vector from its parent vector.
    */
   unlink(): void {
+    //no-op
   }
 
   /**

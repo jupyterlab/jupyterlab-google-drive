@@ -10,6 +10,14 @@ import {
 } from 'phosphor/lib/algorithm/json';
 
 import {
+  Widget
+} from 'phosphor/lib/ui/widget';
+
+import {
+  InstanceTracker
+} from 'jupyterlab/lib/common/instancetracker';
+
+import {
   showDialog
 } from 'jupyterlab/lib/dialog';
 
@@ -44,10 +52,22 @@ declare let gapi : any;
 export
 class GoogleRealtime implements IRealtime {
 
+  /**
+   * A promise that is resolved when the services
+   * are ready to be used.
+   */
   get ready(): Promise<void> {
     return this._authorized;
   }
 
+  /**
+   * Share a realtime model.
+   *
+   * @param model: the model to be shared.
+   *
+   * @returns a promise that is resolved when the model
+   *   has been successfully shared.
+   */
   shareDocument(model: IRealtimeModel): Promise<void> { 
     return new Promise<void>( (resolve, reject) => {
       if( !this._authorized ) {
@@ -77,6 +97,14 @@ class GoogleRealtime implements IRealtime {
     });
   }
 
+  /**
+   * Open a realtime model that has been shared.
+   *
+   * @param model: the model to be shared.
+   *
+   * @returns a promise that is resolved when the model
+   *   has been successfully opened.
+   */
   openSharedDocument(model: IRealtimeModel): Promise<void> {
     return new Promise<void>((resolve,reject) => {
       if( !this._authorized ) {
@@ -102,6 +130,41 @@ class GoogleRealtime implements IRealtime {
         reject();
       });
     });
+  }
+
+  /**
+   * Register a realtime collaborative object with the
+   * realtime services.
+   *
+   * @param tracker: a widget tracker that contains some
+   *   shareable item.
+   *
+   * @param getModel: a function which takes a shareable widget
+   *   and returns an object that implements `IRealtimeModel`,
+   *   the actual collaborative data model.
+   */
+  addTracker(tracker: InstanceTracker<Widget>, getModel: (widget: Widget)=>IRealtimeModel): void {
+    this._trackerSet.add([tracker, getModel]);
+  }
+
+  /**
+   * Get a realtime model for a widget, for
+   * use in registering an `IRealtimeModel` associated with
+   * the widget as collaborative.
+   *
+   * @param widget: the widget in question.
+   *
+   * @returns an `IRealtimeModel` if `widget` belongs
+   * to one of the realtime trackers, `null` otherwise.
+   */
+  checkTrackers( widget: Widget ): IRealtimeModel {
+    let model: IRealtimeModel = null;
+    this._trackerSet.forEach( ([tracker, getModel]) => {
+      if (tracker.has(widget)) {
+        model = getModel(widget);
+      }
+    });
+    return model;
   }
 
   protected _shareRealtimeDocument( model: IRealtimeModel, emailAddress : string) : Promise<GoogleRealtimeHandler> {
@@ -133,6 +196,7 @@ class GoogleRealtime implements IRealtime {
   }
 
   private _authorized: Promise<void> = null;
+  private _trackerSet = new Set<[InstanceTracker<Widget>, (widget: Widget)=>IRealtimeModel]>();
 }
 
 export
@@ -167,6 +231,13 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     });
   }
 
+  /**
+   * Create a string for the realtime model.
+   *
+   * @param str: the string to link to a realtime string.
+   *
+   * @returns a promise when the linking is done.
+   */
   linkString (str: IObservableString) : Promise<void> {
     return new Promise<void>( (resolve,reject) => {
       //Fail if the string is not linkable.
@@ -183,6 +254,16 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     });
   }
 
+  /**
+   * Create a vector for the realtime model.
+   *
+   * @param factory: a method that takes a `JSONObject` representing a
+   *   serialized vector entry, and creates an object from that.
+   *
+   * @param initialValue: the optional initial value of the vector.
+   *
+   * @returns a promise of a realtime vector.
+   */
   linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>) : Promise<void> {
     return new Promise<void>( (resolve,reject) => {
       //Fail if the vector is not linkable.
@@ -199,6 +280,12 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     });
   }
 
+  /**
+   * Get the Google Drive FileID associated with this
+   * realtime handler.
+   *
+   * @returns a string of the file ID.
+   */
   get fileId() : string {
     return this._fileId;
   }
