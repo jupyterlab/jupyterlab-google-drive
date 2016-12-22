@@ -230,7 +230,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    *
    * @returns a promise when the linking is done.
    */
-  linkString (str: IObservableString) : Promise<void> {
+  linkString (str: IObservableString, id: string) : Promise<void> {
     return new Promise<void>( (resolve,reject) => {
       //Fail if the string is not linkable.
       if(!str.isLinkable) {
@@ -239,7 +239,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       this.ready.then( () => {
         //Create the collaborative string
         let gstr = new GoogleRealtimeString(
-          this._model, 'collabStr', str.text);
+          this._model, id, str.text);
         str.link(gstr);
         resolve();
       });
@@ -256,7 +256,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    *
    * @returns a promise of a realtime vector.
    */
-  linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>) : Promise<void> {
+  linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>, id: string) : Promise<void> {
     return new Promise<void>( (resolve,reject) => {
       //Fail if the vector is not linkable.
       if(!vec.isLinkable) {
@@ -265,7 +265,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       this.ready.then( () => {
         //Create the collaborative string
         let gvec = new GoogleRealtimeVector<T>
-          (vec.factory, this._model, 'collabVec', vec);
+          (vec.factory, this._model, id, vec);
         vec.link(gvec);
         resolve();
       });
