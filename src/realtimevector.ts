@@ -128,6 +128,13 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   readonly isLinkable: boolean = false;
 
   /**
+   * Get whether this vector can is linked to another.
+   *
+   * @returns `false`.
+   */
+  readonly isLinked: boolean = false;
+
+  /**
    * The length of the sequence.
    *
    * #### Notes
