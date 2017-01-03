@@ -455,10 +455,10 @@ class GoogleFileBrowserModel implements IFileBrowserModel {
 
 
 // Define the signals for the `FileBrowserModel` class.
-defineSignal(FileBrowserModel.prototype, 'pathChanged');
-defineSignal(FileBrowserModel.prototype, 'refreshed');
-defineSignal(FileBrowserModel.prototype, 'fileChanged');
-defineSignal(FileBrowserModel.prototype, 'connectionFailure');
+defineSignal(GoogleFileBrowserModel.prototype, 'pathChanged');
+defineSignal(GoogleFileBrowserModel.prototype, 'refreshed');
+defineSignal(GoogleFileBrowserModel.prototype, 'fileChanged');
+defineSignal(GoogleFileBrowserModel.prototype, 'connectionFailure');
 
 /**
  * The namespace for the file browser model private data.
