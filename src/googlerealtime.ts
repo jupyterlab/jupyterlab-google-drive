@@ -19,9 +19,12 @@ import {
 } from 'jupyterlab/lib/realtime';
 
 import {
-  authorize, createPermissions,
-  createRealtimeDocument, loadRealtimeDocument
+  authorize
 } from './gapi';
+
+import {
+  createPermissions, createRealtimeDocument, loadRealtimeDocument
+} from './drive';
 
 import {
   GoogleRealtimeString
