@@ -22,7 +22,7 @@ import {
 } from 'jupyterlab/lib/realtime';
 
 import {
-  IFileBrowserModel, IPathTracker, FileBrowser
+  FileBrowserModel, IPathTracker, FileBrowser
 } from 'jupyterlab/lib/filebrowser';
 
 import {
@@ -30,8 +30,8 @@ import {
 } from './googlerealtime';
 
 import {
-  GoogleFileBrowserModel
-} from './filebrowser';
+  GoogleDriveServiceManager
+} from './contents';
 
 const realtimePlugin: JupyterLabPlugin<IRealtime> = {
   id: 'jupyter.services.realtime',
@@ -43,7 +43,7 @@ const realtimePlugin: JupyterLabPlugin<IRealtime> = {
 
 const fileBrowserPlugin: JupyterLabPlugin<IPathTracker> = {
   id: 'jupyter.services.google-drive',
-  requires: [IServiceManager, IDocumentManager, IDocumentRegistry],
+  requires: [IDocumentManager, IDocumentRegistry],
   provides: IPathTracker,
   activate: activateFileBrowser,
   autoStart: true
@@ -57,9 +57,10 @@ function activateRealtime(app: JupyterLab): IRealtime {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, manager: IServiceManager, documentManager: IDocumentManager, registry: IDocumentRegistry): IPathTracker {
+function activateFileBrowser(app: JupyterLab, documentManager: IDocumentManager, registry: IDocumentRegistry): IPathTracker {
   let { commands, keymap } = app;
-  let fbModel = new GoogleFileBrowserModel({manager});
+  let manager = new GoogleDriveServiceManager();
+  let fbModel = new FileBrowserModel({manager});
   let fbWidget = new FileBrowser({
     commands: commands,
     keymap: keymap,
