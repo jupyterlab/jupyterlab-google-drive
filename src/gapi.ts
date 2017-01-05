@@ -5,6 +5,11 @@
 import $ = require('jquery');
 
 import {
+  Contents
+} from '@jupyterlab/services';
+
+
+import {
   showDialog
 } from 'jupyterlab/lib/dialog';
 
@@ -22,10 +27,15 @@ const METADATA_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.metadata';
 const INSTALL_SCOPE = 'https://www.googleapis.com/auth/drive.install'
 
 const SCOPE = [FULL_OAUTH_SCOPE];
+const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,'+
+                      'parents,modifiedTime,createdTime,capabilities';
 //const SCOPE = [FILES_OAUTH_SCOPE, METADATA_OAUTH_SCOPE];
 
+export
 const RT_MIMETYPE = 'application/vnd.google-apps.drive-sdk';
+export
 const FOLDER_MIMETYPE = 'application/vnd.google-apps.folder';
+export
 const FILE_MIMETYPE = 'application/vnd.google-apps.file';
 
 export
@@ -168,12 +178,60 @@ function getResourceForRelativePath(pathComponent: string, type: FileType, folde
               "Google Drive: multiple files/folders match: "
               +pathComponent);
           }
-          resolve(files[0]);
+          //Unfortunately, files resource returned by `drive.files.list`
+          //does not allow for specifying the fields that we want, so
+          //we have to query the server again for those.
+          fullResourceFromFileId( files[0].id ).then( (resource: any)=> {
+            resolve(resource);
+          });
         });
       });
     });
   });
 };
+
+function fullResourceFromFileId(id: string): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    gapiLoaded.then(()=>{
+      gapi.client.load('drive', 'v3').then(()=>{
+        let request: any = gapi.client.drive.files.get({
+         fileId: id,
+         fields: RESOURCE_FIELDS
+        });
+        gapiExecute(request).then((response: any)=>{
+          resolve(response);
+        });
+      });
+    });
+  });
+}
+
+function batchFullResourcesFromFileIds( ids: string[]): Promise<any[]> {
+  console.log("Batch");
+  return new Promise<any>((resolve,reject)=>{
+    gapiLoaded.then(()=>{
+      gapi.client.load('drive', 'v3').then(()=>{
+        let batch = gapi.client.newBatch();
+        let resourceRequest = function(id: string): any {
+          return gapi.client.drive.files.get({
+           fileId: id,
+           fields: RESOURCE_FIELDS
+          });
+        }
+        for(let i =0; i < ids.length; i++) {
+          batch.add( resourceRequest(ids[i]), {'id': 'resource'+String(i)});
+        }
+        gapiExecute(batch).then((response: any)=>{
+          let resources: any[] = []
+          for(let i =0; i < ids.length; i++) {
+            resources.push(response['resource'+String(i)].result);
+          }
+          resolve(resources);
+        });
+      });
+    });
+  });
+}
 
 
 /**
@@ -203,9 +261,8 @@ function getResourceForPath(path: string, type?: FileType): Promise<any> {
 
       if (components.length === 0) {
         //Handle the case for the root folder
-        gapi.client.load('drive', 'v3').then(()=>{
-          let request: any = gapi.client.drive.files.get({ fileId: 'root' });
-          gapiExecute(request).then((response: any)=>{resolve(response);});
+        fullResourceFromFileId('root').then((fullResource:any)=>{
+          resolve(fullResource);
         });
       } else {
         //Loop through the path components and get the resource for each
@@ -275,7 +332,8 @@ function getIdForPath(path: string, type?: FileType) {
  * @return {Promise} Fullfilled with the result on success, or the
  *     result wrapped as an Error on error.
  */
-export var gapiExecute = function(request: any, attemptReauth:boolean = true): Promise<any> {
+export
+function gapiExecute(request: any, attemptReauth:boolean = true): Promise<any> {
   return new Promise(function(resolve, reject) {
     request.execute( (result: any)=> {
       resolve(result);
@@ -284,3 +342,68 @@ export var gapiExecute = function(request: any, attemptReauth:boolean = true): P
     });
   });
 };
+
+export
+function contentsModelFromFileResource(resource: any, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+  return new Promise<Contents.IModel>((resolve,reject)=>{
+    if(resource.mimeType === FOLDER_MIMETYPE) {
+      //enter contents metadata
+      let contents: any = {
+        name: resource.name,
+        path: path,
+        type: 'directory',
+        writable: resource.capabilities.canEdit,
+        created: String(resource.createdTime),
+        last_modified: String(resource.modifiedTime),
+        mimetype: null,
+        content: null,
+        format: 'json'
+      };
+
+      //get directory listing if applicable
+      let fileList: any[] = [];
+      if (includeContents) {
+        gapi.client.load('drive', 'v3').then(()=>{
+          let query: string = '\''+resource.id+'\' in parents';
+          let request: string = gapi.client.drive.files.list({
+            'q': query,
+          });
+          gapiExecute(request).then( (response: any)=>{
+            let files: any = response.files;
+            let ids: string[] = [];
+            for(let i = 0; i<files.length; i++) {
+              ids.push(files[i].id);
+            }
+            batchFullResourcesFromFileIds(ids).then((resources: any)=>{
+              let currentFile = Promise.resolve({});
+              for(let i = 0; i<resources.length; i++) {
+                let fullResource = resources[i];
+                currentFile = contentsModelFromFileResource(fullResource, path, false)
+                currentFile.then((contents: Contents.IModel)=>{
+                  fileList.push(contents);
+                });
+              }
+              currentFile.then(()=>{
+                contents.content = fileList;
+                resolve(contents);
+              });
+            });
+          });
+        });
+      }
+    } else {
+      let contents: Contents.IModel = {
+        name: resource.name,
+        path: path,
+        type: 'file',
+        writable: resource.capabilities.canEdit,
+        created: String(resource.createdTime),
+        last_modified: String(resource.modifiedTime),
+        mimetype: null,
+        content: null,
+        format: 'text'
+      };
+      resolve(contents);
+    }
+  });
+}
