@@ -31,11 +31,17 @@ const SCOPE = [FULL_OAUTH_SCOPE];
 
 export
 let gapiLoaded = new Promise<void>( (resolve, reject) => {
+  //get the gapi script from Google
   $.getScript('https://apis.google.com/js/api.js')
   .done( (script, textStatus)=> {
+    //load overall API
     (window as any).gapi.load('auth:client,drive-realtime,drive-share', ()=> {
-      console.log("gapi: loaded onto page");
-      resolve();
+      //load client library (for some reason different
+      //from the toplevel API)
+      gapi.client.load('drive', 'v3').then(()=>{
+        console.log("gapi: loaded onto page");
+        resolve();
+      });
     });
   }).fail( () => {
     console.log("gapi: unable to load onto page");

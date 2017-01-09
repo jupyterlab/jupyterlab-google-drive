@@ -35,20 +35,22 @@ const FILE_MIMETYPE = 'application/vnd.google-apps.file';
 export
 function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
   return new Promise<void> ((resolve,reject) => {
-    let permissionRequest = {
-      'type' : 'user',
-      'role' : 'writer',
-      'emailAddress': emailAddress
-    }
-    gapi.client.load('drive', 'v3').then( () => {
-      gapi.client.drive.permissions.create( {
-        'fileId': fileId,
-        'emailMessage' : fileId,
-        'sendNotificationEmail' : true,
-        'resource': permissionRequest
-      }).then( (response : any) => {
-        console.log("gapi: created permissions for "+emailAddress);
-        resolve();
+    gapiLoaded.then(()=>{
+      let permissionRequest = {
+        'type' : 'user',
+        'role' : 'writer',
+        'emailAddress': emailAddress
+      }
+      gapi.client.load('drive', 'v3').then( () => {
+        gapi.client.drive.permissions.create( {
+          'fileId': fileId,
+          'emailMessage' : fileId,
+          'sendNotificationEmail' : true,
+          'resource': permissionRequest
+        }).then( (response : any) => {
+          console.log("gapi: created permissions for "+emailAddress);
+          resolve();
+        });
       });
     });
   });
@@ -57,7 +59,7 @@ function createPermissions (fileId: string, emailAddress: string ): Promise<void
 export
 function createRealtimeDocument(): Promise<string> {
   return new Promise( (resolve, reject) => {
-    gapi.client.load('drive', 'v3').then( () => {
+    gapiLoaded.then( () => {
       gapi.client.drive.files.create({
         'resource': {
           mimeType: RT_MIMETYPE,
@@ -74,10 +76,12 @@ function createRealtimeDocument(): Promise<string> {
 
 export
 function loadRealtimeDocument( fileId : string): Promise<gapi.drive.realtime.Document> {
-  console.log("gapi : attempting to load realtime file " + fileId);
   return new Promise( (resolve, reject) => {
-    gapi.drive.realtime.load( fileId, (doc : gapi.drive.realtime.Document ):any => {
-      resolve(doc);
+    gapiLoaded.then( () => {
+      console.log("gapi : attempting to load realtime file " + fileId);
+      gapi.drive.realtime.load( fileId, (doc : gapi.drive.realtime.Document ):any => {
+        resolve(doc);
+      });
     });
   });
 }
@@ -105,25 +109,23 @@ function getResourceForRelativePath(pathComponent: string, type: FileType, folde
           query += ' and mimeType = \'' + FOLDER_MIMETYPE + '\'';
       }
       query += ' and \'' + folderId + '\' in parents';
-      gapi.client.load('drive', 'v3').then(()=>{
-        let request: string = gapi.client.drive.files.list({'q': query});
-        return gapiExecute(request).then(function(response): any {
-          let files: any = response['files'];
-          if (!files || files.length === 0) {
-            throw new Error(
-              "Google Drive: cannot find the specified file/folder: "
-              +pathComponent);
-          } else if (files.length > 1) {
-            throw new Error(
-              "Google Drive: multiple files/folders match: "
-              +pathComponent);
-          }
-          //Unfortunately, files resource returned by `drive.files.list`
-          //does not allow for specifying the fields that we want, so
-          //we have to query the server again for those.
-          fullResourceFromFileId( files[0].id ).then( (resource: any)=> {
-            resolve(resource);
-          });
+      let request: string = gapi.client.drive.files.list({'q': query});
+      return gapiExecute(request).then(function(response): any {
+        let files: any = response['files'];
+        if (!files || files.length === 0) {
+          throw new Error(
+            "Google Drive: cannot find the specified file/folder: "
+            +pathComponent);
+        } else if (files.length > 1) {
+          throw new Error(
+            "Google Drive: multiple files/folders match: "
+            +pathComponent);
+        }
+        //Unfortunately, files resource returned by `drive.files.list`
+        //does not allow for specifying the fields that we want, so
+        //we have to query the server again for those.
+        fullResourceFromFileId( files[0].id ).then( (resource: any)=> {
+          resolve(resource);
         });
       });
     });
@@ -133,14 +135,12 @@ function getResourceForRelativePath(pathComponent: string, type: FileType, folde
 function fullResourceFromFileId(id: string): Promise<any> {
   return new Promise<any>((resolve,reject)=>{
     gapiLoaded.then(()=>{
-      gapi.client.load('drive', 'v3').then(()=>{
-        let request: any = gapi.client.drive.files.get({
-         fileId: id,
-         fields: RESOURCE_FIELDS
-        });
-        gapiExecute(request).then((response: any)=>{
-          resolve(response);
-        });
+      let request: any = gapi.client.drive.files.get({
+       fileId: id,
+       fields: RESOURCE_FIELDS
+      });
+      gapiExecute(request).then((response: any)=>{
+        resolve(response);
       });
     });
   });
@@ -150,24 +150,22 @@ function batchFullResourcesFromFileIds( ids: string[]): Promise<any[]> {
   console.log("Batch");
   return new Promise<any>((resolve,reject)=>{
     gapiLoaded.then(()=>{
-      gapi.client.load('drive', 'v3').then(()=>{
-        let batch = gapi.client.newBatch();
-        let resourceRequest = function(id: string): any {
-          return gapi.client.drive.files.get({
-           fileId: id,
-           fields: RESOURCE_FIELDS
-          });
-        }
-        for(let i =0; i < ids.length; i++) {
-          batch.add( resourceRequest(ids[i]), {'id': 'resource'+String(i)});
-        }
-        gapiExecute(batch).then((response: any)=>{
-          let resources: any[] = []
-          for(let i =0; i < ids.length; i++) {
-            resources.push(response['resource'+String(i)].result);
-          }
-          resolve(resources);
+      let batch = gapi.client.newBatch();
+      let resourceRequest = function(id: string): any {
+        return gapi.client.drive.files.get({
+         fileId: id,
+         fields: RESOURCE_FIELDS
         });
+      }
+      for(let i =0; i < ids.length; i++) {
+        batch.add( resourceRequest(ids[i]), {'id': 'resource'+String(i)});
+      }
+      gapiExecute(batch).then((response: any)=>{
+        let resources: any[] = []
+        for(let i =0; i < ids.length; i++) {
+          resources.push(response['resource'+String(i)].result);
+        }
+        resolve(resources);
       });
     });
   });
@@ -275,34 +273,32 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
       //get directory listing if applicable
       let fileList: any[] = [];
       if (includeContents) {
-        gapi.client.load('drive', 'v3').then(()=>{
-          let query: string = '\''+resource.id+'\' in parents';
-          let request: string = gapi.client.drive.files.list({
-            'q': query,
-          });
-          gapiExecute(request).then( (response: any)=>{
-            let files: any = response.files;
-            let ids: string[] = [];
-            for(let i = 0; i<files.length; i++) {
-              ids.push(files[i].id);
-            }
-            batchFullResourcesFromFileIds(ids).then((resources: any)=>{
-              let currentFile = Promise.resolve({});
-              for(let i = 0; i<resources.length; i++) {
-                let fullResource = resources[i];
-                let resourcePath = path ?
-                                   path+'/'+fullResource.name :
-                                   fullResource.name;
-                currentFile = contentsModelFromFileResource(
-                  fullResource, resourcePath, false);
-                currentFile.then((contents: Contents.IModel)=>{
-                  fileList.push(contents);
-                });
-              }
-              currentFile.then(()=>{
-                contents.content = fileList;
-                resolve(contents);
+        let query: string = '\''+resource.id+'\' in parents';
+        let request: string = gapi.client.drive.files.list({
+          'q': query,
+        });
+        gapiExecute(request).then( (response: any)=>{
+          let files: any = response.files;
+          let ids: string[] = [];
+          for(let i = 0; i<files.length; i++) {
+            ids.push(files[i].id);
+          }
+          batchFullResourcesFromFileIds(ids).then((resources: any)=>{
+            let currentFile = Promise.resolve({});
+            for(let i = 0; i<resources.length; i++) {
+              let fullResource = resources[i];
+              let resourcePath = path ?
+                                 path+'/'+fullResource.name :
+                                 fullResource.name;
+              currentFile = contentsModelFromFileResource(
+                fullResource, resourcePath, false);
+              currentFile.then((contents: Contents.IModel)=>{
+                fileList.push(contents);
               });
+            }
+            currentFile.then(()=>{
+              contents.content = fileList;
+              resolve(contents);
             });
           });
         });
@@ -337,14 +333,12 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
 function downloadResource(resource: any): Promise<any> {
   return new Promise<any>((resolve,reject)=>{
     gapiLoaded.then(()=>{
-      gapi.client.load('drive', 'v3').then(()=>{
-        let request: any = gapi.client.drive.files.get({
-         fileId: resource.id,
-         alt: 'media'
-        });
-        gapiExecute(request).then((response: any)=>{
-          resolve(response);
-        });
+      let request: any = gapi.client.drive.files.get({
+       fileId: resource.id,
+       alt: 'media'
+      });
+      gapiExecute(request).then((response: any)=>{
+        resolve(response);
       });
     });
   });
