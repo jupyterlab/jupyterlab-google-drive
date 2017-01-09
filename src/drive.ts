@@ -302,9 +302,11 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
             });
           });
         });
+      } else {
+        resolve(contents);
       }
     } else {
-      let contents: Contents.IModel = {
+      let contents: any = {
         name: resource.name,
         path: path,
         type: 'file',
@@ -315,7 +317,33 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         content: null,
         format: 'text'
       };
-      resolve(contents);
+      if(includeContents) {
+        debugger;
+        downloadResource(resource).then((response: any)=>{
+          debugger;
+          let resourceContents: any = response.body;
+          contents.content = resourceContents;
+          resolve(contents);
+        });
+      } else {
+        resolve(contents);
+      }
     }
+  });
+}
+
+function downloadResource(resource: any): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    gapiLoaded.then(()=>{
+      gapi.client.load('drive', 'v3').then(()=>{
+        let request: any = gapi.client.drive.files.get({
+         fileId: resource.id,
+         alt: 'media'
+        });
+        gapiExecute(request).then((response: any)=>{
+          resolve(response);
+        });
+      });
+    });
   });
 }

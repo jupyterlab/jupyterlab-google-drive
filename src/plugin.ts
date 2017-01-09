@@ -10,7 +10,7 @@ import {
 } from 'jupyterlab/lib/application';
 
 import {
-  IDocumentManager
+  IDocumentManager, DocumentManager
 } from 'jupyterlab/lib/docmanager';
 
 import {
@@ -43,7 +43,7 @@ const realtimePlugin: JupyterLabPlugin<IRealtime> = {
 
 const fileBrowserPlugin: JupyterLabPlugin<IPathTracker> = {
   id: 'jupyter.services.google-drive',
-  requires: [IDocumentManager, IDocumentRegistry],
+  requires: [IDocumentRegistry],
   provides: IPathTracker,
   activate: activateFileBrowser,
   autoStart: true
@@ -57,10 +57,24 @@ function activateRealtime(app: JupyterLab): IRealtime {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, documentManager: IDocumentManager, registry: IDocumentRegistry): IPathTracker {
+function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry): IPathTracker {
   let { commands, keymap } = app;
-  let manager = new GoogleDriveServiceManager();
-  let fbModel = new FileBrowserModel({manager});
+  let serviceManager = new GoogleDriveServiceManager();
+
+  let id = 1;
+  let opener: DocumentManager.IWidgetOpener = {
+    open: widget => {
+      if (!widget.id) {
+        widget.id = `google-drive-manager-${++id}`;
+      }
+      if (!widget.isAttached) {
+        app.shell.addToMainArea(widget);
+      }
+      app.shell.activateMain(widget.id);
+    }
+  };
+  let documentManager = new DocumentManager({ registry, manager: serviceManager, opener });
+  let fbModel = new FileBrowserModel({manager: serviceManager});
   let fbWidget = new FileBrowser({
     commands: commands,
     keymap: keymap,
