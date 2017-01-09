@@ -290,7 +290,11 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
               let currentFile = Promise.resolve({});
               for(let i = 0; i<resources.length; i++) {
                 let fullResource = resources[i];
-                currentFile = contentsModelFromFileResource(fullResource, path, false)
+                let resourcePath = path ?
+                                   path+'/'+fullResource.name :
+                                   fullResource.name;
+                currentFile = contentsModelFromFileResource(
+                  fullResource, resourcePath, false);
                 currentFile.then((contents: Contents.IModel)=>{
                   fileList.push(contents);
                 });
@@ -315,13 +319,11 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         last_modified: String(resource.modifiedTime),
         mimetype: null,
         content: null,
-        format: 'text'
+        format: 'json'
       };
       if(includeContents) {
-        debugger;
         downloadResource(resource).then((response: any)=>{
-          debugger;
-          let resourceContents: any = response.body;
+          let resourceContents: any = response;
           contents.content = resourceContents;
           resolve(contents);
         });
