@@ -194,27 +194,6 @@ function getResourceForPath(path: string, type?: FileType): Promise<any> {
   });
 }
 
-
-/**
-* Gets the Google Drive file/folder ID for a file or folder.  The path is
-* always treated as an absolute path, no matter whether it contains leading
-* or trailing slashes.  In fact, all leading, trailing and consecutive
-* slashes are ignored.
- *
- * @param {String} path The path
- * @param {FileType} type The type (file or folder)
- * @return {Promise} fullfilled with folder id (string) on success
- *     or Error object on error.
- */
-function getIdForPath(path: string, type?: FileType) {
-  var components = splitPath(path);
-  if (components.length == 0) {
-    return $.Deferred().resolve('root');
-  }
-  return getResourceForPath(path, type)
-    .then(function(resource): string { return resource['id']; });
-}
-
 export
 function contentsModelFromFileResource(resource: any, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
   return new Promise<Contents.IModel>((resolve,reject)=>{
