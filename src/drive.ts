@@ -104,7 +104,10 @@ function getResourceForRelativePath(pathComponent: string, type: FileType, folde
         query += ' and mimeType = \'' + FOLDER_MIMETYPE + '\'';
     }
     query += ' and \'' + folderId + '\' in parents';
-    let request: string = gapi.client.drive.files.list({'q': query});
+    let request: string = gapi.client.drive.files.list({
+      'q': query,
+       'fields': 'files('+RESOURCE_FIELDS+')'
+    });
     return driveApiRequest(request).then((result: any)=>{
       let files: any = result.files;
       if (!files || files.length === 0) {
@@ -116,17 +119,12 @@ function getResourceForRelativePath(pathComponent: string, type: FileType, folde
           "Google Drive: multiple files/folders match: "
           +pathComponent);
       }
-      //Unfortunately, files resource returned by `drive.files.list`
-      //does not allow for specifying the fields that we want, so
-      //we have to query the server again for those.
-      fullResourceFromFileId( files[0].id ).then( (resource: any)=> {
-        resolve(resource);
-      });
+      resolve(files[0]);
     });
   });
 }
 
-function fullResourceFromFileId(id: string): Promise<any> {
+function resourceFromFileId(id: string): Promise<any> {
   return new Promise<any>((resolve,reject)=>{
     let request: any = gapi.client.drive.files.get({
      fileId: id,
@@ -137,30 +135,6 @@ function fullResourceFromFileId(id: string): Promise<any> {
     });
   });
 }
-
-function batchFullResourcesFromFileIds( ids: string[]): Promise<any[]> {
-  console.log("Batch");
-  return new Promise<any>((resolve,reject)=>{
-    let batch = gapi.client.newBatch();
-    let resourceRequest = function(id: string): any {
-      return gapi.client.drive.files.get({
-       fileId: id,
-       fields: RESOURCE_FIELDS
-      });
-    }
-    for(let i =0; i < ids.length; i++) {
-      batch.add( resourceRequest(ids[i]), {'id': 'resource'+String(i)});
-    }
-    driveApiRequest(batch).then((result: any)=>{
-      let resources: any[] = []
-      for(let i =0; i < ids.length; i++) {
-        resources.push(result['resource'+String(i)].result);
-      }
-      resolve(resources);
-    });
-  });
-}
-
 
 /**
  * Split a path into path components
@@ -188,8 +162,8 @@ function getResourceForPath(path: string, type?: FileType): Promise<any> {
 
     if (components.length === 0) {
       //Handle the case for the root folder
-      fullResourceFromFileId('root').then((fullResource:any)=>{
-        resolve(fullResource);
+      resourceFromFileId('root').then((resource:any)=>{
+        resolve(resource);
       });
     } else {
       //Loop through the path components and get the resource for each
@@ -261,33 +235,30 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
       //get directory listing if applicable
       let fileList: any[] = [];
       if (includeContents) {
-        let query: string = '\''+resource.id+'\' in parents';
+        let query: string = '\''+resource.id+'\' in parents'+
+                            ' and trashed = false';
         let request: string = gapi.client.drive.files.list({
           'q': query,
+          'fields': 'files('+RESOURCE_FIELDS+')'
         });
         driveApiRequest(request).then( (result: any)=>{
-          let files: any = result.files;
-          let ids: string[] = [];
-          for(let i = 0; i<files.length; i++) {
-            ids.push(files[i].id);
-          }
-          batchFullResourcesFromFileIds(ids).then((resources: any)=>{
-            let currentFile = Promise.resolve({});
-            for(let i = 0; i<resources.length; i++) {
-              let fullResource = resources[i];
-              let resourcePath = path ?
-                                 path+'/'+fullResource.name :
-                                 fullResource.name;
-              currentFile = contentsModelFromFileResource(
-                fullResource, resourcePath, false);
-              currentFile.then((contents: Contents.IModel)=>{
-                fileList.push(contents);
-              });
-            }
-            currentFile.then(()=>{
-              contents.content = fileList;
-              resolve(contents);
+          let resources: any = result.files;
+          let currentContents = Promise.resolve({});
+
+          for(let i = 0; i<resources.length; i++) {
+            let currentResource = resources[i];
+            let resourcePath = path ?
+                               path+'/'+currentResource.name :
+                               currentResource.name;
+            currentContents = contentsModelFromFileResource(
+              currentResource, resourcePath, false);
+            currentContents.then((contents: Contents.IModel)=>{
+              fileList.push(contents);
             });
+          }
+          currentContents.then(()=>{
+            contents.content = fileList;
+            resolve(contents);
           });
         });
       } else {
