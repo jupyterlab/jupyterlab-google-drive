@@ -217,6 +217,13 @@ class GoogleDriveContentsManager implements Contents.IManager {
           path = utils.urlPathJoin(path, name);
           uploadFile(path, model as Contents.IModel, false)
           .then((contents: Contents.IModel)=>{
+
+            this.fileChanged.emit({
+              type: 'new',
+              oldValue: null,
+              newValue: contents
+            });
+
             resolve(contents);
           });
         });
@@ -232,7 +239,16 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves when the file is deleted.
    */
   delete(path: string): Promise<void> {
-    return deleteFile(path);
+    return new Promise<void>((resolve,reject)=>{
+      deleteFile(path).then(()=>{
+        this.fileChanged.emit({
+          type: 'delete',
+          oldValue: { path },
+          newValue: null
+        });
+        resolve();
+      });
+    });
   }
 
   /**
@@ -260,11 +276,22 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *   file is saved.
    */
   save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
-    if(options) {
-      return uploadFile(path, options, true);
-    } else {
-      return this.get(path);
-    }
+    return new Promise<Contents.IModel>((resolve,reject)=>{
+      let savePromise = Promise.reject(void 0);
+      if(options) {
+        savePromise = uploadFile(path, options, true);
+      } else {
+        savePromise = this.get(path);
+      }
+      savePromise.then((contents)=>{
+        this.fileChanged.emit({
+          type: 'save',
+          oldValue: null,
+          newValue: contents
+        });
+        resolve(contents);
+      });
+    });
   }
 
   /**
