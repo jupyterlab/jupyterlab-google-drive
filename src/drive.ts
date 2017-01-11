@@ -5,7 +5,7 @@
 import $ = require('jquery');
 
 import {
-  Contents
+  Contents, utils 
 } from '@jupyterlab/services';
 
 import {
@@ -31,6 +31,8 @@ export
 const FOLDER_MIMETYPE = 'application/vnd.google-apps.folder';
 export
 const FILE_MIMETYPE = 'application/vnd.google-apps.file';
+
+const MULTIPART_BOUNDARY = '-------314159265358979323846';
 
 export
 function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
@@ -105,8 +107,8 @@ function getResourceForRelativePath(pathComponent: string, type: FileType, folde
     }
     query += ' and \'' + folderId + '\' in parents';
     let request: string = gapi.client.drive.files.list({
-      'q': query,
-       'fields': 'files('+RESOURCE_FIELDS+')'
+      q: query,
+      fields: 'files('+RESOURCE_FIELDS+')'
     });
     return driveApiRequest(request).then((result: any)=>{
       let files: any = result.files;
@@ -195,6 +197,87 @@ function getResourceForPath(path: string, type?: FileType): Promise<any> {
 }
 
 export
+function fileResourceFromContentsModel(contents: Contents.IModel): any {
+  let mimeType = '';
+  switch (contents.type) {
+    case 'directory':
+      mimeType = FOLDER_MIMETYPE;
+      break;
+    case 'notebook':
+      mimeType = 'application/ipynb';
+      break;
+    case 'file':
+      mimeType = FILE_MIMETYPE;
+      break;
+    default:
+      throw new Error('Invalid contents type');
+  }
+  return {
+    name: contents.name,
+    mimeType: mimeType
+  };
+}
+
+export
+function uploadFile(path: string, model: Contents.IModel): Promise<Contents.IModel> {
+  return new Promise<Contents.IModel>((resolve,reject)=>{
+    let resource: any = fileResourceFromContentsModel(model);
+    getResourceForPath(path).then((parentFolderResource: any)=>{
+      if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
+        throw new Error("Google Drive: expected a folder: "+path);
+      }
+      resource['parents'] = [parentFolderResource.id];
+
+      //Construct the HTTP request: first the metadata,
+      //then the content of the uploaded file
+
+      let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
+      let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
+      let mime = resource.mimeType;
+
+      //Metatdata part
+      let body = delimiter+'Content-Type: application/json\r\n\r\n';
+      body += JSON.stringify(resource);
+      body += delimiter;
+
+      //Content of the file
+      body += 'Content-Type: ' + mime + '\r\n';
+      if (mime === 'application/octet-stream') {
+        body += 'Content-Transfer-Encoding: base64\r\n';
+      }
+      //TODO: this puts extra quotes around strings.
+      body +='\r\n' + JSON.stringify(model.content) + closeDelim;
+
+      var path = '/upload/drive/v3/files';
+      var method = 'POST';
+
+      var request = gapi.client.request({
+        path: path,
+        method: method,
+        params: {
+          uploadType: 'multipart',
+          fields: RESOURCE_FIELDS
+          },
+        headers: {
+          'Content-Type': 'multipart/related; boundary="' +
+            MULTIPART_BOUNDARY + '"'
+          },
+        body: body
+      });
+
+      driveApiRequest(request).then( (result: any)=>{
+        console.log("gapi: uploaded document to "+result.id);
+        let filePath: string = (path ? path+'/' : '') + result.name;
+        contentsModelFromFileResource(result, filePath, false).then((contents: Contents.IModel)=>{
+          resolve(contents);
+        });
+      });
+    });
+  });
+}
+
+
+export
 function contentsModelFromFileResource(resource: any, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
   return new Promise<Contents.IModel>((resolve,reject)=>{
     if(resource.mimeType === FOLDER_MIMETYPE) {
@@ -217,8 +300,8 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         let query: string = '\''+resource.id+'\' in parents'+
                             ' and trashed = false';
         let request: string = gapi.client.drive.files.list({
-          'q': query,
-          'fields': 'files('+RESOURCE_FIELDS+')'
+          q: query,
+          fields: 'files('+RESOURCE_FIELDS+')'
         });
         driveApiRequest(request).then( (result: any)=>{
           let resources: any = result.files;
@@ -277,6 +360,23 @@ function downloadResource(resource: any): Promise<any> {
     });
     driveApiRequest(request).then((result: any)=>{
       resolve(result);
+    });
+  });
+}
+
+export
+function searchDirectory(path: string, query: string): Promise<any[]> {
+  return new Promise<any[]>((resolve, reject)=>{
+    getResourceForPath(path, FileType.FOLDER).then((resource: any)=>{
+      let fullQuery: string = '\''+resource.id+'\' in parents '+
+                              'and trashed = false and '+query;
+      let request = gapi.client.drive.files.list({
+        q: fullQuery,
+        fields: 'files('+RESOURCE_FIELDS+')'
+      });
+      driveApiRequest(request).then((result: any)=>{
+        resolve(result.files);
+      });
     });
   });
 }

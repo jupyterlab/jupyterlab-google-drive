@@ -59,7 +59,7 @@ function activateRealtime(app: JupyterLab): IRealtime {
  */
 function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry): IPathTracker {
   let { commands, keymap } = app;
-  let serviceManager = new GoogleDriveServiceManager();
+  let serviceManager = new GoogleDriveServiceManager(registry);
 
   let id = 1;
   let opener: DocumentManager.IWidgetOpener = {

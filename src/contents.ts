@@ -15,14 +15,21 @@ import {
 } from 'jupyterlab/lib/services';
 
 import {
+  IDocumentRegistry
+} from 'jupyterlab/lib/docregistry';
+
+import {
   authorize
 } from './gapi';
 
 import {
   getResourceForPath, contentsModelFromFileResource,
+  uploadFile,
+  searchDirectory,
   FOLDER_MIMETYPE, FILE_MIMETYPE
 } from './drive';
 
+const NOTEBOOK_MIMETYPE = 'application/ipynb';
 
 /**
  * An implementation of an IServiceManager
@@ -35,9 +42,9 @@ class GoogleDriveServiceManager extends ServiceManager {
   /**
    * Construct the services provider.
    */
-  constructor() {
+  constructor(registry: IDocumentRegistry) {
     super();
-    this._driveContents = new GoogleDriveContentsManager();
+    this._driveContents = new GoogleDriveContentsManager({}, registry);
   }
 
   /**
@@ -62,7 +69,8 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *
    * @param options - The options used to initialize the object.
    */
-  constructor(options: ContentsManager.IOptions = {}) {
+  constructor(options: ContentsManager.IOptions = {}, registry: IDocumentRegistry) {
+    this._docRegistry = registry;
   }
 
   /**
@@ -152,7 +160,66 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *    file is created.
    */
   newUntitled(options: Contents.ICreateOptions = {}): Promise<Contents.IModel> {
-    return Promise.reject(void 0);
+    return new Promise<Contents.IModel>((resolve,reject)=>{
+
+      //Set default values
+      let ext = '';
+      let baseName = 'Untitled'
+      let path = '';
+      let contentType: Contents.ContentType = 'notebook';
+
+      if(options) {
+        //Add leading `.` to extension if necessary.
+        ext = options.ext ?
+              ContentsManager.normalizeExtension(options.ext) : ext;
+        //If we are not creating in the root directory
+        path = options.path || '';
+        contentType = options.type || 'notebook';
+      }
+
+      let model: any = null;
+      if (contentType === 'notebook') {
+        ext = '.ipynb';
+        baseName = 'Untitled'
+        model = {
+          type: 'notebook',
+          content: this._docRegistry.getModelFactory('Notebook')
+                                      .createNew().toJSON(),
+          mimetype: NOTEBOOK_MIMETYPE,
+          format: 'json'
+        };
+      } else if (contentType === 'file') {
+        ext = ext || '.txt';
+        baseName = 'untitled';
+        model = {
+          type: 'file',
+          content: 'Hello world',
+          mimetype: 'text/plain',
+          format: 'text'
+        };
+      } else if (contentType === 'directory') {
+        ext = '';
+        baseName = 'Untitled Folder';
+        model = {
+          type: 'directory',
+          content: [],
+          format : 'json'
+        }
+      } else {
+        reject(new Error("Unrecognized type " + contentType));
+      }
+
+      let folderResourcePromise = getResourceForPath(path);
+      let namePromise = this._getNewFilename(path, ext, baseName);
+      folderResourcePromise.then((folderResource: any)=>{
+        namePromise.then((name: string)=>{
+          model['name'] = name;
+          uploadFile(path, model as Contents.IModel).then((contents: Contents.IModel)=>{
+            resolve(contents);
+          });
+        });
+      });
+    });
   }
 
   /**
@@ -262,10 +329,48 @@ class GoogleDriveContentsManager implements Contents.IManager {
     this._authorized = authorize();
   }
 
+  /**
+   * Obtains the filename that should be used for a new file in a given
+   * folder.  This is the next file in the series Untitled0, Untitled1, ... in
+   * the given drive folder.  As a fallback, returns Untitled.
+   *
+   * @param path - The path of the directory in which we are making the file.
+   * @param ext - The file extension.
+   * @param baseName - The base name of the new file
+   * @return A promise fullfilled with the new filename.
+   */
+  private _getNewFilename(path: string, ext: string, baseName: string): Promise<string> {
+    return new Promise<string>((resolve,reject)=>{
+
+      //Get the file listing for the directory
+      //let query = '\''+baseName+'\' in name and \''+ext+'\' in name';
+      let query = 'name contains \''+baseName+
+                  '\' and name contains \''+ext+'\'';
+      searchDirectory(path, query).then((resourceList: any[])=>{
+        let existingNames: any= {};
+        for( let i = 0; i < resourceList.length; i++) {
+          existingNames[resourceList[i].name] = true;
+        }
+
+        //Loop over the list and select the first name that
+        //does not exist. Note that the loop is N+1 iterations,
+        //so is guaranteed to come up with a name that is not
+        //in `existingNames`.
+        for (let i = 0; i <= resourceList.length; i++) {
+          let filename = baseName + (i > 0 ? String(i) : '') + ext;
+          if (!existingNames[filename]) {
+            resolve(filename);
+          }
+        }
+      });
+    });
+  }
+
   private _baseUrl = '';
   private _isDisposed = false;
   private _ajaxSettings: IAjaxSettings = null;
   private _authorized: Promise<void> = null;
+  private _docRegistry: IDocumentRegistry = null;
 }
 
 // Define the signals for the `GoogleDriveContentsManager` class.
