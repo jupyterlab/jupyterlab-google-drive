@@ -401,3 +401,18 @@ function searchDirectory(path: string, query: string): Promise<any[]> {
     });
   });
 }
+
+export
+function deleteFile(path: string): Promise<void> {
+  return new Promise<void>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      let request: any = gapi.client.drive.files.delete({fileId: resource.id});
+      driveApiRequest(request, 204).then(()=>{
+        resolve();
+      });
+    }).catch((result)=>{
+      console.log('Google Drive: unable to delete file: '+path);
+      reject();
+    });
+  });
+}

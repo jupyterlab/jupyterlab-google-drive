@@ -24,7 +24,7 @@ import {
 
 import {
   getResourceForPath, contentsModelFromFileResource,
-  uploadFile,
+  uploadFile, deleteFile,
   searchDirectory,
   FOLDER_MIMETYPE, FILE_MIMETYPE
 } from './drive';
@@ -232,7 +232,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves when the file is deleted.
    */
   delete(path: string): Promise<void> {
-    return Promise.reject(void 0);
+    return deleteFile(path);
   }
 
   /**
