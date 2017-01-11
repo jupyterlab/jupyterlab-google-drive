@@ -102,7 +102,7 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry): IPat
     let ext = '.' + path.split('.').pop();
     let factories = registry.preferredWidgetFactories(ext);
     let widgetNames = toArray(map(factories, factory => factory.name));
-    let prefix = `file-browser-contextmenu-${++Private.id}`;
+    let prefix = `google-drive-file-browser-contextmenu-${++Private.id}`;
     let openWith: Menu = null;
     if (path && widgetNames.length > 1) {
       let disposables = new DisposableSet();
@@ -145,7 +145,7 @@ export default plugins;
 function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
   let { commands, keymap } = fbWidget;
   let menu = new Menu({ commands, keymap });
-  let prefix = `file-browser-${++Private.id}`;
+  let prefix = `google-drive-file-browser-${++Private.id}`;
   let disposables = new DisposableSet();
   let command: string;
 
