@@ -219,15 +219,27 @@ function fileResourceFromContentsModel(contents: Contents.IModel): any {
 }
 
 export
-function uploadFile(path: string, model: Contents.IModel): Promise<Contents.IModel> {
+function uploadFile(path: string, model: Contents.IModel, existing: boolean = false): Promise<Contents.IModel> {
   return new Promise<Contents.IModel>((resolve,reject)=>{
-    let resource: any = fileResourceFromContentsModel(model);
-    getResourceForPath(path).then((parentFolderResource: any)=>{
-      if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
-        throw new Error("Google Drive: expected a folder: "+path);
-      }
-      resource['parents'] = [parentFolderResource.id];
-
+    let resourceReadyPromise = Promise.resolve(void 0);
+    if(existing) {
+      resourceReadyPromise = getResourceForPath(path)
+    } else {
+      resourceReadyPromise = new Promise<any>((resolve,reject)=>{
+        let enclosingFolderPath =
+          utils.urlPathJoin(...splitPath(path).slice(0,-1));
+        let resource: any = fileResourceFromContentsModel(model);
+        getResourceForPath(enclosingFolderPath)
+        .then((parentFolderResource: any)=>{
+          if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
+             throw new Error("Google Drive: expected a folder: "+path);
+          }
+          resource['parents'] = [parentFolderResource.id];
+          resolve(resource);
+        });
+      });
+    }
+    resourceReadyPromise.then((resource: any)=>{
       //Construct the HTTP request: first the metadata,
       //then the content of the uploaded file
 
@@ -237,7 +249,10 @@ function uploadFile(path: string, model: Contents.IModel): Promise<Contents.IMod
 
       //Metatdata part
       let body = delimiter+'Content-Type: application/json\r\n\r\n';
-      body += JSON.stringify(resource);
+      //Don't update metadata if the file already exists.
+      if(!existing) {
+        body += JSON.stringify(resource);
+      }
       body += delimiter;
 
       //Content of the file
@@ -248,11 +263,16 @@ function uploadFile(path: string, model: Contents.IModel): Promise<Contents.IMod
       //TODO: this puts extra quotes around strings.
       body +='\r\n' + JSON.stringify(model.content) + closeDelim;
 
-      var path = '/upload/drive/v3/files';
-      var method = 'POST';
+      let apiPath = '/upload/drive/v3/files';
+      let method = 'POST';
 
-      var request = gapi.client.request({
-        path: path,
+      if(existing) {
+        method = 'PATCH';
+        apiPath = apiPath+'/'+resource.id;
+      }
+
+      let request = gapi.client.request({
+        path: apiPath,
         method: method,
         params: {
           uploadType: 'multipart',
@@ -267,8 +287,7 @@ function uploadFile(path: string, model: Contents.IModel): Promise<Contents.IMod
 
       driveApiRequest(request).then( (result: any)=>{
         console.log("gapi: uploaded document to "+result.id);
-        let filePath: string = (path ? path+'/' : '') + result.name;
-        contentsModelFromFileResource(result, filePath, false).then((contents: Contents.IModel)=>{
+        contentsModelFromFileResource(result, path, true).then((contents: Contents.IModel)=>{
           resolve(contents);
         });
       });
@@ -327,10 +346,12 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         resolve(contents);
       }
     } else {
+      let contentType = resource.mimeType === 'application/ipynb' ?
+                        'notebook' : 'file';
       let contents: any = {
         name: resource.name,
         path: path,
-        type: 'file',
+        type: contentType,
         writable: resource.capabilities.canEdit,
         created: String(resource.createdTime),
         last_modified: String(resource.modifiedTime),
@@ -343,7 +364,7 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
           contents.content = result;
           resolve(contents);
         }).catch(()=>{
-          debugger;
+          console.log("Google Drive: unable to download contents");
         });
       } else {
         resolve(contents);

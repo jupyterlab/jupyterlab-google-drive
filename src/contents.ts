@@ -3,7 +3,7 @@
 
 import {
   ServiceManager, ContentsManager, Contents,
-  IAjaxSettings
+  IAjaxSettings, utils
 } from '@jupyterlab/services';
 
 import {
@@ -214,7 +214,9 @@ class GoogleDriveContentsManager implements Contents.IManager {
       folderResourcePromise.then((folderResource: any)=>{
         namePromise.then((name: string)=>{
           model['name'] = name;
-          uploadFile(path, model as Contents.IModel).then((contents: Contents.IModel)=>{
+          path = utils.urlPathJoin(path, name);
+          uploadFile(path, model as Contents.IModel, false)
+          .then((contents: Contents.IModel)=>{
             resolve(contents);
           });
         });
@@ -258,7 +260,11 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *   file is saved.
    */
   save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
-    return Promise.reject(void 0);
+    if(options) {
+      return uploadFile(path, options, true);
+    } else {
+      return this.get(path);
+    }
   }
 
   /**
