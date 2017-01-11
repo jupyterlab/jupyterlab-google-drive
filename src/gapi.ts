@@ -64,11 +64,11 @@ function resetDriveTimer() {
 }
 
 export
-function driveApiRequest( request: any) : Promise<any> {
+function driveApiRequest( request: any, successCode: number = 200) : Promise<any> {
   return new Promise<any>((resolve, reject)=>{
     driveReady.then(()=>{
       request.then( (response: any)=> {
-        if(response.status !== 200) { //HTTP error
+        if(response.status !== successCode) { //HTTP error
           console.log("gapi: Drive API error: ", response.status);
           console.log(response);
           resetDriveTimer();
