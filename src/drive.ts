@@ -246,6 +246,14 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
       let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
       let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
       let mime = resource.mimeType;
+      switch(model.type) {
+        case 'notebook':
+          mime = 'application/json';
+          break;
+        case 'directory':
+          mime = FOLDER_MIMETYPE;
+          break;
+      }
 
       //Metatdata part
       let body = delimiter+'Content-Type: application/json\r\n\r\n';

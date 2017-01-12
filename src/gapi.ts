@@ -79,9 +79,9 @@ function driveApiRequest( request: any, successCode: number = 200) : Promise<any
         }
       }, (response: any)=>{ //Some other error
         console.log("gapi: Drive API Error.");
-        console.log(response.result);
+        console.log(response, request);
         resetDriveTimer();
-        reject(response.result);
+        reject(response);
       });
     });
   });
