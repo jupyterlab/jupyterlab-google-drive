@@ -42,6 +42,10 @@ import {
 } from './googlerealtime';
 
 import {
+  getResourceForPath
+} from './drive';
+
+import {
   GoogleDriveServiceManager
 } from './contents';
 
@@ -55,7 +59,7 @@ const realtimePlugin: JupyterLabPlugin<IRealtime> = {
 
 const fileBrowserPlugin: JupyterLabPlugin<IPathTracker> = {
   id: 'jupyter.services.google-drive',
-  requires: [IDocumentRegistry],
+  requires: [IDocumentRegistry, IRealtime],
   provides: IPathTracker,
   activate: activateFileBrowser,
   autoStart: true
@@ -69,7 +73,7 @@ function activateRealtime(app: JupyterLab): IRealtime {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry): IPathTracker {
+function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realtime: IRealtime): IPathTracker {
   let { commands, keymap } = app;
   let serviceManager = new GoogleDriveServiceManager(registry);
 
@@ -83,6 +87,13 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry): IPat
         app.shell.addToMainArea(widget);
       }
       app.shell.activateMain(widget.id);
+      let model = realtime.checkTrackers(widget);
+      if(model) {
+        let path: string = (widget as any).context.path;
+        getResourceForPath(path).then( (resource: any)=>{
+          realtime.shareModel(model, resource.id);
+        });
+      }
     }
   };
   let documentManager = new DocumentManager({ registry, manager: serviceManager, opener });

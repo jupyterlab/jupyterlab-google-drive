@@ -63,7 +63,7 @@ class GoogleRealtime implements IRealtime {
    * @returns a promise that is resolved when the model
    *   has been successfully shared.
    */
-  shareDocument(model: IRealtimeModel): Promise<void> { 
+  addCollaborator(model: IRealtimeModel): Promise<void> {
     return new Promise<void>( (resolve, reject) => {
       if( !this._authorized ) {
         this._authorize();
@@ -100,26 +100,38 @@ class GoogleRealtime implements IRealtime {
    * @returns a promise that is resolved when the model
    *   has been successfully opened.
    */
-  openSharedDocument(model: IRealtimeModel): Promise<void> {
+  shareModel(model: IRealtimeModel, uid?: string): Promise<void> {
     return new Promise<void>((resolve,reject) => {
       if( !this._authorized ) {
         this._authorize();
       }
       this._authorized.then( () => {
-        let input = document.createElement('input');
-        showDialog({
-          title: 'File ID...',
-          body: input,
-          okText: 'OPEN'
-        }).then(result => {
-          if (result.text === 'OPEN') {
-            this._openRealtimeDocument(model, input.value).then(()=>{
-              resolve();
-            }).catch( ()=>{
-              console.log("Google Realtime: unable to open shared document");
-            });
-          }
+        //If we are provided a fileId, use that.
+        //Otherwise, query for one.
+        let fileId = '';
+        if(uid) {
+          fileId = uid;
+        } else {
+          let input = document.createElement('input');
+          showDialog({
+            title: 'File ID...',
+            body: input,
+            okText: 'OPEN'
+          }).then(result => {
+            if (result.text === 'OPEN') {
+              fileId = input.value;
+            }
+          });
+        }
+
+        //Open the realtime document
+        this._openRealtimeDocument(model, fileId).then(()=>{
+          resolve();
+        }).catch( ()=>{
+          console.log("Google Realtime: unable to open shared document");
+          reject();
         });
+
       }).catch(()=>{
         console.log("Google Realtime: unable to authorize")
         reject();
@@ -162,18 +174,17 @@ class GoogleRealtime implements IRealtime {
     return model;
   }
 
-  protected _shareRealtimeDocument( model: IRealtimeModel, emailAddress : string) : Promise<GoogleRealtimeHandler> {
-    return new Promise<GoogleRealtimeHandler>( (resolve, reject) => {
-        let handler = new GoogleRealtimeHandler();
-        model.registerCollaborative(handler);
-        handler.ready.then( () => {
-          createPermissions(handler.fileId, emailAddress).then( () => {
-            resolve(handler);
-          }).catch( () => {
-            console.log("Google Realtime: unable to share document");
-            reject(void 0);
-          });
+  protected _shareRealtimeDocument( model: IRealtimeModel, emailAddress : string) : Promise<void> {
+    return new Promise<void>( (resolve, reject) => {
+      let handler = model.realtimeHandler as GoogleRealtimeHandler;
+      handler.ready.then( () => {
+        createPermissions(handler.fileId, emailAddress).then( () => {
+          resolve();
+        }).catch( () => {
+          console.log("Google Realtime: unable to share document");
+          reject();
         });
+      });
     });
   }
 
@@ -200,7 +211,6 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     this.ready = new Promise<void>( (resolve, reject) => {
       if (fileId) {
         this._fileId = fileId;
-        this._creator = false;
         loadRealtimeDocument(this._fileId).then( (doc : gapi.drive.realtime.Document) => {
           this._doc = doc;
           this._model = this._doc.getModel();
@@ -210,7 +220,6 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
           reject();
         });
       } else {
-        this._creator = true;
         createRealtimeDocument().then( (fileId: string) => {
           this._fileId = fileId;
           loadRealtimeDocument(fileId).then( (doc : gapi.drive.realtime.Document) => {
@@ -285,7 +294,6 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     return this._fileId;
   }
 
-  private _creator : boolean;
   private _fileId : string = '';
   private _doc : gapi.drive.realtime.Document = null;
   private _model : gapi.drive.realtime.Model = null;

@@ -5,7 +5,7 @@
 import $ = require('jquery');
 
 import {
-  Contents
+  Contents, utils
 } from '@jupyterlab/services';
 
 
@@ -48,6 +48,9 @@ let gapiLoaded = new Promise<void>( (resolve, reject) => {
     reject();
   });
 });
+
+export
+let gapiAuthorized = new utils.PromiseDelegate<void>();
 
 export
 let driveReady = new Promise<void>((resolve, reject)=>{
@@ -93,6 +96,7 @@ function authorize (): Promise<void> {
     gapiLoaded.then( () => {
       let handleAuthorization = function (authResult : any) {
         if (authResult && !authResult.error) {
+          gapiAuthorized.resolve();
           resolve();
         } else {
           popupAuthorization();
@@ -111,6 +115,7 @@ function authorize (): Promise<void> {
               immediate: false
             }, handleAuthorization);
           } else {
+            gapiAuthorized.reject();
             reject();
           }
         });
