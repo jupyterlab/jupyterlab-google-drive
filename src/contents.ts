@@ -277,7 +277,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    */
   save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
     return new Promise<Contents.IModel>((resolve,reject)=>{
-      let savePromise = Promise.reject(void 0);
+      let savePromise = Promise.resolve(void 0);
       if(options) {
         savePromise = uploadFile(path, options, true);
       } else {
