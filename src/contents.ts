@@ -24,8 +24,8 @@ import {
 
 import {
   getResourceForPath, contentsModelFromFileResource,
-  uploadFile, deleteFile,
-  searchDirectory,
+  uploadFile, deleteFile, pinCurrentRevision,
+  searchDirectory, listRevisions,
   FOLDER_MIMETYPE, FILE_MIMETYPE
 } from './drive';
 
@@ -317,7 +317,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *   checkpoint is created.
    */
   createCheckpoint(path: string): Promise<Contents.ICheckpointModel> {
-    return Promise.reject(void 0);
+    return pinCurrentRevision(path);
   }
 
   /**
@@ -329,7 +329,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *    the file.
    */
   listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
-    return Promise.reject(void 0);
+    return listRevisions(path);
   }
 
   /**
@@ -399,6 +399,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
     });
   }
 
+  private _lastRevisionMap: any = {};
   private _baseUrl = '';
   private _isDisposed = false;
   private _ajaxSettings: IAjaxSettings = null;

@@ -5,6 +5,10 @@
 import $ = require('jquery');
 
 import {
+  map, filter, toArray
+} from 'phosphor/lib/algorithm/iteration';
+
+import {
   Contents, utils 
 } from '@jupyterlab/services';
 
@@ -22,7 +26,7 @@ declare let gapi: any;
 export
 enum FileType {FILE=1, FOLDER=2};
 
-const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,'+
+const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,headRevisionId,'+
                       'parents,modifiedTime,createdTime,capabilities';
 
 export
@@ -421,6 +425,43 @@ function deleteFile(path: string): Promise<void> {
     }).catch((result)=>{
       console.log('Google Drive: unable to delete file: '+path);
       reject();
+    });
+  });
+}
+
+export
+function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
+  return new Promise<Contents.ICheckpointModel[]>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      let request: any = gapi.client.drive.revisions.list({
+        fileId: resource.id,
+        fields: 'revisions(id, modifiedTime, keepForever)' //NOT DOCUMENTED
+      });
+      driveApiRequest(request).then((result: any)=>{
+        let revisions = map(filter(result.revisions, (revision: any)=>{
+          return revision.keepForever;
+        }), (revision: any)=>{
+          return { id: revision.id, last_modified: revision.modifiedTime }
+        });
+        resolve(toArray(revisions));
+      });
+    });
+  });
+}
+
+
+export
+function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
+  return new Promise<Contents.ICheckpointModel>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      let request: any = gapi.client.drive.revisions.update({
+        fileId: resource.id,
+        revisionId: resource.headRevisionId,
+        keepForever: true
+      });
+      driveApiRequest(request).then((revision: any)=>{
+        resolve ({ id: revision.id, last_modified: revision.modifiedTime });
+      });
     });
   });
 }
