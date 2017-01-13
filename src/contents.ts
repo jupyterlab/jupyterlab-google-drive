@@ -386,7 +386,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
 
       //Get the file listing for the directory
       //let query = '\''+baseName+'\' in name and \''+ext+'\' in name';
-      let query = 'name cont ains \''+baseName+
+      let query = 'name contains \''+baseName+
                   '\' and name contains \''+ext+'\'';
       drive.searchDirectory(path, query).then((resourceList: any[])=>{
         let existingNames: any= {};
