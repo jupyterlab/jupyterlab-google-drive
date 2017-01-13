@@ -89,9 +89,13 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
       app.shell.activateMain(widget.id);
       let model = realtime.checkTrackers(widget);
       if(model) {
-        let path: string = (widget as any).context.path;
-        getResourceForPath(path).then( (resource: any)=>{
-          realtime.shareModel(model, resource.id);
+        let context: any = (widget as any).context;
+        let path: string = context.path;
+
+        context.ready.then(()=>{
+          getResourceForPath(path).then( (resource: any)=>{
+            realtime.shareModel(model, resource.id);
+          });
         });
       }
     }

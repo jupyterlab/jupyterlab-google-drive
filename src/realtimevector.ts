@@ -490,7 +490,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   clear(): void {
     let oldValues = toArray(this._vec);
     this._vec.clear();
-    this._gvec.clear();
+    //this._gvec.clear();
     this.changed.emit({
       type: 'remove',
       oldIndex: 0,
