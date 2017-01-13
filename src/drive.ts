@@ -398,11 +398,12 @@ function downloadResource(resource: any): Promise<any> {
 }
 
 export
-function searchDirectory(path: string, query: string): Promise<any[]> {
+function searchDirectory(path: string, query: string = ''): Promise<any[]> {
   return new Promise<any[]>((resolve, reject)=>{
     getResourceForPath(path, FileType.FOLDER).then((resource: any)=>{
       let fullQuery: string = '\''+resource.id+'\' in parents '+
-                              'and trashed = false and '+query;
+                              'and trashed = false';
+      if(query) fullQuery += ' and '+query;
       let request = gapi.client.drive.files.list({
         q: fullQuery,
         fields: 'files('+RESOURCE_FIELDS+')'
@@ -464,4 +465,80 @@ function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
       });
     });
   });
+}
+
+export
+function unpinRevision(path: string, revisionId: string): Promise<void> {
+  return new Promise<void>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      let request: any = gapi.client.drive.revisions.update({
+        fileId: resource.id,
+        revisionId: revisionId,
+        keepForever: false
+      });
+      driveApiRequest(request).then(()=>{
+        resolve ();
+      });
+    });
+  });
+}
+
+export
+function contentsModelForPath(path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+  return new Promise<Contents.IModel>((resolve,reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      contentsModelFromFileResource(resource, path, includeContents)
+      .then((contents: Contents.IModel)=>{
+        resolve(contents);
+      });
+    });
+  });
+}
+
+
+export
+function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+  if( oldPath === newPath ) {
+    return contentsModelForPath(oldPath);
+  } else {
+    return new Promise<Contents.IModel>((resolve, reject)=>{
+      let pathComponents = splitPath(newPath);
+      let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
+
+      //Get a promise that resolves with the resource in the current position.
+      let resourcePromise = getResourceForPath(oldPath)
+      //Get a promise that resolves with the resource of the new folder.
+      let newFolderPromise = getResourceForPath(newFolderPath);
+
+      //Check the new path to make sure there isn't already a file
+      //with the same name there.
+      let newName = pathComponents.slice(-1)[0];
+      let directorySearchPromise =
+        searchDirectory(newFolderPath, 'name = \''+newName+'\'');
+
+      Promise.all([resourcePromise, newFolderPromise, directorySearchPromise])
+      .then((values)=>{
+        let resource = values[0];
+        let newFolder = values[1];
+        let directorySearch = values[2];
+
+        if(directorySearch.length !== 0) {
+            reject(void 0);
+        } else {
+          let request: any = gapi.client.drive.files.update({
+            fileId: resource.id,
+            addParents: newFolder.id,
+            removeParents: resource.parents[0],
+            name: newName
+          });
+          driveApiRequest(request).then(()=>{
+            contentsModelForPath(newPath)
+            .then((contents: Contents.IModel)=>{
+              resolve(contents);
+            });
+          });
+        }
+      });
+    });
+  }
 }

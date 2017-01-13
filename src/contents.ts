@@ -22,12 +22,7 @@ import {
   authorize
 } from './gapi';
 
-import {
-  getResourceForPath, contentsModelFromFileResource,
-  uploadFile, deleteFile, pinCurrentRevision,
-  searchDirectory, listRevisions,
-  FOLDER_MIMETYPE, FILE_MIMETYPE
-} from './drive';
+import * as drive from './drive';
 
 const NOTEBOOK_MIMETYPE = 'application/ipynb';
 
@@ -130,8 +125,8 @@ class GoogleDriveContentsManager implements Contents.IManager {
     }
     return new Promise<Contents.IModel>((resolve,reject)=>{
       this._authorized.then(()=>{
-        getResourceForPath(path).then((resource: any)=>{
-          resolve(contentsModelFromFileResource(resource, path, true));
+        drive.getResourceForPath(path).then((resource: any)=>{
+          resolve(drive.contentsModelFromFileResource(resource, path, true));
         });
       });
     });
@@ -184,7 +179,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
         model = {
           type: 'notebook',
           content: this._docRegistry.getModelFactory('Notebook')
-                                      .createNew().toJSON(),
+                   .createNew().toJSON(),
           mimetype: NOTEBOOK_MIMETYPE,
           format: 'json'
         };
@@ -209,13 +204,13 @@ class GoogleDriveContentsManager implements Contents.IManager {
         reject(new Error("Unrecognized type " + contentType));
       }
 
-      let folderResourcePromise = getResourceForPath(path);
+      let folderResourcePromise = drive.getResourceForPath(path);
       let namePromise = this._getNewFilename(path, ext, baseName);
       folderResourcePromise.then((folderResource: any)=>{
         namePromise.then((name: string)=>{
           model['name'] = name;
           path = utils.urlPathJoin(path, name);
-          uploadFile(path, model as Contents.IModel, false)
+          drive.uploadFile(path, model as Contents.IModel, false)
           .then((contents: Contents.IModel)=>{
 
             this.fileChanged.emit({
@@ -240,7 +235,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    */
   delete(path: string): Promise<void> {
     return new Promise<void>((resolve,reject)=>{
-      deleteFile(path).then(()=>{
+      drive.deleteFile(path).then(()=>{
         this.fileChanged.emit({
           type: 'delete',
           oldValue: { path },
@@ -262,7 +257,20 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *   the file is renamed.
    */
   rename(path: string, newPath: string): Promise<Contents.IModel> {
-    return Promise.reject(void 0);
+    if(path === newPath) {
+      return this.get(path);
+    } else {
+      return new Promise<Contents.IModel>((resolve,reject)=>{
+        drive.moveFile(path, newPath).then((contents: Contents.IModel)=>{
+          this.fileChanged.emit({
+            type: 'rename',
+            oldValue: { path },
+            newValue: contents
+          });
+          resolve(contents);
+        });
+      });
+    }
   }
 
   /**
@@ -279,7 +287,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
     return new Promise<Contents.IModel>((resolve,reject)=>{
       let savePromise = Promise.resolve(void 0);
       if(options) {
-        savePromise = uploadFile(path, options, true);
+        savePromise = drive.uploadFile(path, options, true);
       } else {
         savePromise = this.get(path);
       }
@@ -317,7 +325,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *   checkpoint is created.
    */
   createCheckpoint(path: string): Promise<Contents.ICheckpointModel> {
-    return pinCurrentRevision(path);
+    return drive.pinCurrentRevision(path);
   }
 
   /**
@@ -329,7 +337,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *    the file.
    */
   listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
-    return listRevisions(path);
+    return drive.listRevisions(path);
   }
 
   /**
@@ -342,6 +350,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves when the checkpoint is restored.
    */
   restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
+    //return checkoutRevision(path, checkpointID);
     return Promise.reject(void 0);
   }
 
@@ -355,7 +364,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves when the checkpoint is deleted.
    */
   deleteCheckpoint(path: string, checkpointID: string): Promise<void> {
-    return Promise.reject(void 0);
+    return drive.unpinRevision(path, checkpointID);
   }
 
   private _authorize(): void {
@@ -377,9 +386,9 @@ class GoogleDriveContentsManager implements Contents.IManager {
 
       //Get the file listing for the directory
       //let query = '\''+baseName+'\' in name and \''+ext+'\' in name';
-      let query = 'name contains \''+baseName+
+      let query = 'name cont ains \''+baseName+
                   '\' and name contains \''+ext+'\'';
-      searchDirectory(path, query).then((resourceList: any[])=>{
+      drive.searchDirectory(path, query).then((resourceList: any[])=>{
         let existingNames: any= {};
         for( let i = 0; i < resourceList.length; i++) {
           existingNames[resourceList[i].name] = true;
