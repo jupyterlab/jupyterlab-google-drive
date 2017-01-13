@@ -328,14 +328,7 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
       //get directory listing if applicable
       let fileList: any[] = [];
       if (includeContents) {
-        let query: string = '\''+resource.id+'\' in parents'+
-                            ' and trashed = false';
-        let request: string = gapi.client.drive.files.list({
-          q: query,
-          fields: 'files('+RESOURCE_FIELDS+')'
-        });
-        driveApiRequest(request).then( (result: any)=>{
-          let resources: any = result.files;
+        searchDirectory(path).then( (resources: any[])=>{
           let currentContents = Promise.resolve({});
 
           for(let i = 0; i<resources.length; i++) {
