@@ -53,18 +53,7 @@ export
 let gapiAuthorized = new utils.PromiseDelegate<void>();
 
 export
-let driveReady = new Promise<void>((resolve, reject)=>{
-  gapiLoaded.then(()=>resolve());
-});
-
-export
-function resetDriveTimer() {
-  driveReady = new Promise<void>((resolve, reject)=>{
-    setTimeout( ()=>{
-      resolve();
-    }, 1000);
-  });
-}
+let driveReady = gapiAuthorized.promise;
 
 export
 function driveApiRequest( request: any, successCode: number = 200) : Promise<any> {
@@ -74,16 +63,13 @@ function driveApiRequest( request: any, successCode: number = 200) : Promise<any
         if(response.status !== successCode) { //HTTP error
           console.log("gapi: Drive API error: ", response.status);
           console.log(response);
-          resetDriveTimer();
           reject(response.result);
         } else { //Success
-          resetDriveTimer();
           resolve(response.result);
         }
       }, (response: any)=>{ //Some other error
         console.log("gapi: Drive API Error.");
         console.log(response, request);
-        resetDriveTimer();
         reject(response);
       });
     });
