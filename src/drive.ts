@@ -27,7 +27,8 @@ export
 enum FileType {FILE=1, FOLDER=2};
 
 const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,headRevisionId,'+
-                      'parents,modifiedTime,createdTime,capabilities';
+                      'parents,modifiedTime,createdTime,capabilities,'+
+                      'webContentLink';
 
 export
 const RT_MIMETYPE = 'application/vnd.google-apps.drive-sdk';
@@ -148,6 +149,16 @@ function resourceFromFileId(id: string): Promise<any> {
 function splitPath(path: string): string[] {
     return path.split('/').filter((s,i,a) => (Boolean(s)));
 };
+
+export
+function urlForFile(path: string): Promise<string> {
+  return new Promise<string>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      resolve(resource.webContentLink);
+    });
+  });
+}
+
 
 
 /**
