@@ -323,6 +323,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
 
     this._vec.set(index, value);
     this._gvec.set(index, value.toJSON());
+    this._connectToSync(value);
 
     this.changed.emit({
       type: 'set',
