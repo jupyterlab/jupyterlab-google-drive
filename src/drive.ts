@@ -39,155 +39,8 @@ const FILE_MIMETYPE = 'application/vnd.google-apps.file';
 
 const MULTIPART_BOUNDARY = '-------314159265358979323846';
 
-/**
- * Give edit permissions to a Google drive user.
- *
- * @param fileId - the ID of the file.
- *
- * @param emailAddress - the email address of the user for which
- *   to create the permissions.
- *
- * @returns a promise fulfilled when the permissions are created.
- */
-export
-function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
-  return new Promise<void> ((resolve,reject) => {
-    let permissionRequest = {
-      'type' : 'user',
-      'role' : 'writer',
-      'emailAddress': emailAddress
-    }
-    let request = gapi.client.drive.permissions.create({
-      'fileId': fileId,
-      'emailMessage' : fileId,
-      'sendNotificationEmail' : true,
-      'resource': permissionRequest
-    });
-    driveApiRequest(request).then( (result : any) => {
-      console.log("gapi: created permissions for "+emailAddress);
-      resolve();
-    });
-  });
-}
 
-/**
- * Create a new document for realtime collaboration.
- * This file is not associated with a particular filetype,
- * and is not downloadable/readable.  Realtime documents
- * may also be associated with other, more readable documents.
- *
- * @returns a promise fulfilled with the fileId of the
- *   newly-created realtime document.
- */
-export
-function createRealtimeDocument(): Promise<string> {
-  return new Promise( (resolve, reject) => {
-    let request = gapi.client.drive.files.create({
-        'resource': {
-          mimeType: RT_MIMETYPE,
-          name: 'jupyterlab_realtime_file'
-          }
-    })
-    driveApiRequest(request).then( (result : any)=>{
-      let fileId : string = result.id;
-      console.log("gapi: created realtime document "+fileId);
-      resolve(fileId);
-    });
-  });
-}
-
-/**
- * Load the realtime document associated with a file.
- *
- * @param fileId - the ID of the realtime file on Google Drive.
- *
- * @returns a promise fulfilled with the realtime document model.
- */
-export
-function loadRealtimeDocument( fileId : string): Promise<gapi.drive.realtime.Document> {
-  return new Promise((resolve, reject) =>{
-    driveReady.then(()=>{
-      console.log("gapi : attempting to load realtime file " + fileId);
-      gapi.drive.realtime.load( fileId, (doc : gapi.drive.realtime.Document ):any => {
-        resolve(doc);
-      });
-    });
-  });
-}
-
-/**
- * Obtains the Google Drive Files resource for a file or folder relative
- * to the a given folder.  The path should be a file or a subfolder, and
- * should not contain multiple levels of folders (hence the name
- * pathComponent).  It should also not contain any leading or trailing
- * slashes.
- *
- * @param pathComponent - The file/folder to find
- *
- * @param type - type of resource (file or folder)
- *
- * @param folderId - The Google Drive folder id
- *
- * @returns A promise fulfilled by either the files resource for the given
- *   file/folder, or rejected with an Error object.
- */
-function getResourceForRelativePath(pathComponent: string, type: FileType, folderId: string): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    //Construct a search query for the file at hand.
-    let query = 'name = \'' + pathComponent + '\' and trashed = false ';
-    if (type === FileType.FOLDER) {
-        query += ' and mimeType = \'' + FOLDER_MIMETYPE + '\'';
-    }
-    query += ' and \'' + folderId + '\' in parents';
-    //Construct a request for the files matching the query
-    let request: string = gapi.client.drive.files.list({
-      q: query,
-      fields: 'files('+RESOURCE_FIELDS+')'
-    });
-    //Make the request
-    return driveApiRequest(request).then((result: any)=>{
-      let files: any = result.files;
-      if (!files || files.length === 0) {
-        throw new Error(
-          "Google Drive: cannot find the specified file/folder: "
-          +pathComponent);
-      } else if (files.length > 1) {
-        throw new Error(
-          "Google Drive: multiple files/folders match: "
-          +pathComponent);
-      }
-      resolve(files[0]);
-    });
-  });
-}
-
-/**
- * Given the unique id string for a file in Google Drive,
- * get the files resource metadata associated with it.
- *
- * @param id - The file ID.
- *
- * @returns A promise that resolves with the files resource
- *   corresponding to `id`.
- */
-function resourceFromFileId(id: string): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    let request: any = gapi.client.drive.files.get({
-     fileId: id,
-     fields: RESOURCE_FIELDS
-    });
-    driveApiRequest(request).then((result: any)=>{
-        resolve(result);
-    });
-  });
-}
-
-/**
- * Split a path into path components
- */
-function splitPath(path: string): string[] {
-    return path.split('/').filter((s,i,a) => (Boolean(s)));
-};
+/* ****** Functions for uploading/downloading files ******** */
 
 /**
  * Get a download URL for a file path.
@@ -203,94 +56,6 @@ function urlForFile(path: string): Promise<string> {
       resolve(resource.webContentLink);
     });
   });
-}
-
-
-
-/**
- * Gets the Google Drive Files resource corresponding to a path.  The path
- * is always treated as an absolute path, no matter whether it contains
- * leading or trailing slashes.  In fact, all leading, trailing and
- * consecutive slashes are ignored.
- *
- * @param path - The path of the file.
- *
- * @param type - The type (file or folder)
- *
- * @returns A promise fulfilled with the files resource for the given path.
- *   or an Error object on error.
- */
-export
-function getResourceForPath(path: string, type?: FileType): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    let components = splitPath(path);
-
-    if (components.length === 0) {
-      //Handle the case for the root folder
-      resourceFromFileId('root').then((resource:any)=>{
-        resolve(resource);
-      });
-    } else {
-      //Loop through the path components and get the resource for each
-      //one, verifying that the path corresponds to a valid drive object.
-
-      //Utility function that gets the file resource object given its name,
-      //whether it is a file or a folder, and a promise for the resource 
-      //object of its containing folder.
-      let getResource = function(pathComponent: string, componentType: FileType, parentResource: Promise<any>): Promise<any> {
-        return parentResource.then((resource: any)=>{
-          return getResourceForRelativePath(pathComponent, componentType, resource['id']);
-        });
-      }
-
-      //We start with the root directory:
-      let currentResource: Promise<any> = Promise.resolve({id: 'root'});
-
-      //Loop over the components, updating the current resource
-      for (let i = 0; i < components.length; i++) {
-        let component = components[i];
-        let ctype = (i == components.length - 1) ? type : FileType.FOLDER;
-        currentResource = getResource(component, ctype, currentResource);
-      }
-
-      //Resolve with the final value of currentResource.
-      currentResource.then( (resource: any)=>{resolve(resource);});
-    }
-  });
-}
-
-/**
- * Construct a minimal files resource object from a
- * contents model.
- *
- * @param contents - The contents model.
- *
- * @returns a files resource object for the Google Drive API.
- *
- * #### Notes
- * This does not include any of the binary/text/json content of the
- * `contents`, just some metadata (`name` and `mimeType`).
- */
-export
-function fileResourceFromContentsModel(contents: Contents.IModel): any {
-  let mimeType = '';
-  switch (contents.type) {
-    case 'directory':
-      mimeType = FOLDER_MIMETYPE;
-      break;
-    case 'notebook':
-      mimeType = 'application/ipynb';
-      break;
-    case 'file':
-      mimeType = FILE_MIMETYPE;
-      break;
-    default:
-      throw new Error('Invalid contents type');
-  }
-  return {
-    name: contents.name,
-    mimeType: mimeType
-  };
 }
 
 /**
@@ -390,7 +155,6 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
   });
 }
 
-
 /**
  * Given a files resource, construct a Contents.IModel.
  *
@@ -479,23 +243,130 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
 }
 
 /**
- * Download the contents of a file from Google Drive.
+ * Given a path, get a `Contents.IModel` corresponding to that file.
  *
- * @param resource - the files resource metadata object.
+ * @param path - the path of the file.
  *
- * @returns a promise fulfilled with the contents of the file.
+ * @param includeContents - whether to include the binary/text/contents of the file.
+ *   If false, just get the metadata.
+ *
+ * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
+ *   Otherwise, throws an error.
  */
-function downloadResource(resource: any): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    let request: any = gapi.client.drive.files.get({
-     fileId: resource.id,
-     alt: 'media'
-    });
-    driveApiRequest(request).then((result: any)=>{
-      resolve(result);
+export
+function contentsModelForPath(path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+  return new Promise<Contents.IModel>((resolve,reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      contentsModelFromFileResource(resource, path, includeContents)
+      .then((contents: Contents.IModel)=>{
+        resolve(contents);
+      });
     });
   });
 }
+
+
+/* ********* Functions for file creation/deletion ************** */
+
+/**
+ * Give edit permissions to a Google drive user.
+ *
+ * @param fileId - the ID of the file.
+ *
+ * @param emailAddress - the email address of the user for which
+ *   to create the permissions.
+ *
+ * @returns a promise fulfilled when the permissions are created.
+ */
+export
+function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
+  return new Promise<void> ((resolve,reject) => {
+    let permissionRequest = {
+      'type' : 'user',
+      'role' : 'writer',
+      'emailAddress': emailAddress
+    }
+    let request = gapi.client.drive.permissions.create({
+      'fileId': fileId,
+      'emailMessage' : fileId,
+      'sendNotificationEmail' : true,
+      'resource': permissionRequest
+    });
+    driveApiRequest(request).then( (result : any) => {
+      console.log("gapi: created permissions for "+emailAddress);
+      resolve();
+    });
+  });
+}
+
+/**
+ * Create a new document for realtime collaboration.
+ * This file is not associated with a particular filetype,
+ * and is not downloadable/readable.  Realtime documents
+ * may also be associated with other, more readable documents.
+ *
+ * @returns a promise fulfilled with the fileId of the
+ *   newly-created realtime document.
+ */
+export
+function createRealtimeDocument(): Promise<string> {
+  return new Promise( (resolve, reject) => {
+    let request = gapi.client.drive.files.create({
+        'resource': {
+          mimeType: RT_MIMETYPE,
+          name: 'jupyterlab_realtime_file'
+          }
+    })
+    driveApiRequest(request).then( (result : any)=>{
+      let fileId : string = result.id;
+      console.log("gapi: created realtime document "+fileId);
+      resolve(fileId);
+    });
+  });
+}
+
+/**
+ * Load the realtime document associated with a file.
+ *
+ * @param fileId - the ID of the realtime file on Google Drive.
+ *
+ * @returns a promise fulfilled with the realtime document model.
+ */
+export
+function loadRealtimeDocument( fileId : string): Promise<gapi.drive.realtime.Document> {
+  return new Promise((resolve, reject) =>{
+    driveReady.then(()=>{
+      console.log("gapi : attempting to load realtime file " + fileId);
+      gapi.drive.realtime.load( fileId, (doc : gapi.drive.realtime.Document ):any => {
+        resolve(doc);
+      });
+    });
+  });
+}
+
+/**
+ * Delete a file from the users Google Drive.
+ *
+ * @param path - the path of the file to delete.
+ *
+ * @returns a promise fulfilled when the file has been deleted.
+ */
+export
+function deleteFile(path: string): Promise<void> {
+  return new Promise<void>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      let request: any = gapi.client.drive.files.delete({fileId: resource.id});
+      driveApiRequest(request, 204).then(()=>{
+        resolve();
+      });
+    }).catch((result)=>{
+      console.log('Google Drive: unable to delete file: '+path);
+      reject();
+    });
+  });
+}
+
+/* ****** Functions for file system querying/manipulation ***** */
 
 /**
  * Search a directory.
@@ -530,26 +401,69 @@ function searchDirectory(path: string, query: string = ''): Promise<any[]> {
 }
 
 /**
- * Delete a file from the users Google Drive.
+ * Move a file in Google Drive. Can also be used to rename the file.
  *
- * @param path - the path of the file to delete.
+ * @param oldPath - The initial location of the file (where the path
+ *   includes the filename).
  *
- * @returns a promise fulfilled when the file has been deleted.
+ * @param oldPath - The new location of the file (where the path
+ *   includes the filename).
+ *
+ * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
+ *   Otherwise, throws an error.
  */
 export
-function deleteFile(path: string): Promise<void> {
-  return new Promise<void>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      let request: any = gapi.client.drive.files.delete({fileId: resource.id});
-      driveApiRequest(request, 204).then(()=>{
-        resolve();
+function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+  if( oldPath === newPath ) {
+    return contentsModelForPath(oldPath);
+  } else {
+    return new Promise<Contents.IModel>((resolve, reject)=>{
+      let pathComponents = splitPath(newPath);
+      let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
+
+      //Get a promise that resolves with the resource in the current position.
+      let resourcePromise = getResourceForPath(oldPath)
+      //Get a promise that resolves with the resource of the new folder.
+      let newFolderPromise = getResourceForPath(newFolderPath);
+
+      //Check the new path to make sure there isn't already a file
+      //with the same name there.
+      let newName = pathComponents.slice(-1)[0];
+      let directorySearchPromise =
+        searchDirectory(newFolderPath, 'name = \''+newName+'\'');
+
+      //Once we have all the required information,
+      //update the metadata with the new parent directory
+      //for the file.
+      Promise.all([resourcePromise, newFolderPromise, directorySearchPromise])
+      .then((values)=>{
+        let resource = values[0];
+        let newFolder = values[1];
+        let directorySearch = values[2];
+
+        if(directorySearch.length !== 0) {
+            reject(void 0);
+        } else {
+          let request: any = gapi.client.drive.files.update({
+            fileId: resource.id,
+            addParents: newFolder.id,
+            removeParents: resource.parents[0],
+            name: newName
+          });
+          driveApiRequest(request).then(()=>{
+            contentsModelForPath(newPath)
+            .then((contents: Contents.IModel)=>{
+              resolve(contents);
+            });
+          });
+        }
       });
-    }).catch((result)=>{
-      console.log('Google Drive: unable to delete file: '+path);
-      reject();
     });
-  });
+  }
 }
+
+
+/* ******** Functions for dealing with revisions ******** */
 
 /**
  * List the revisions for a file in Google Drive.
@@ -630,93 +544,6 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
   });
 }
 
-
-/**
- * Given a path, get a `Contents.IModel` corresponding to that file.
- *
- * @param path - the path of the file.
- *
- * @param includeContents - whether to include the binary/text/contents of the file.
- *   If false, just get the metadata.
- *
- * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
- *   Otherwise, throws an error.
- */
-export
-function contentsModelForPath(path: string, includeContents: boolean = false): Promise<Contents.IModel> {
-  return new Promise<Contents.IModel>((resolve,reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      contentsModelFromFileResource(resource, path, includeContents)
-      .then((contents: Contents.IModel)=>{
-        resolve(contents);
-      });
-    });
-  });
-}
-
-
-/**
- * Move a file in Google Drive. Can also be used to rename the file.
- *
- * @param oldPath - The initial location of the file (where the path
- *   includes the filename).
- *
- * @param oldPath - The new location of the file (where the path
- *   includes the filename).
- *
- * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
- *   Otherwise, throws an error.
- */
-export
-function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
-  if( oldPath === newPath ) {
-    return contentsModelForPath(oldPath);
-  } else {
-    return new Promise<Contents.IModel>((resolve, reject)=>{
-      let pathComponents = splitPath(newPath);
-      let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
-
-      //Get a promise that resolves with the resource in the current position.
-      let resourcePromise = getResourceForPath(oldPath)
-      //Get a promise that resolves with the resource of the new folder.
-      let newFolderPromise = getResourceForPath(newFolderPath);
-
-      //Check the new path to make sure there isn't already a file
-      //with the same name there.
-      let newName = pathComponents.slice(-1)[0];
-      let directorySearchPromise =
-        searchDirectory(newFolderPath, 'name = \''+newName+'\'');
-
-      //Once we have all the required information,
-      //update the metadata with the new parent directory
-      //for the file.
-      Promise.all([resourcePromise, newFolderPromise, directorySearchPromise])
-      .then((values)=>{
-        let resource = values[0];
-        let newFolder = values[1];
-        let directorySearch = values[2];
-
-        if(directorySearch.length !== 0) {
-            reject(void 0);
-        } else {
-          let request: any = gapi.client.drive.files.update({
-            fileId: resource.id,
-            addParents: newFolder.id,
-            removeParents: resource.parents[0],
-            name: newName
-          });
-          driveApiRequest(request).then(()=>{
-            contentsModelForPath(newPath)
-            .then((contents: Contents.IModel)=>{
-              resolve(contents);
-            });
-          });
-        }
-      });
-    });
-  }
-}
-
 /**
  * Revert a file to a particular revision id.
  *
@@ -763,6 +590,186 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
           resolve();
         });
       });
+    });
+  });
+}
+
+/* *********Utility functions ********* */
+
+/**
+ * Construct a minimal files resource object from a
+ * contents model.
+ *
+ * @param contents - The contents model.
+ *
+ * @returns a files resource object for the Google Drive API.
+ *
+ * #### Notes
+ * This does not include any of the binary/text/json content of the
+ * `contents`, just some metadata (`name` and `mimeType`).
+ */
+function fileResourceFromContentsModel(contents: Contents.IModel): any {
+  let mimeType = '';
+  switch (contents.type) {
+    case 'directory':
+      mimeType = FOLDER_MIMETYPE;
+      break;
+    case 'notebook':
+      mimeType = 'application/ipynb';
+      break;
+    case 'file':
+      mimeType = FILE_MIMETYPE;
+      break;
+    default:
+      throw new Error('Invalid contents type');
+  }
+  return {
+    name: contents.name,
+    mimeType: mimeType
+  };
+}
+
+/**
+ * Obtains the Google Drive Files resource for a file or folder relative
+ * to the a given folder.  The path should be a file or a subfolder, and
+ * should not contain multiple levels of folders (hence the name
+ * pathComponent).  It should also not contain any leading or trailing
+ * slashes.
+ *
+ * @param pathComponent - The file/folder to find
+ *
+ * @param type - type of resource (file or folder)
+ *
+ * @param folderId - The Google Drive folder id
+ *
+ * @returns A promise fulfilled by either the files resource for the given
+ *   file/folder, or rejected with an Error object.
+ */
+function getResourceForRelativePath(pathComponent: string, type: FileType, folderId: string): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    //Construct a search query for the file at hand.
+    let query = 'name = \'' + pathComponent + '\' and trashed = false ';
+    if (type === FileType.FOLDER) {
+        query += ' and mimeType = \'' + FOLDER_MIMETYPE + '\'';
+    }
+    query += ' and \'' + folderId + '\' in parents';
+    //Construct a request for the files matching the query
+    let request: string = gapi.client.drive.files.list({
+      q: query,
+      fields: 'files('+RESOURCE_FIELDS+')'
+    });
+    //Make the request
+    return driveApiRequest(request).then((result: any)=>{
+      let files: any = result.files;
+      if (!files || files.length === 0) {
+        throw new Error(
+          "Google Drive: cannot find the specified file/folder: "
+          +pathComponent);
+      } else if (files.length > 1) {
+        throw new Error(
+          "Google Drive: multiple files/folders match: "
+          +pathComponent);
+      }
+      resolve(files[0]);
+    });
+  });
+}
+
+/**
+ * Given the unique id string for a file in Google Drive,
+ * get the files resource metadata associated with it.
+ *
+ * @param id - The file ID.
+ *
+ * @returns A promise that resolves with the files resource
+ *   corresponding to `id`.
+ */
+function resourceFromFileId(id: string): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    let request: any = gapi.client.drive.files.get({
+     fileId: id,
+     fields: RESOURCE_FIELDS
+    });
+    driveApiRequest(request).then((result: any)=>{
+        resolve(result);
+    });
+  });
+}
+
+/**
+ * Split a path into path components
+ */
+function splitPath(path: string): string[] {
+    return path.split('/').filter((s,i,a) => (Boolean(s)));
+};
+
+/**
+ * Gets the Google Drive Files resource corresponding to a path.  The path
+ * is always treated as an absolute path, no matter whether it contains
+ * leading or trailing slashes.  In fact, all leading, trailing and
+ * consecutive slashes are ignored.
+ *
+ * @param path - The path of the file.
+ *
+ * @param type - The type (file or folder)
+ *
+ * @returns A promise fulfilled with the files resource for the given path.
+ *   or an Error object on error.
+ */
+export
+function getResourceForPath(path: string, type?: FileType): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    let components = splitPath(path);
+
+    if (components.length === 0) {
+      //Handle the case for the root folder
+      resourceFromFileId('root').then((resource:any)=>{
+        resolve(resource);
+      });
+    } else {
+      //Loop through the path components and get the resource for each
+      //one, verifying that the path corresponds to a valid drive object.
+
+      //Utility function that gets the file resource object given its name,
+      //whether it is a file or a folder, and a promise for the resource 
+      //object of its containing folder.
+      let getResource = function(pathComponent: string, componentType: FileType, parentResource: Promise<any>): Promise<any> {
+        return parentResource.then((resource: any)=>{
+          return getResourceForRelativePath(pathComponent, componentType, resource['id']);
+        });
+      }
+
+      //We start with the root directory:
+      let currentResource: Promise<any> = Promise.resolve({id: 'root'});
+
+      //Loop over the components, updating the current resource
+      for (let i = 0; i < components.length; i++) {
+        let component = components[i];
+        let ctype = (i == components.length - 1) ? type : FileType.FOLDER;
+        currentResource = getResource(component, ctype, currentResource);
+      }
+
+      //Resolve with the final value of currentResource.
+      currentResource.then( (resource: any)=>{resolve(resource);});
+    }
+  });
+}
+
+/**
+ * Download the contents of a file from Google Drive.
+ *
+ * @param resource - the files resource metadata object.
+ *
+ * @returns a promise fulfilled with the contents of the file.
+ */
+function downloadResource(resource: any): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    let request: any = gapi.client.drive.files.get({
+     fileId: resource.id,
+     alt: 'media'
+    });
+    driveApiRequest(request).then((result: any)=>{
+      resolve(result);
     });
   });
 }
