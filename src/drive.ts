@@ -48,10 +48,8 @@ const MULTIPART_BOUNDARY = '-------314159265358979323846';
  */
 export
 function urlForFile(path: string): Promise<string> {
-  return new Promise<string>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      resolve(resource.webContentLink);
-    });
+  return getResourceForPath(path).then((resource: any)=>{
+    return resource.webContentLink;
   });
 }
 
@@ -69,86 +67,82 @@ function urlForFile(path: string): Promise<string> {
  */
 export
 function uploadFile(path: string, model: Contents.IModel, existing: boolean = false): Promise<Contents.IModel> {
-  return new Promise<Contents.IModel>((resolve,reject)=>{
-    let resourceReadyPromise = Promise.resolve(void 0);
-    if(existing) {
-      resourceReadyPromise = getResourceForPath(path)
-    } else {
-      resourceReadyPromise = new Promise<any>((resolve,reject)=>{
-        let enclosingFolderPath =
-          utils.urlPathJoin(...splitPath(path).slice(0,-1));
-        let resource: any = fileResourceFromContentsModel(model);
-        getResourceForPath(enclosingFolderPath)
-        .then((parentFolderResource: any)=>{
-          if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
-             throw new Error("Google Drive: expected a folder: "+path);
-          }
-          resource['parents'] = [parentFolderResource.id];
-          resolve(resource);
-        });
-      });
-    }
-    resourceReadyPromise.then((resource: any)=>{
-      //Construct the HTTP request: first the metadata,
-      //then the content of the uploaded file
-
-      let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
-      let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
-      let mime = resource.mimeType;
-      switch(model.type) {
-        case 'notebook':
-          mime = 'application/ipynb';
-          break;
-        case 'directory':
-          mime = FOLDER_MIMETYPE;
-          break;
-      }
-
-      //Metatdata part
-      let body = delimiter+'Content-Type: application/json\r\n\r\n';
-      //Don't update metadata if the file already exists.
-      if(!existing) {
-        body += JSON.stringify(resource);
-      }
-      body += delimiter;
-
-      //Content of the file
-      body += 'Content-Type: ' + mime + '\r\n';
-      if (mime === 'application/octet-stream') {
-        body += 'Content-Transfer-Encoding: base64\r\n';
-      }
-      //TODO: this puts extra quotes around strings.
-      body +='\r\n' + JSON.stringify(model.content) + closeDelim;
-
-      let apiPath = '/upload/drive/v3/files';
-      let method = 'POST';
-
-      if(existing) {
-        method = 'PATCH';
-        apiPath = apiPath+'/'+resource.id;
-      }
-
-      let request = gapi.client.request({
-        path: apiPath,
-        method: method,
-        params: {
-          uploadType: 'multipart',
-          fields: RESOURCE_FIELDS
-          },
-        headers: {
-          'Content-Type': 'multipart/related; boundary="' +
-            MULTIPART_BOUNDARY + '"'
-          },
-        body: body
-      });
-
-      driveApiRequest(request).then( (result: any)=>{
-        console.log("gapi: uploaded document to "+result.id);
-        contentsModelFromFileResource(result, path, true).then((contents: Contents.IModel)=>{
-          resolve(contents);
-        });
+  let resourceReadyPromise = Promise.resolve(void 0);
+  if(existing) {
+    resourceReadyPromise = getResourceForPath(path)
+  } else {
+    resourceReadyPromise = new Promise<any>((resolve,reject)=>{
+      let enclosingFolderPath =
+        utils.urlPathJoin(...splitPath(path).slice(0,-1));
+      let resource: any = fileResourceFromContentsModel(model);
+      getResourceForPath(enclosingFolderPath)
+      .then((parentFolderResource: any)=>{
+        if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
+           throw new Error("Google Drive: expected a folder: "+path);
+        }
+        resource['parents'] = [parentFolderResource.id];
+        resolve(resource);
       });
     });
+  }
+  return resourceReadyPromise.then((resource: any)=>{
+    //Construct the HTTP request: first the metadata,
+    //then the content of the uploaded file
+
+    let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
+    let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
+    let mime = resource.mimeType;
+    switch(model.type) {
+      case 'notebook':
+        mime = 'application/ipynb';
+        break;
+      case 'directory':
+        mime = FOLDER_MIMETYPE;
+        break;
+    }
+
+    //Metatdata part
+    let body = delimiter+'Content-Type: application/json\r\n\r\n';
+    //Don't update metadata if the file already exists.
+    if(!existing) {
+      body += JSON.stringify(resource);
+    }
+    body += delimiter;
+
+    //Content of the file
+    body += 'Content-Type: ' + mime + '\r\n';
+    if (mime === 'application/octet-stream') {
+      body += 'Content-Transfer-Encoding: base64\r\n';
+    }
+    //TODO: this puts extra quotes around strings.
+    body +='\r\n' + JSON.stringify(model.content) + closeDelim;
+
+    let apiPath = '/upload/drive/v3/files';
+    let method = 'POST';
+
+    if(existing) {
+      method = 'PATCH';
+      apiPath = apiPath+'/'+resource.id;
+    }
+
+    let request = gapi.client.request({
+      path: apiPath,
+      method: method,
+      params: {
+        uploadType: 'multipart',
+        fields: RESOURCE_FIELDS
+        },
+      headers: {
+        'Content-Type': 'multipart/related; boundary="' +
+          MULTIPART_BOUNDARY + '"'
+        },
+      body: body
+    });
+
+    return driveApiRequest(request);
+  }).then( (result: any)=>{
+    console.log("gapi: uploaded document to "+result.id);
+    return contentsModelFromFileResource(result, path, true);
   });
 }
 
@@ -168,90 +162,85 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
  */
 export
 function contentsModelFromFileResource(resource: any, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
-  return new Promise<Contents.IModel>((resolve,reject)=>{
+  //Handle the case of getting the contents of a directory
+  if(resource.mimeType === FOLDER_MIMETYPE) {
+    //enter contents metadata
+    let contents: any = {
+      name: resource.name,
+      path: path,
+      type: 'directory',
+      writable: resource.capabilities.canEdit,
+      created: String(resource.createdTime),
+      last_modified: String(resource.modifiedTime),
+      mimetype: null,
+      content: null,
+      format: 'json'
+    };
 
-    //Handle the case of getting the contents of a directory
-    if(resource.mimeType === FOLDER_MIMETYPE) {
-      //enter contents metadata
-      let contents: any = {
-        name: resource.name,
-        path: path,
-        type: 'directory',
-        writable: resource.capabilities.canEdit,
-        created: String(resource.createdTime),
-        last_modified: String(resource.modifiedTime),
-        mimetype: null,
-        content: null,
-        format: 'json'
-      };
+    //get directory listing if applicable
+    if (includeContents) {
+      let fileList: any[] = [];
+      return searchDirectory(path).then( (resources: any[])=>{
+        let currentContents = Promise.resolve({});
 
-      //get directory listing if applicable
-      if (includeContents) {
-        let fileList: any[] = [];
-        searchDirectory(path).then( (resources: any[])=>{
-          let currentContents = Promise.resolve({});
-
-          for(let i = 0; i<resources.length; i++) {
-            let currentResource = resources[i];
-            let resourcePath = path ?
-                               path+'/'+currentResource.name :
-                               currentResource.name;
-            currentContents = contentsModelFromFileResource(
-              currentResource, resourcePath, false);
-            currentContents.then((contents: Contents.IModel)=>{
-              fileList.push(contents);
-            });
-          }
-          currentContents.then(()=>{
-            contents.content = fileList;
-            resolve(contents);
+        for(let i = 0; i<resources.length; i++) {
+          let currentResource = resources[i];
+          let resourcePath = path ?
+                             path+'/'+currentResource.name :
+                             currentResource.name;
+          currentContents = contentsModelFromFileResource(
+            currentResource, resourcePath, false);
+          currentContents.then((contents: Contents.IModel)=>{
+            fileList.push(contents);
           });
-        });
-      } else {
-        resolve(contents);
-      }
-    } else { //Handle the case of getting the contents of a file.
-      let contentType: Contents.ContentType;
-      let mimeType: string;
-      let format: Contents.FileFormat;
-      if(resource.mimeType === 'application/ipynb' ||
-         resource.mimeType === 'application/json') {
-        contentType = 'notebook';
-        format = 'json';
-        mimeType = null;
-      } else if(resource.mimeType === 'text/plain') {
-        contentType = 'file';
-        format = 'text';
-        mimeType = 'text/plain';
-      } else {
-        contentType = 'file';
-        format = 'base64';
-        mimeType = 'application/octet-stream';
-      }
-      let contents: any = {
-        name: resource.name,
-        path: path,
-        type: contentType,
-        writable: resource.capabilities.canEdit,
-        created: String(resource.createdTime),
-        last_modified: String(resource.modifiedTime),
-        mimetype: mimeType,
-        content: null,
-        format: format
-      };
-      //Download the contents from the server if necessary.
-      if(includeContents) {
-        downloadResource(resource).then((result: any)=>{
-          contents.content = result;
-          resolve(contents);
-        }).catch(()=>{
-          console.log("Google Drive: unable to download contents");
-        });
-      } else {
-        resolve(contents);
-      }
+        }
+        return currentContents;
+      }).then(()=>{
+        contents.content = fileList;
+        return contents as Contents.IModel;
+      });
+    } else {
+      return Promise.resolve(contents as Contents.IModel);
     }
-  });
+  } else { //Handle the case of getting the contents of a file.
+    let contentType: Contents.ContentType;
+    let mimeType: string;
+    let format: Contents.FileFormat;
+    if(resource.mimeType === 'application/ipynb' ||
+       resource.mimeType === 'application/json') {
+      contentType = 'notebook';
+      format = 'json';
+      mimeType = null;
+    } else if(resource.mimeType === 'text/plain') {
+      contentType = 'file';
+      format = 'text';
+      mimeType = 'text/plain';
+    } else {
+      contentType = 'file';
+      format = 'base64';
+      mimeType = 'application/octet-stream';
+    }
+    let contents: any = {
+      name: resource.name,
+      path: path,
+      type: contentType,
+      writable: resource.capabilities.canEdit,
+      created: String(resource.createdTime),
+      last_modified: String(resource.modifiedTime),
+      mimetype: mimeType,
+      content: null,
+      format: format
+    };
+    //Download the contents from the server if necessary.
+    if(includeContents) {
+      return downloadResource(resource).then((result: any)=>{
+        contents.content = result;
+        return contents as Contents.IModel;
+      });
+    } else {
+      return Promise.resolve(contents as Contents.IModel);
+    }
+  }
 }
 
 /**
@@ -267,13 +256,8 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
  */
 export
 function contentsModelForPath(path: string, includeContents: boolean = false): Promise<Contents.IModel> {
-  return new Promise<Contents.IModel>((resolve,reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      contentsModelFromFileResource(resource, path, includeContents)
-      .then((contents: Contents.IModel)=>{
-        resolve(contents);
-      });
-    });
+  return getResourceForPath(path).then((resource: any)=>{
+    return contentsModelFromFileResource(resource, path, includeContents)
   });
 }
 
@@ -292,22 +276,20 @@ function contentsModelForPath(path: string, includeContents: boolean = false): P
  */
 export
 function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
-  return new Promise<void> ((resolve,reject) => {
-    let permissionRequest = {
-      'type' : 'user',
-      'role' : 'writer',
-      'emailAddress': emailAddress
-    }
-    let request = gapi.client.drive.permissions.create({
-      'fileId': fileId,
-      'emailMessage' : fileId,
-      'sendNotificationEmail' : true,
-      'resource': permissionRequest
-    });
-    driveApiRequest(request).then( (result : any) => {
-      console.log("gapi: created permissions for "+emailAddress);
-      resolve();
-    });
+  let permissionRequest = {
+    'type' : 'user',
+    'role' : 'writer',
+    'emailAddress': emailAddress
+  }
+  let request = gapi.client.drive.permissions.create({
+    'fileId': fileId,
+    'emailMessage' : fileId,
+    'sendNotificationEmail' : true,
+    'resource': permissionRequest
+  });
+  return driveApiRequest(request).then( (result : any) => {
+    console.log("gapi: created permissions for "+emailAddress);
+    return void 0;
   });
 }
 
@@ -322,18 +304,15 @@ function createPermissions (fileId: string, emailAddress: string ): Promise<void
  */
 export
 function createRealtimeDocument(): Promise<string> {
-  return new Promise( (resolve, reject) => {
-    let request = gapi.client.drive.files.create({
-        'resource': {
-          mimeType: RT_MIMETYPE,
-          name: 'jupyterlab_realtime_file'
-          }
-    })
-    driveApiRequest(request).then( (result : any)=>{
-      let fileId : string = result.id;
-      console.log("gapi: created realtime document "+fileId);
-      resolve(fileId);
-    });
+  let request = gapi.client.drive.files.create({
+      'resource': {
+        mimeType: RT_MIMETYPE,
+        name: 'jupyterlab_realtime_file'
+        }
+  });
+  return driveApiRequest(request).then( (result : any)=>{
+    console.log("gapi: created realtime document "+result.id);
+    return result.id;
   });
 }
 
@@ -365,16 +344,11 @@ function loadRealtimeDocument( fileId : string): Promise<gapi.drive.realtime.Doc
  */
 export
 function deleteFile(path: string): Promise<void> {
-  return new Promise<void>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      let request: any = gapi.client.drive.files.delete({fileId: resource.id});
-      driveApiRequest(request, 204).then(()=>{
-        resolve();
-      });
-    }).catch((result)=>{
-      console.log('Google Drive: unable to delete file: '+path);
-      reject();
-    });
+  return getResourceForPath(path).then((resource: any)=>{
+    let request: any = gapi.client.drive.files.delete({fileId: resource.id});
+    return driveApiRequest(request, 204);
+  }).then(()=>{
+    return void 0;
   });
 }
 
@@ -396,26 +370,23 @@ function deleteFile(path: string): Promise<void> {
  */
 export
 function searchDirectory(path: string, query: string = ''): Promise<any[]> {
-  return new Promise<any[]>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
+  return getResourceForPath(path).then((resource: any)=>{
+    //Check to make sure this is a folder.
+    if(resource.mimeType !== FOLDER_MIMETYPE) {
+      throw new Error("Google Drive: expected a folder: "+path);
+    }
+    //Construct the query
+    let fullQuery: string = '\''+resource.id+'\' in parents '+
+                            'and trashed = false';
+    if(query) fullQuery += ' and '+query;
 
-      //Check to make sure this is a folder.
-      if(resource.mimeType !== FOLDER_MIMETYPE) {
-        throw new Error("Google Drive: expected a folder: "+path);
-      }
-      //Construct the query
-      let fullQuery: string = '\''+resource.id+'\' in parents '+
-                              'and trashed = false';
-      if(query) fullQuery += ' and '+query;
-
-      let request = gapi.client.drive.files.list({
-        q: fullQuery,
-        fields: 'files('+RESOURCE_FIELDS+')'
-      });
-      driveApiRequest(request).then((result: any)=>{
-        resolve(result.files);
-      });
+    let request = gapi.client.drive.files.list({
+      q: fullQuery,
+      fields: 'files('+RESOURCE_FIELDS+')'
     });
+    return driveApiRequest(request);
+  }).then((result: any)=>{
+    return result.files;
   });
 }
 
@@ -436,47 +407,43 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
   if( oldPath === newPath ) {
     return contentsModelForPath(oldPath);
   } else {
-    return new Promise<Contents.IModel>((resolve, reject)=>{
-      let pathComponents = splitPath(newPath);
-      let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
+    let pathComponents = splitPath(newPath);
+    let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
 
-      //Get a promise that resolves with the resource in the current position.
-      let resourcePromise = getResourceForPath(oldPath)
-      //Get a promise that resolves with the resource of the new folder.
-      let newFolderPromise = getResourceForPath(newFolderPath);
+    //Get a promise that resolves with the resource in the current position.
+    let resourcePromise = getResourceForPath(oldPath)
+    //Get a promise that resolves with the resource of the new folder.
+    let newFolderPromise = getResourceForPath(newFolderPath);
 
-      //Check the new path to make sure there isn't already a file
-      //with the same name there.
-      let newName = pathComponents.slice(-1)[0];
-      let directorySearchPromise =
-        searchDirectory(newFolderPath, 'name = \''+newName+'\'');
+    //Check the new path to make sure there isn't already a file
+    //with the same name there.
+    let newName = pathComponents.slice(-1)[0];
+    let directorySearchPromise =
+      searchDirectory(newFolderPath, 'name = \''+newName+'\'');
 
-      //Once we have all the required information,
-      //update the metadata with the new parent directory
-      //for the file.
-      Promise.all([resourcePromise, newFolderPromise, directorySearchPromise])
-      .then((values)=>{
-        let resource = values[0];
-        let newFolder = values[1];
-        let directorySearch = values[2];
+    //Once we have all the required information,
+    //update the metadata with the new parent directory
+    //for the file.
+    return Promise.all([resourcePromise, newFolderPromise,
+                       directorySearchPromise]).then((values)=>{
+      let resource = values[0];
+      let newFolder = values[1];
+      let directorySearch = values[2];
 
-        if(directorySearch.length !== 0) {
-            reject(void 0);
-        } else {
-          let request: any = gapi.client.drive.files.update({
-            fileId: resource.id,
-            addParents: newFolder.id,
-            removeParents: resource.parents[0],
-            name: newName
-          });
-          driveApiRequest(request).then(()=>{
-            contentsModelForPath(newPath)
-            .then((contents: Contents.IModel)=>{
-              resolve(contents);
-            });
-          });
-        }
-      });
+      if(directorySearch.length !== 0) {
+        throw new Error("Google Drive: File with the same name "+
+                        "already exists in the destination directory");
+      } else {
+        let request: any = gapi.client.drive.files.update({
+          fileId: resource.id,
+          addParents: newFolder.id,
+          removeParents: resource.parents[0],
+          name: newName
+        });
+        return driveApiRequest(request);
+      }
+    }).then(()=>{
+      return contentsModelForPath(newPath);
     });
   }
 }
@@ -494,21 +461,19 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
  */
 export
 function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
-  return new Promise<Contents.ICheckpointModel[]>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      let request: any = gapi.client.drive.revisions.list({
-        fileId: resource.id,
-        fields: 'revisions(id, modifiedTime, keepForever)' //NOT DOCUMENTED
-      });
-      driveApiRequest(request).then((result: any)=>{
-        let revisions = map(filter(result.revisions, (revision: any)=>{
-          return revision.keepForever;
-        }), (revision: any)=>{
-          return { id: revision.id, last_modified: revision.modifiedTime }
-        });
-        resolve(toArray(revisions));
-      });
+  return getResourceForPath(path).then((resource: any)=>{
+    let request: any = gapi.client.drive.revisions.list({
+      fileId: resource.id,
+      fields: 'revisions(id, modifiedTime, keepForever)' //NOT DOCUMENTED
     });
+    return driveApiRequest(request);
+  }).then((result: any)=>{
+    let revisions = map(filter(result.revisions, (revision: any)=>{
+      return revision.keepForever;
+    }), (revision: any)=>{
+      return { id: revision.id, last_modified: revision.modifiedTime }
+    });
+    return toArray(revisions);
   });
 }
 
@@ -523,17 +488,15 @@ function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
  */
 export
 function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
-  return new Promise<Contents.ICheckpointModel>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      let request: any = gapi.client.drive.revisions.update({
-        fileId: resource.id,
-        revisionId: resource.headRevisionId,
-        keepForever: true
-      });
-      driveApiRequest(request).then((revision: any)=>{
-        resolve ({ id: revision.id, last_modified: revision.modifiedTime });
-      });
+  return getResourceForPath(path).then((resource: any)=>{
+    let request: any = gapi.client.drive.revisions.update({
+      fileId: resource.id,
+      revisionId: resource.headRevisionId,
+      keepForever: true
     });
+    return driveApiRequest(request);
+  }).then((revision: any)=>{
+    return { id: revision.id, last_modified: revision.modifiedTime };
   });
 }
 
@@ -549,17 +512,15 @@ function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
  */
 export
 function unpinRevision(path: string, revisionId: string): Promise<void> {
-  return new Promise<void>((resolve, reject)=>{
-    getResourceForPath(path).then((resource: any)=>{
-      let request: any = gapi.client.drive.revisions.update({
-        fileId: resource.id,
-        revisionId: revisionId,
-        keepForever: false
-      });
-      driveApiRequest(request).then(()=>{
-        resolve ();
-      });
+  return getResourceForPath(path).then((resource: any)=>{
+    let request: any = gapi.client.drive.revisions.update({
+      fileId: resource.id,
+      revisionId: revisionId,
+      keepForever: false
     });
+    return driveApiRequest(request);
+  }).then(()=>{
+    return void 0;
   });
 }
 
@@ -574,56 +535,55 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
  */
 export
 function revertToRevision(path: string, revisionId: string): Promise<void> {
-  return new Promise<void>((resolve, reject)=>{
-    //Get the correct file resource
-    getResourceForPath(path).then((resource: any)=>{
-
-      //Construct the request for a specific revision to the file.
-      let downloadRequest: any = gapi.client.drive.revisions.get({
-       fileId: resource.id,
-       revisionId: revisionId,
-       alt: 'media'
-      });
-      //Make the request
-      driveApiRequest(downloadRequest).then((result: any)=>{
-
-        let contentType: Contents.ContentType;
-        let mimeType: string;
-        let format: Contents.FileFormat;
-        if(resource.mimeType === 'application/ipynb' ||
-           resource.mimeType === 'application/json') {
-          contentType = 'notebook';
-          format = 'json';
-          mimeType = null;
-        } else if(resource.mimeType === 'text/plain') {
-          contentType = 'file';
-          format = 'text';
-          mimeType = 'text/plain';
-        } else {
-          contentType = 'file';
-          format = 'base64';
-          mimeType = 'application/octet-stream';
-        }
-        //Reconstruct the Contents.IModel from the retrieved contents
-        let contents: Contents.IModel = {
-          name: resource.name,
-          path: path,
-          type: contentType,
-          writable: resource.capabilities.canEdit,
-          created: String(resource.createdTime),
-          //TODO What is the appropriate modified time?
-          last_modified: String(resource.modifiedTime),
-          mimetype: mimeType,
-          content: result,
-          format: format
-        };
-
-        //Reupload the reverted file to the head revision/
-        uploadFile(path, contents, true).then(()=>{
-          resolve();
-        });
-      });
+  let revisionResource: any;
+  //Get the correct file resource
+  return getResourceForPath(path).then((resource: any)=>{
+    revisionResource = resource;
+    //Construct the request for a specific revision to the file.
+    let downloadRequest: any = gapi.client.drive.revisions.get({
+     fileId: revisionResource.id,
+     revisionId: revisionId,
+     alt: 'media'
     });
+    //Make the request
+    return driveApiRequest(downloadRequest);
+  }).then((result: any)=>{
+
+    let contentType: Contents.ContentType;
+    let mimeType: string;
+    let format: Contents.FileFormat;
+    if(revisionResource.mimeType === 'application/ipynb' ||
+       revisionResource.mimeType === 'application/json') {
+      contentType = 'notebook';
+      format = 'json';
+      mimeType = null;
+    } else if(revisionResource.mimeType === 'text/plain') {
+      contentType = 'file';
+      format = 'text';
+      mimeType = 'text/plain';
+    } else {
+      contentType = 'file';
+      format = 'base64';
+      mimeType = 'application/octet-stream';
+    }
+    //Reconstruct the Contents.IModel from the retrieved contents
+    let contents: Contents.IModel = {
+      name: revisionResource.name,
+      path: path,
+      type: contentType,
+      writable: revisionResource.capabilities.canEdit,
+      created: String(revisionResource.createdTime),
+      //TODO What is the appropriate modified time?
+      last_modified: String(revisionResource.modifiedTime),
+      mimetype: mimeType,
+      content: result,
+      format: format
+    };
+
+    //Reupload the reverted file to the head revision/
+    return uploadFile(path, contents, true);
+  }).then(()=>{
+    return void 0;
   });
 }
 
@@ -684,29 +644,27 @@ function fileResourceFromContentsModel(contents: Contents.IModel): any {
  *   file/folder, or rejected with an Error object.
  */
 function getResourceForRelativePath(pathComponent: string, folderId: string): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    //Construct a search query for the file at hand.
-    let query = 'name = \'' + pathComponent + '\' and trashed = false '
-                + 'and \'' + folderId + '\' in parents';
-    //Construct a request for the files matching the query
-    let request: string = gapi.client.drive.files.list({
-      q: query,
-      fields: 'files('+RESOURCE_FIELDS+')'
-    });
-    //Make the request
-    return driveApiRequest(request).then((result: any)=>{
-      let files: any = result.files;
-      if (!files || files.length === 0) {
-        throw new Error(
-          "Google Drive: cannot find the specified file/folder: "
-          +pathComponent);
-      } else if (files.length > 1) {
-        throw new Error(
-          "Google Drive: multiple files/folders match: "
-          +pathComponent);
-      }
-      resolve(files[0]);
-    });
+  //Construct a search query for the file at hand.
+  let query = 'name = \'' + pathComponent + '\' and trashed = false '
+              + 'and \'' + folderId + '\' in parents';
+  //Construct a request for the files matching the query
+  let request: string = gapi.client.drive.files.list({
+    q: query,
+    fields: 'files('+RESOURCE_FIELDS+')'
+  });
+  //Make the request
+  return driveApiRequest(request).then((result: any)=>{
+    let files: any = result.files;
+    if (!files || files.length === 0) {
+      throw new Error(
+        "Google Drive: cannot find the specified file/folder: "
+        +pathComponent);
+    } else if (files.length > 1) {
+      throw new Error(
+        "Google Drive: multiple files/folders match: "
+        +pathComponent);
+    }
+    return files[0];
   });
 }
 
@@ -720,14 +678,12 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
  *   corresponding to `id`.
  */
 function resourceFromFileId(id: string): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    let request: any = gapi.client.drive.files.get({
-     fileId: id,
-     fields: RESOURCE_FIELDS
-    });
-    driveApiRequest(request).then((result: any)=>{
-        resolve(result);
-    });
+  let request: any = gapi.client.drive.files.get({
+   fileId: id,
+   fields: RESOURCE_FIELDS
+  });
+  return driveApiRequest(request).then((result: any)=>{
+    return result;
   });
 }
 
@@ -735,7 +691,7 @@ function resourceFromFileId(id: string): Promise<any> {
  * Split a path into path components
  */
 function splitPath(path: string): string[] {
-    return path.split('/').filter((s,i,a) => (Boolean(s)));
+  return path.split('/').filter((s,i,a) => (Boolean(s)));
 };
 
 /**
@@ -753,40 +709,36 @@ function splitPath(path: string): string[] {
  */
 export
 function getResourceForPath(path: string): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    let components = splitPath(path);
+  let components = splitPath(path);
 
-    if (components.length === 0) {
-      //Handle the case for the root folder
-      resourceFromFileId('root').then((resource:any)=>{
-        resolve(resource);
+  if (components.length === 0) {
+    //Handle the case for the root folder
+    return resourceFromFileId('root');
+  } else {
+    //Loop through the path components and get the resource for each
+    //one, verifying that the path corresponds to a valid drive object.
+
+    //Utility function that gets the file resource object given its name,
+    //whether it is a file or a folder, and a promise for the resource 
+    //object of its containing folder.
+    let getResource = function(pathComponent: string, parentResource: Promise<any>): Promise<any> {
+      return parentResource.then((resource: any)=>{
+        return getResourceForRelativePath(pathComponent, resource['id']);
       });
-    } else {
-      //Loop through the path components and get the resource for each
-      //one, verifying that the path corresponds to a valid drive object.
-
-      //Utility function that gets the file resource object given its name,
-      //whether it is a file or a folder, and a promise for the resource 
-      //object of its containing folder.
-      let getResource = function(pathComponent: string, parentResource: Promise<any>): Promise<any> {
-        return parentResource.then((resource: any)=>{
-          return getResourceForRelativePath(pathComponent, resource['id']);
-        });
-      }
-
-      //We start with the root directory:
-      let currentResource: Promise<any> = Promise.resolve({id: 'root'});
-
-      //Loop over the components, updating the current resource
-      for (let i = 0; i < components.length; i++) {
-        let component = components[i];
-        currentResource = getResource(component, currentResource);
-      }
-
-      //Resolve with the final value of currentResource.
-      currentResource.then( (resource: any)=>{resolve(resource);});
     }
-  });
+
+    //We start with the root directory:
+    let currentResource: Promise<any> = Promise.resolve({id: 'root'});
+
+    //Loop over the components, updating the current resource
+    for (let i = 0; i < components.length; i++) {
+      let component = components[i];
+      currentResource = getResource(component, currentResource);
+    }
+
+    //Resolve with the final value of currentResource.
+    return currentResource;
+  }
 }
 
 /**
@@ -797,13 +749,9 @@ function getResourceForPath(path: string): Promise<any> {
  * @returns a promise fulfilled with the contents of the file.
  */
 function downloadResource(resource: any): Promise<any> {
-  return new Promise<any>((resolve,reject)=>{
-    let request: any = gapi.client.drive.files.get({
-     fileId: resource.id,
-     alt: 'media'
-    });
-    driveApiRequest(request).then((result: any)=>{
-      resolve(result);
-    });
+  let request: any = gapi.client.drive.files.get({
+   fileId: resource.id,
+   alt: 'media'
   });
+  return driveApiRequest(request);
 }

@@ -19,7 +19,7 @@ import {
 } from 'jupyterlab/lib/realtime';
 
 import {
-  authorize
+  authorize, gapiAuthorized
 } from './gapi';
 
 import {
@@ -52,7 +52,7 @@ class GoogleRealtime implements IRealtime {
    * are ready to be used.
    */
   get ready(): Promise<void> {
-    return this._authorized;
+    return gapiAuthorized.promise;
   }
 
   /**
@@ -65,29 +65,21 @@ class GoogleRealtime implements IRealtime {
    */
   addCollaborator(model: IRealtimeModel): Promise<void> {
     return new Promise<void>( (resolve, reject) => {
-      if( !this._authorized ) {
-        this._authorize();
-      }
-      this._authorized.then( () => {
-        let input = document.createElement('input');
-        showDialog({
-          title: 'Email address...',
-          body: input,
-          okText: 'SHARE'
-        }).then(result => {
-          if (result.text === 'SHARE') {
-            this._shareRealtimeDocument(model, input.value).then( ()=> {
-              resolve();
-            }).catch( ()=>{
-              console.log("Google Realtime: unable to open shared document");
-            });
-          } else {
+      let input = document.createElement('input');
+      showDialog({
+        title: 'Email address...',
+        body: input,
+        okText: 'SHARE'
+      }).then(result => {
+        if (result.text === 'SHARE') {
+          this._shareRealtimeDocument(model, input.value).then( ()=> {
             resolve();
-          }
-        });
-      }).catch( () => {
-        console.log("Google Realtime: unable to authorize")
-        reject();
+          }).catch( ()=>{
+            console.log("Google Realtime: unable to open shared document");
+          });
+        } else {
+          resolve();
+        }
       });
     });
   }
@@ -101,41 +93,30 @@ class GoogleRealtime implements IRealtime {
    *   has been successfully opened.
    */
   shareModel(model: IRealtimeModel, uid?: string): Promise<void> {
-    return new Promise<void>((resolve,reject) => {
-      if( !this._authorized ) {
-        this._authorize();
-      }
-      this._authorized.then( () => {
-        //If we are provided a fileId, use that.
-        //Otherwise, query for one.
-        let fileId = '';
-        if(uid) {
-          fileId = uid;
-        } else {
-          let input = document.createElement('input');
-          showDialog({
-            title: 'File ID...',
-            body: input,
-            okText: 'OPEN'
-          }).then(result => {
-            if (result.text === 'OPEN') {
-              fileId = input.value;
-            }
-          });
-        }
-
-        //Open the realtime document
-        this._openRealtimeDocument(model, fileId).then(()=>{
-          resolve();
-        }).catch( ()=>{
-          console.log("Google Realtime: unable to open shared document");
-          reject();
+    return this.ready.then( () => {
+      //If we are provided a fileId, use that.
+      //Otherwise, query for one.
+      let fileId = '';
+      if(uid) {
+        fileId = uid;
+      } else {
+        let input = document.createElement('input');
+        showDialog({
+          title: 'File ID...',
+          body: input,
+          okText: 'OPEN'
+        }).then(result => {
+          if (result.text === 'OPEN') {
+            fileId = input.value;
+          }
         });
-
-      }).catch(()=>{
-        console.log("Google Realtime: unable to authorize")
-        reject();
-      });
+      }
+      return fileId;
+    }).then((id: string)=>{
+      //Open the realtime document
+      return this._openRealtimeDocument(model, id);
+    }).then(()=>{
+      return void 0;
     });
   }
 
@@ -175,33 +156,19 @@ class GoogleRealtime implements IRealtime {
   }
 
   protected _shareRealtimeDocument( model: IRealtimeModel, emailAddress : string) : Promise<void> {
-    return new Promise<void>( (resolve, reject) => {
-      let handler = model.realtimeHandler as GoogleRealtimeHandler;
-      handler.ready.then( () => {
-        createPermissions(handler.fileId, emailAddress).then( () => {
-          resolve();
-        }).catch( () => {
-          console.log("Google Realtime: unable to share document");
-          reject();
-        });
-      });
+    let handler = model.realtimeHandler as GoogleRealtimeHandler;
+    return handler.ready.then( () => {
+      return createPermissions(handler.fileId, emailAddress);
     });
   }
 
   protected _openRealtimeDocument( model: IRealtimeModel, fileId: string) : Promise<GoogleRealtimeHandler> {
-    return new Promise<GoogleRealtimeHandler>( (resolve, reject) => {
-      let handler = new GoogleRealtimeHandler(fileId);
-      model.registerCollaborative(handler).then( ()=>{;
-        resolve(handler);
-      });
+    let handler = new GoogleRealtimeHandler(fileId);
+    return model.registerCollaborative(handler).then( ()=>{;
+      return handler;
     });
   }
 
-  protected _authorize(): void {
-    this._authorized = authorize();
-  }
-
-  private _authorized: Promise<void> = null;
   private _trackerSet = new Set<[InstanceTracker<Widget>, (widget: Widget)=>IRealtimeModel]>();
 }
 
@@ -243,22 +210,19 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    * @returns a promise when the linking is done.
    */
   linkString (str: IObservableString, id: string) : Promise<void> {
-    return new Promise<void>( (resolve,reject) => {
-      //Fail if the string is not linkable.
-      if(!str.isLinkable) {
-        reject();
-      }
-      this.ready.then( () => {
-        //Create the collaborative string
-        let gstr = new GoogleRealtimeString(
-          this._model, id, str.text);
-        str.link(gstr);
-        resolve();
-      });
+    //Fail if the string is not linkable.
+    if(!str.isLinkable) {
+      return Promise.reject(void 0);
+    }
+    return this.ready.then( () => {
+      //Create the collaborative string
+      let gstr = new GoogleRealtimeString(this._model, id, str.text);
+      str.link(gstr);
+      return void 0;
     });
   }
 
-  /**
+/**
    * Create a vector for the realtime model.
    *
    * @param factory: a method that takes a `JSONObject` representing a
@@ -269,18 +233,16 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    * @returns a promise of a realtime vector.
    */
   linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>, id: string) : Promise<void> {
-    return new Promise<void>( (resolve,reject) => {
-      //Fail if the vector is not linkable.
-      if(!vec.isLinkable) {
-        reject();
-      }
-      this.ready.then( () => {
-        //Create the collaborative string
-        let gvec = new GoogleRealtimeVector<T>
-          (vec.factory, this._model, id, vec);
-        vec.link(gvec);
-        resolve();
-      });
+    //Fail if the vector is not linkable.
+    if(!vec.isLinkable) {
+      return Promise.reject(void 0);
+    }
+    return this.ready.then( () => {
+      //Create the collaborative string
+      let gvec = new GoogleRealtimeVector<T>
+        (vec.factory, this._model, id, vec);
+      vec.link(gvec);
+      return void 0;
     });
   }
 
