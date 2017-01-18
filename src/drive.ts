@@ -97,7 +97,7 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
       let mime = resource.mimeType;
       switch(model.type) {
         case 'notebook':
-          mime = 'application/json';
+          mime = 'application/ipynb';
           break;
         case 'directory':
           mime = FOLDER_MIMETYPE;
@@ -211,19 +211,22 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         resolve(contents);
       }
     } else { //Handle the case of getting the contents of a file.
-      let contentType: string, mimetype: string, format: string;
-      if(resource.mimeType === 'application/json') {
+      let contentType: Contents.ContentType;
+      let mimeType: string;
+      let format: Contents.FileFormat;
+      if(resource.mimeType === 'application/ipynb' ||
+         resource.mimeType === 'application/json') {
         contentType = 'notebook';
         format = 'json';
-        mimetype = null;
+        mimeType = null;
       } else if(resource.mimeType === 'text/plain') {
         contentType = 'file';
         format = 'text';
-        mimetype = 'text/plain';
+        mimeType = 'text/plain';
       } else {
         contentType = 'file';
         format = 'base64';
-        mimetype = 'application/octet-stream';
+        mimeType = 'application/octet-stream';
       }
       let contents: any = {
         name: resource.name,
@@ -232,7 +235,7 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         writable: resource.capabilities.canEdit,
         created: String(resource.createdTime),
         last_modified: String(resource.modifiedTime),
-        mimetype: mimetype,
+        mimetype: mimeType,
         content: null,
         format: format
       };
@@ -584,10 +587,24 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
       //Make the request
       driveApiRequest(downloadRequest).then((result: any)=>{
 
+        let contentType: Contents.ContentType;
+        let mimeType: string;
+        let format: Contents.FileFormat;
+        if(resource.mimeType === 'application/ipynb' ||
+           resource.mimeType === 'application/json') {
+          contentType = 'notebook';
+          format = 'json';
+          mimeType = null;
+        } else if(resource.mimeType === 'text/plain') {
+          contentType = 'file';
+          format = 'text';
+          mimeType = 'text/plain';
+        } else {
+          contentType = 'file';
+          format = 'base64';
+          mimeType = 'application/octet-stream';
+        }
         //Reconstruct the Contents.IModel from the retrieved contents
-        let contentType: Contents.ContentType =
-          resource.mimeType === 'application/ipynb' ?
-          'notebook' : 'file';
         let contents: Contents.IModel = {
           name: resource.name,
           path: path,
@@ -596,9 +613,9 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
           created: String(resource.createdTime),
           //TODO What is the appropriate modified time?
           last_modified: String(resource.modifiedTime),
-          mimetype: null,
+          mimetype: mimeType,
           content: result,
-          format: 'json'
+          format: format
         };
 
         //Reupload the reverted file to the head revision/
