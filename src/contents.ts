@@ -350,8 +350,8 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves when the checkpoint is restored.
    */
   restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
-    //return checkoutRevision(path, checkpointID);
-    return Promise.reject(void 0);
+    //TODO: should this emit a signal?
+    return drive.revertToRevision(path, checkpointID);
   }
 
   /**

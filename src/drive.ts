@@ -546,3 +546,38 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
     });
   }
 }
+
+export
+function revertToRevision(path: string, revisionId: string): Promise<void> {
+  return new Promise<void>((resolve, reject)=>{
+    getResourceForPath(path).then((resource: any)=>{
+      let downloadRequest: any = gapi.client.drive.revisions.get({
+       fileId: resource.id,
+       revisionId: revisionId,
+       alt: 'media'
+      });
+      driveApiRequest(downloadRequest).then((result: any)=>{
+        //Reconstruct the ContentsModel.
+        let contentType: Contents.ContentType =
+          resource.mimeType === 'application/ipynb' ?
+          'notebook' : 'file';
+        let contents: Contents.IModel = {
+          name: resource.name,
+          path: path,
+          type: contentType,
+          writable: resource.capabilities.canEdit,
+          created: String(resource.createdTime),
+          //TODO What is the appropriate modified time?
+          last_modified: String(resource.modifiedTime),
+          mimetype: null,
+          content: result,
+          format: 'json'
+        };
+
+        uploadFile(path, contents, true).then((reverted: Contents.IModel)=>{
+          resolve();
+        });
+      });
+    });
+  });
+}
