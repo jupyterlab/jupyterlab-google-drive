@@ -211,8 +211,20 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         resolve(contents);
       }
     } else { //Handle the case of getting the contents of a file.
-      let contentType = resource.mimeType === 'application/ipynb' ?
-                        'notebook' : 'file';
+      let contentType: string, mimetype: string, format: string;
+      if(resource.mimeType === 'application/json') {
+        contentType = 'notebook';
+        format = 'json';
+        mimetype = null;
+      } else if(resource.mimeType === 'text/plain') {
+        contentType = 'file';
+        format = 'text';
+        mimetype = 'text/plain';
+      } else {
+        contentType = 'file';
+        format = 'base64';
+        mimetype = 'application/octet-stream';
+      }
       let contents: any = {
         name: resource.name,
         path: path,
@@ -220,9 +232,9 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
         writable: resource.capabilities.canEdit,
         created: String(resource.createdTime),
         last_modified: String(resource.modifiedTime),
-        mimetype: null,
+        mimetype: mimetype,
         content: null,
-        format: 'json'
+        format: format
       };
       //Download the contents from the server if necessary.
       if(includeContents) {
@@ -622,7 +634,12 @@ function fileResourceFromContentsModel(contents: Contents.IModel): any {
       mimeType = 'application/ipynb';
       break;
     case 'file':
-      mimeType = FILE_MIMETYPE;
+      if(contents.format) {
+        if(contents.format === 'text')
+          mimeType = 'text/plain';
+        else if (contents.format === 'base64')
+          mimeType = 'application/octet-stream';
+      }
       break;
     default:
       throw new Error('Invalid contents type');
