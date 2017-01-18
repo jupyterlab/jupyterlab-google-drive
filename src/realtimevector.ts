@@ -348,8 +348,8 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   pushBack(value: T): number {
     let len = this._vec.pushBack(value);
-    this._connectToSync(value);
     this._gvec.push(value.toJSON());
+    this._connectToSync(value);
 
     this.changed.emit({
       type: 'add',
@@ -490,7 +490,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   clear(): void {
     let oldValues = toArray(this._vec);
     this._vec.clear();
-    //this._gvec.clear();
+    this._gvec.clear();
     this.changed.emit({
       type: 'remove',
       oldIndex: 0,
@@ -519,12 +519,8 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   move(fromIndex: number, toIndex: number): void {
     let value = this.at(fromIndex);
-    this.removeAt(fromIndex);
-    if (toIndex < fromIndex) {
-      this.insert(toIndex - 1, value);
-    } else {
-      this.insert(toIndex, value);
-    }
+    this._vec.move(fromIndex, toIndex);
+    this._gvec.move(fromIndex, toIndex);
     this.changed.emit({
       type: 'move',
       oldIndex: fromIndex,
@@ -550,7 +546,11 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   pushAll(values: IterableOrArrayLike<T>): number {
     let newIndex = this.length;
     let newValues = toArray(values);
-    each(newValues, value => { this.pushBack(value); });
+    each(newValues, value => {
+      this._vec.pushBack(value);
+      this._gvec.push(value.toJSON());
+      this._connectToSync(value);
+    });
     this.changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -585,7 +585,13 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   insertAll(index: number, values: IterableOrArrayLike<T>): number {
     let newIndex = index;
     let newValues = toArray(values);
-    each(newValues, value => { this.insert(index++, value); });
+    let i = index;
+    each(newValues, value => {
+      this._vec.insert(i, value);
+      this._gvec.insert(i, value.toJSON());
+      this._connectToSync(value);
+      i++;
+    });
     this.changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -617,7 +623,9 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   removeRange(startIndex: number, endIndex: number): number {
     let oldValues: T[] = [];
     for (let i = startIndex; i < endIndex; i++) {
-      oldValues.push(this.removeAt(startIndex));
+      let val = this._vec.removeAt(startIndex);
+      this._gvec.remove(startIndex);
+      oldValues.push(val);
     }
     this.changed.emit({
       type: 'remove',
@@ -637,7 +645,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   }
 
   /**
-   * Dispose of the resources held by the string.
+   * Dispose of the resources held by the vector.
    */
   dispose(): void {
     if(this._isDisposed) {
