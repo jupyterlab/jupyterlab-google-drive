@@ -124,10 +124,8 @@ class GoogleDriveContentsManager implements Contents.IManager {
     if(!this._authorized) {
       this._authorize();
     }
-    return new Promise<Contents.IModel>((resolve,reject)=>{
-      this._authorized.then(()=>{
-        resolve(drive.contentsModelForPath(path, getContent));
-      });
+    return this._authorized.then(()=>{
+      return drive.contentsModelForPath(path, getContent)
     });
   }
 
@@ -269,13 +267,21 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *   file is saved.
    */
   save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
-    let savePromise = Promise.resolve(void 0);
-    if(options) {
-      savePromise = drive.uploadFile(path, options, true);
-    } else {
-      savePromise = this.get(path);
-    }
-    return savePromise.then((contents)=>{
+    return this.get(path).then((contents)=>{
+      //The file exists
+      if(options) {
+        //Overwrite the existing file
+        return drive.uploadFile(path, options, true);
+      } else {
+        //File exists, but we are not saving anything
+        //to it? TODO: figure out the appropriate
+        //way to handle this case.
+        return void 0;
+      }
+    }, ()=>{
+      //The file does not exist already, create a new one.
+      return drive.uploadFile(path, options, false)
+    }).then((contents)=>{
       this.fileChanged.emit({
         type: 'save',
         oldValue: null,

@@ -656,11 +656,11 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
   return driveApiRequest(request).then((result: any)=>{
     let files: any = result.files;
     if (!files || files.length === 0) {
-      throw new Error(
+      return Promise.reject(
         "Google Drive: cannot find the specified file/folder: "
         +pathComponent);
     } else if (files.length > 1) {
-      throw new Error(
+      return Promise.reject(
         "Google Drive: multiple files/folders match: "
         +pathComponent);
     }
