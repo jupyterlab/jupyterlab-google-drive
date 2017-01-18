@@ -120,14 +120,13 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves with the file content.
    */
   get(path: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
-    if( !this._authorized ) {
+    let getContent = options ? !!options.content : true;
+    if(!this._authorized) {
       this._authorize();
     }
     return new Promise<Contents.IModel>((resolve,reject)=>{
       this._authorized.then(()=>{
-        drive.getResourceForPath(path).then((resource: any)=>{
-          resolve(drive.contentsModelFromFileResource(resource, path, true));
-        });
+        resolve(drive.contentsModelForPath(path, getContent));
       });
     });
   }
@@ -204,23 +203,17 @@ class GoogleDriveContentsManager implements Contents.IManager {
         reject(new Error("Unrecognized type " + contentType));
       }
 
-      let folderResourcePromise = drive.getResourceForPath(path);
-      let namePromise = this._getNewFilename(path, ext, baseName);
-      folderResourcePromise.then((folderResource: any)=>{
-        namePromise.then((name: string)=>{
-          model['name'] = name;
-          path = utils.urlPathJoin(path, name);
-          drive.uploadFile(path, model as Contents.IModel, false)
-          .then((contents: Contents.IModel)=>{
-
-            this.fileChanged.emit({
-              type: 'new',
-              oldValue: null,
-              newValue: contents
-            });
-
-            resolve(contents);
+      this._getNewFilename(path, ext, baseName).then((name: string)=>{
+        model['name'] = name;
+        path = utils.urlPathJoin(path, name);
+        drive.uploadFile(path, model as Contents.IModel, false)
+        .then((contents: Contents.IModel)=>{
+          this.fileChanged.emit({
+            type: 'new',
+            oldValue: null,
+            newValue: contents
           });
+          resolve(contents);
         });
       });
     });

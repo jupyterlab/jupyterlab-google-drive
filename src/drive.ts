@@ -23,9 +23,6 @@ import {
 //TODO: Complete gapi typings and commit upstream
 declare let gapi: any;
 
-export
-enum FileType {FILE=1, FOLDER=2};
-
 const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,headRevisionId,'+
                       'parents,modifiedTime,createdTime,capabilities,'+
                       'webContentLink';
@@ -385,10 +382,17 @@ function deleteFile(path: string): Promise<void> {
 export
 function searchDirectory(path: string, query: string = ''): Promise<any[]> {
   return new Promise<any[]>((resolve, reject)=>{
-    getResourceForPath(path, FileType.FOLDER).then((resource: any)=>{
+    getResourceForPath(path).then((resource: any)=>{
+
+      //Check to make sure this is a folder.
+      if(resource.mimeType !== FOLDER_MIMETYPE) {
+        throw new Error("Google Drive: expected a folder: "+path);
+      }
+      //Construct the query
       let fullQuery: string = '\''+resource.id+'\' in parents '+
                               'and trashed = false';
       if(query) fullQuery += ' and '+query;
+
       let request = gapi.client.drive.files.list({
         q: fullQuery,
         fields: 'files('+RESOURCE_FIELDS+')'
@@ -645,14 +649,11 @@ function fileResourceFromContentsModel(contents: Contents.IModel): any {
  * @returns A promise fulfilled by either the files resource for the given
  *   file/folder, or rejected with an Error object.
  */
-function getResourceForRelativePath(pathComponent: string, type: FileType, folderId: string): Promise<any> {
+function getResourceForRelativePath(pathComponent: string, folderId: string): Promise<any> {
   return new Promise<any>((resolve,reject)=>{
     //Construct a search query for the file at hand.
-    let query = 'name = \'' + pathComponent + '\' and trashed = false ';
-    if (type === FileType.FOLDER) {
-        query += ' and mimeType = \'' + FOLDER_MIMETYPE + '\'';
-    }
-    query += ' and \'' + folderId + '\' in parents';
+    let query = 'name = \'' + pathComponent + '\' and trashed = false '
+                + 'and \'' + folderId + '\' in parents';
     //Construct a request for the files matching the query
     let request: string = gapi.client.drive.files.list({
       q: query,
@@ -717,7 +718,7 @@ function splitPath(path: string): string[] {
  *   or an Error object on error.
  */
 export
-function getResourceForPath(path: string, type?: FileType): Promise<any> {
+function getResourceForPath(path: string): Promise<any> {
   return new Promise<any>((resolve,reject)=>{
     let components = splitPath(path);
 
@@ -733,9 +734,9 @@ function getResourceForPath(path: string, type?: FileType): Promise<any> {
       //Utility function that gets the file resource object given its name,
       //whether it is a file or a folder, and a promise for the resource 
       //object of its containing folder.
-      let getResource = function(pathComponent: string, componentType: FileType, parentResource: Promise<any>): Promise<any> {
+      let getResource = function(pathComponent: string, parentResource: Promise<any>): Promise<any> {
         return parentResource.then((resource: any)=>{
-          return getResourceForRelativePath(pathComponent, componentType, resource['id']);
+          return getResourceForRelativePath(pathComponent, resource['id']);
         });
       }
 
@@ -745,8 +746,7 @@ function getResourceForPath(path: string, type?: FileType): Promise<any> {
       //Loop over the components, updating the current resource
       for (let i = 0; i < components.length; i++) {
         let component = components[i];
-        let ctype = (i == components.length - 1) ? type : FileType.FOLDER;
-        currentResource = getResource(component, ctype, currentResource);
+        currentResource = getResource(component, currentResource);
       }
 
       //Resolve with the final value of currentResource.
