@@ -15,7 +15,7 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  ISynchronizable
+  ISynchronizable, ICollaborator
 } from 'jupyterlab/lib/realtime';
 
 import {
@@ -33,6 +33,10 @@ import {
 import {
   GoogleRealtimeVector
 } from './realtimevector';
+
+import {
+  CollaboratorMap
+} from './collaborator';
 
 import {
   IObservableString
@@ -156,7 +160,7 @@ class GoogleRealtime implements IRealtime {
   }
 
   protected _shareRealtimeDocument( model: IRealtimeModel, emailAddress : string) : Promise<void> {
-    let handler = model.realtimeHandler as GoogleRealtimeHandler;
+    let handler = model.realtimeHandler as any; //GoogleRealtimeHandler;
     return handler.ready.then( () => {
       return createPermissions(handler.fileId, emailAddress);
     });
@@ -181,6 +185,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         loadRealtimeDocument(this._fileId).then( (doc : gapi.drive.realtime.Document) => {
           this._doc = doc;
           this._model = this._doc.getModel();
+          //this._collaborators = new CollaboratorMap(doc);
           resolve();
         }).catch( () => {
           console.log("gapi: unable to load realtime document")
@@ -192,6 +197,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
           loadRealtimeDocument(fileId).then( (doc : gapi.drive.realtime.Document) => {
             this._doc = doc;
             this._model = this._doc.getModel();
+            //this._collaborators = new CollaboratorMap(doc);
             resolve();
           });
         }).catch( () => {
@@ -200,6 +206,13 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         });
       }
     });
+  }
+
+  /**
+   * Get a map of the collaborators on this handler.
+   */
+  get collaborators(): CollaboratorMap {
+    return this._collaborators;
   }
 
   /**
@@ -218,6 +231,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       //Create the collaborative string
       let gstr = new GoogleRealtimeString(this._model, id, str.text);
       str.link(gstr);
+      this._rtObjects.push(gstr);
       return void 0;
     });
   }
@@ -242,6 +256,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let gvec = new GoogleRealtimeVector<T>
         (vec.factory, this._model, id, vec);
       vec.link(gvec);
+      this._rtObjects.push(gvec);
       return void 0;
     });
   }
@@ -256,8 +271,38 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     return this._fileId;
   }
 
-  private _fileId : string = '';
-  private _doc : gapi.drive.realtime.Document = null;
-  private _model : gapi.drive.realtime.Model = null;
+  /**
+   * Get whether the handler is disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources held by the handler.
+   */
+  dispose(): void {
+    if(this._isDisposed) {
+      return;
+    }
+    //this._collaborators.dispose();
+    for(let i=0; i<this._rtObjects.length; i++) {
+      let item: any = this._rtObjects[i];
+      item.dispose();
+    }
+    this._doc.removeAllEventListeners();
+    this._doc.close();
+    this._doc = null;
+    this._isDisposed = true;
+    console.log("DOSPOSE");
+  }
+
+
+  private _isDisposed: boolean = false;
+  private _collaborators: CollaboratorMap = null;
+  private _fileId: string = '';
+  private _doc: gapi.drive.realtime.Document = null;
+  private _model: gapi.drive.realtime.Model = null;
+  private _rtObjects: any[] = [];
   ready : Promise<void> = null;
 }

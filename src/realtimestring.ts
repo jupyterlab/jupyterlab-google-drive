@@ -156,6 +156,7 @@ class GoogleRealtimeString implements IObservableString {
     this._str.removeAllEventListeners();
     clearSignalData(this);
     this._isDisposed = true;
+    console.log("DSPOSE");
   }
 
   private _model : gapi.drive.realtime.Model = null;

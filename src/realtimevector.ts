@@ -652,10 +652,11 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     if(this._isDisposed) {
       return;
     }
+    clearSignalData(this);
     this._gvec.removeAllEventListeners();
     this._vec.dispose();
-    clearSignalData(this);
     this._isDisposed = true;
+    console.log("DVSPOSE");
   }
 
   private _toJSONArray( array: T[] ): JSONObject[] {
