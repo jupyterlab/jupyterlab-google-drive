@@ -111,9 +111,6 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
 
     //Content of the file
     body += 'Content-Type: ' + mime + '\r\n';
-    if (mime === 'application/octet-stream') {
-      body += 'Content-Transfer-Encoding: base64\r\n';
-    }
     //TODO: this puts extra quotes around strings.
     body +='\r\n' + JSON.stringify(model.content) + closeDelim;
 
