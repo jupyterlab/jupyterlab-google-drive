@@ -62,7 +62,7 @@ function driveApiRequest( request: any, successCode: number = 200) : Promise<any
       request.then( (response: any)=> {
         if(response.status !== successCode) { //HTTP error
           console.log("gapi: Drive API error: ", response.status);
-          console.log(response);
+          console.log(response, request);
           reject(response.result);
         } else { //Success
           resolve(response.result);
@@ -76,11 +76,21 @@ function driveApiRequest( request: any, successCode: number = 200) : Promise<any
   });
 }
 
+let authorizeRefresh: number = null;
+
 export
 function authorize (): Promise<void> {
   return gapiLoaded.then( () => {
     let handleAuthorization = function (authResult : any): void {
       if (authResult && !authResult.error) {
+        console.log("gapi: authorized.");
+        //Set a timer to refresh the authorization
+        if(authorizeRefresh) clearTimeout(authorizeRefresh);
+        authorizeRefresh = setTimeout( ()=>{
+          console.log('gapi: refreshing authorization.')
+          authorize();
+        }, 750 * Number(authResult.expires_in));
+        //resolve the exported promise
         gapiAuthorized.resolve();
         return void 0;
       } else {
@@ -88,6 +98,10 @@ function authorize (): Promise<void> {
       }
     }
 
+    //Create a popup dialog asking the user
+    //whether to proceed to authorization.
+    //This prevents popup blockers from blocking
+    //the Google OAuth screen.
     let popupAuthorization = function() {
       showDialog({
         title: 'Proceed to Google Authorization?',
