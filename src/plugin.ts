@@ -39,15 +39,15 @@ import {
 
 import {
   GoogleRealtime
-} from './googlerealtime';
+} from './realtime/googlerealtime';
 
 import {
   getResourceForPath
-} from './drive';
+} from './drive/drive';
 
 import {
   GoogleDriveServiceManager
-} from './contents';
+} from './drive/contents';
 
 const realtimePlugin: JupyterLabPlugin<IRealtime> = {
   id: 'jupyter.services.realtime',

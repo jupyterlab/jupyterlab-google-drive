@@ -20,7 +20,7 @@ import {
 
 import {
   authorize
-} from './gapi';
+} from '../gapi';
 
 import * as drive from './drive';
 

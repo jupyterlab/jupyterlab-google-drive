@@ -20,11 +20,11 @@ import {
 
 import {
   authorize, gapiAuthorized
-} from './gapi';
+} from '../gapi';
 
 import {
   createPermissions, createRealtimeDocument, loadRealtimeDocument
-} from './drive';
+} from '../drive/drive';
 
 import {
   GoogleRealtimeString

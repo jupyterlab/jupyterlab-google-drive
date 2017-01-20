@@ -18,7 +18,7 @@ import {
 
 import {
   driveApiRequest, driveReady
-} from './gapi';
+} from '../gapi';
 
 //TODO: Complete gapi typings and commit upstream
 declare let gapi: any;
