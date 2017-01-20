@@ -43,7 +43,6 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     this._doc.addEventListener(
       gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
       (evt : any) => {
-        console.log("JOINED");
         let collaborator = evt.collaborator;
         this._map.set(collaborator.sessionId, {
           userId: collaborator.userId,
@@ -57,7 +56,6 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     this._doc.addEventListener(
       gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
       (evt : any) => {
-        console.log("LEFT");
         this._map.delete(evt.collaborator.sessionId);
       }
     );
