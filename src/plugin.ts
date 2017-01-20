@@ -94,7 +94,7 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
 
         context.ready.then(()=>{
           getResourceForPath(path).then( (resource: any)=>{
-            //realtime.shareModel(model, resource.id);
+            realtime.shareModel(model, resource.id);
           });
         });
       }

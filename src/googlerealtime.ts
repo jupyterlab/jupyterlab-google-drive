@@ -185,7 +185,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         loadRealtimeDocument(this._fileId).then( (doc : gapi.drive.realtime.Document) => {
           this._doc = doc;
           this._model = this._doc.getModel();
-          //this._collaborators = new CollaboratorMap(doc);
+          this._collaborators = new CollaboratorMap(doc);
           resolve();
         }).catch( () => {
           console.log("gapi: unable to load realtime document")
@@ -197,7 +197,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
           loadRealtimeDocument(fileId).then( (doc : gapi.drive.realtime.Document) => {
             this._doc = doc;
             this._model = this._doc.getModel();
-            //this._collaborators = new CollaboratorMap(doc);
+            this._collaborators = new CollaboratorMap(doc);
             resolve();
           });
         }).catch( () => {
@@ -236,7 +236,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     });
   }
 
-/**
+  /**
    * Create a vector for the realtime model.
    *
    * @param factory: a method that takes a `JSONObject` representing a
@@ -285,7 +285,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     if(this._isDisposed) {
       return;
     }
-    //this._collaborators.dispose();
+    this._collaborators.dispose();
     for(let i=0; i<this._rtObjects.length; i++) {
       let item: any = this._rtObjects[i];
       item.dispose();
@@ -294,7 +294,6 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     this._doc.close();
     this._doc = null;
     this._isDisposed = true;
-    console.log("DOSPOSE");
   }
 
 
