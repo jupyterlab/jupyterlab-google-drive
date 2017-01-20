@@ -24,19 +24,48 @@ export
 class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
 
   constructor(doc: gapi.drive.realtime.Document) {
-    this._doc = doc;
-    this._map = new Map<string, GoogleRealtimeCollaborator>();
 
+    //Get the map with the collaborators, or
+    //create it if it does not exist.
+    let id = 'collaborators:map';
+    this._doc = doc;
+    this._map = doc.getModel().getRoot().get(id);
+
+    //We need to create the map
+    if(!this._map) {
+      this._map = doc.getModel().createMap<GoogleRealtimeCollaborator>();
+      doc.getModel().getRoot().set(id, this._map);
+    }
+
+    //Populate the map with its initial values.
+    //Even if the map already exists, it is easy to miss
+    //some collaborator events (if, for instance, the
+    //realtime doc is not shut down properly).
+    //This is an opportunity to refresh it.
     let initialCollaborators: any[] = doc.getCollaborators();
+
+    //remove stale collaborators
+    let initialSessions = new Set<string>();
+    for(let i=0; i<initialCollaborators.length; i++) {
+      initialSessions.add(initialCollaborators[i].sessionId);
+    }
+    for(let k of this._map.keys()) {
+      if(!initialSessions.has(k)) {
+        this._map.delete(k);
+      }
+    }
+    //Now add the remaining collaborators
     for(let i=0; i<initialCollaborators.length; i++) {
       let collaborator = initialCollaborators[i];
-      this._map.set(collaborator.sessionId, {
-        userId: collaborator.userId,
-        sessionId: collaborator.sessionId,
-        displayName: collaborator.displayName,
-        color: collaborator.color,
-        position: {}
-      });
+      if(!this._map.has(collaborator.sessionId)) {
+        this._map.set(collaborator.sessionId, {
+          userId: collaborator.userId,
+          sessionId: collaborator.sessionId,
+          displayName: collaborator.displayName,
+          color: collaborator.color,
+          position: {}
+        });
+      }
     }
 
     //Add event listeners to the CollaboratorMap
@@ -44,7 +73,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
       (evt : any) => {
         let collaborator = evt.collaborator;
-        this._map.set(collaborator.sessionId, {
+        this.set(collaborator.sessionId, {
           userId: collaborator.userId,
           sessionId: collaborator.sessionId,
           displayName: collaborator.displayName,
@@ -56,7 +85,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     this._doc.addEventListener(
       gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
       (evt : any) => {
-        this._map.delete(evt.collaborator.sessionId);
+        this.delete(evt.collaborator.sessionId);
       }
     );
   }
@@ -137,11 +166,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    * @returns - a list of keys.
    */
   keys(): string[] {
-    let k: string[] = [];
-    this._map.forEach((value: GoogleRealtimeCollaborator, key: string)=>{
-      k.push(key);
-    });
-    return k;
+    return this._map.keys();
   }
 
   /**
@@ -150,11 +175,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    * @returns - a list of values.
    */
   values(): GoogleRealtimeCollaborator[] {
-    let vals: GoogleRealtimeCollaborator[] = [];
-    this._map.forEach((value: GoogleRealtimeCollaborator, key: string)=>{
-      vals.push(value);
-    });
-    return vals;
+    return this._map.values();
   }
 
   /**
@@ -209,12 +230,14 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       return;
     }
     clearSignalData(this);
+    this._map.removeAllEventListeners();
     this._map.clear();
+    this._map = null;
     this._isDisposed = true;
   }
 
   private _doc : gapi.drive.realtime.Document = null;
-  private _map : Map<string, GoogleRealtimeCollaborator> = null;
+  private _map : gapi.drive.realtime.CollaborativeMap<GoogleRealtimeCollaborator> = null;
   private _isDisposed : boolean = false;
 }
 
