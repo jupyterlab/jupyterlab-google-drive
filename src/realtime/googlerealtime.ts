@@ -35,8 +35,16 @@ import {
 } from './realtimevector';
 
 import {
+  GoogleRealtimeMap
+} from './realtimemap';
+
+import {
   CollaboratorMap
 } from './collaborator';
+
+import {
+  IObservableMap
+} from 'jupyterlab/lib/common/observablemap';
 
 import {
   IObservableString
@@ -168,7 +176,9 @@ class GoogleRealtime implements IRealtime {
 
   protected _openRealtimeDocument( model: IRealtimeModel, fileId: string) : Promise<GoogleRealtimeHandler> {
     let handler = new GoogleRealtimeHandler(fileId);
-    return model.registerCollaborative(handler).then( ()=>{;
+    return handler.ready.then( ()=> {
+      return model.registerCollaborative(handler);
+    }).then( ()=>{
       return handler;
     });
   }
@@ -216,6 +226,35 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
   }
 
   /**
+   * Get the unique identifier for the collaborative
+   * editing session of the local user.
+   */
+  get localCollaborator(): string {
+    return this._collaborators.localCollaborator;
+  }
+
+  /**
+   * Create a map for the realtime model.
+   *
+   * @param map: the string to link to a realtime map.
+   *
+   * @returns a promise when the linking is done.
+   */
+  linkMap<T>(map: IObservableMap<T>, id: string) : Promise<void> {
+    //Fail if the vector is not linkable.
+    if(!map.isLinkable) {
+      return Promise.reject(void 0);
+    }
+    return this.ready.then( () => {
+      //Create the collaborative map
+      let gmap = new GoogleRealtimeMap<T>(this._model, id, map);
+      map.link(gmap);
+      this._rtObjects.push(gmap);
+      return void 0;
+    });
+  }
+
+  /**
    * Create a string for the realtime model.
    *
    * @param str: the string to link to a realtime string.
@@ -239,12 +278,9 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
   /**
    * Create a vector for the realtime model.
    *
-   * @param factory: a method that takes a `JSONObject` representing a
-   *   serialized vector entry, and creates an object from that.
+   * @param vec: the string to link to a realtime vector.
    *
-   * @param initialValue: the optional initial value of the vector.
-   *
-   * @returns a promise of a realtime vector.
+   * @returns a promise when the linking is done.
    */
   linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>, id: string) : Promise<void> {
     //Fail if the vector is not linkable.

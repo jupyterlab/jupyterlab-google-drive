@@ -48,6 +48,9 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     let initialSessions = new Set<string>();
     for(let i=0; i<initialCollaborators.length; i++) {
       initialSessions.add(initialCollaborators[i].sessionId);
+      if(initialCollaborators[i].isMe) {
+        this._sessionId = initialCollaborators[i].sessionId;
+      }
     }
     for(let k of this._map.keys()) {
       if(!initialSessions.has(k)) {
@@ -80,6 +83,9 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
           color: collaborator.color,
           position: {}
         });
+        if(collaborator.isMe) {
+          this._sessionId = collaborator.sessionId;
+        }
       }
     );
     this._doc.addEventListener(
@@ -88,6 +94,21 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
         this.delete(evt.collaborator.sessionId);
       }
     );
+
+    this._map.addEventListener(
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type: evt.oldValue ? 'change' : 'add',
+            key: evt.property,
+            oldValue: evt.oldValue,
+            newValue: evt.newValue
+          });
+        }
+      }
+    );
+
+
   }
   /**
    * A signal emitted when the map has changed.
@@ -113,6 +134,10 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  get localCollaborator(): string {
+    return this._sessionId;
   }
 
   /**
@@ -236,6 +261,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     this._isDisposed = true;
   }
 
+  private _sessionId: string = '';
   private _doc : gapi.drive.realtime.Document = null;
   private _map : gapi.drive.realtime.CollaborativeMap<GoogleRealtimeCollaborator> = null;
   private _isDisposed : boolean = false;
@@ -276,5 +302,5 @@ class GoogleRealtimeCollaborator implements ICollaborator {
    * is not limited to, the cursor position. Different
    * widgets are responsible for setting/reading this value.
    */
-  position: JSONObject;
+  position: any;
 }
