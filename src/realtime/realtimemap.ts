@@ -11,7 +11,7 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-} from 'jupyterlab/lib/realtime';
+} from 'jupyterlab/lib/common/realtime';
 
 import {
   IObservableMap, ObservableMap

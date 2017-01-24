@@ -24,11 +24,11 @@ import {
 
 import {
   IObservableUndoableVector,
-} from 'jupyterlab/lib/notebook/common/undo';
+} from 'jupyterlab/lib/common/undoablevector';
 
 import {
   ISynchronizable
-} from 'jupyterlab/lib/realtime';
+} from 'jupyterlab/lib/common/realtime';
 
 declare let gapi : any;
 

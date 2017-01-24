@@ -11,12 +11,25 @@ import {
 
 import {
   showDialog
-} from 'jupyterlab/lib/dialog';
+} from 'jupyterlab/lib/common/dialog';
+
+import {
+  IObservableMap
+} from 'jupyterlab/lib/common/observablemap';
+
+import {
+  IObservableString
+} from 'jupyterlab/lib/common/observablestring';
+
+import {
+  IObservableUndoableVector
+} from 'jupyterlab/lib/common/undoablevector';
+
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
   ISynchronizable, ICollaborator
-} from 'jupyterlab/lib/realtime';
+} from 'jupyterlab/lib/common/realtime';
 
 import {
   authorize, gapiAuthorized
@@ -41,18 +54,6 @@ import {
 import {
   CollaboratorMap
 } from './collaborator';
-
-import {
-  IObservableMap
-} from 'jupyterlab/lib/common/observablemap';
-
-import {
-  IObservableString
-} from 'jupyterlab/lib/common/observablestring';
-
-import {
-  IObservableUndoableVector
-} from 'jupyterlab/lib/notebook/common/undo';
 
 declare let gapi : any;
 

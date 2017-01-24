@@ -14,7 +14,7 @@ import {
 
 import {
   showDialog
-} from 'jupyterlab/lib/dialog';
+} from 'jupyterlab/lib/common/dialog';
 
 import {
   driveApiRequest, driveReady

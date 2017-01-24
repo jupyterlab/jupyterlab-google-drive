@@ -26,12 +26,16 @@ import {
 } from 'jupyterlab/lib/docmanager';
 
 import {
+  ICommandPalette
+} from 'jupyterlab/lib/commandpalette';
+
+import {
   IDocumentRegistry
 } from 'jupyterlab/lib/docregistry';
 
 import {
   IRealtime
-} from 'jupyterlab/lib/realtime';
+} from 'jupyterlab/lib/common/realtime';
 
 import {
   FileBrowserModel, IPathTracker, FileBrowser
@@ -51,7 +55,7 @@ import {
 
 const realtimePlugin: JupyterLabPlugin<IRealtime> = {
   id: 'jupyter.services.realtime',
-  requires: [],
+  requires: [ICommandPalette],
   provides: IRealtime,
   activate: activateRealtime,
   autoStart: true
@@ -66,8 +70,26 @@ const fileBrowserPlugin: JupyterLabPlugin<IPathTracker> = {
 };
 
 
-function activateRealtime(app: JupyterLab): IRealtime {
-  return new GoogleRealtime();
+function activateRealtime(app: JupyterLab, commandPalette: ICommandPalette): IRealtime {
+
+  let realtimeServices = new GoogleRealtime();
+
+  let commands = app.commands;
+  let command = 'realtime:add-collaborator';
+  commands.addCommand(command, {
+    label: 'Share file',
+    caption: 'Share this file',
+    execute: ()=> {
+      let widget = app.shell.currentWidget;
+      let model = realtimeServices.checkTrackers(widget);
+      if(model) {
+        realtimeServices.addCollaborator(model);
+      }
+    }
+  });
+  commandPalette.addItem({command, category: 'Realtime'});
+
+  return realtimeServices;
 }
 
 /**

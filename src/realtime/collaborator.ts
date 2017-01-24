@@ -12,7 +12,7 @@ import {
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
   ISynchronizable, ICollaborator
-} from 'jupyterlab/lib/realtime';
+} from 'jupyterlab/lib/common/realtime';
 
 import {
   IObservableMap, ObservableMap

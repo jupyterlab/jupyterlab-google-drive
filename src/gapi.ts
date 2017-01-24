@@ -11,7 +11,7 @@ import {
 
 import {
   showDialog
-} from 'jupyterlab/lib/dialog';
+} from 'jupyterlab/lib/common/dialog';
 
 //TODO: Complete gapi typings and commit upstream
 declare let gapi: any;
