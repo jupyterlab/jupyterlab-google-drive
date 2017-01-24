@@ -139,8 +139,8 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * use [[ContentsManager.getAbsolutePath]] to get an absolute
    * path if necessary.
    */
-  getDownloadUrl(path: string): string {
-    return '';
+  getDownloadUrl(path: string): Promise<string> {
+    return drive.urlForFile(path);
   }
 
   /**
