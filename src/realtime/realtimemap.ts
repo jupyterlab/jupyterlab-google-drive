@@ -40,8 +40,16 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
     this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
         if(!evt.isLocal) {
+          let changeType: ObservableMap.ChangeType;
+          if(evt.oldValue && evt.newValue) {
+            changeType = 'change';
+          } else if (evt.oldValue && !evt.newValue) {
+            changeType = 'remove';
+          } else {
+            changeType = 'add';
+          }
           this.changed.emit({
-            type: evt.oldValue ? 'change' : 'add',
+            type: changeType,
             key: evt.property,
             oldValue: evt.oldValue,
             newValue: evt.newValue
@@ -188,7 +196,12 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    * Set the ObservableMap to an empty map.
    */
   clear(): void {
-    this._map.clear();
+    //delete one by one so that we send
+    //the appropriate signals.
+    let keyList = this.keys();
+    for(let i=0; i<keyList.length; i++) {
+      this.delete(keyList[i]);
+    }
   }
 
   /**
