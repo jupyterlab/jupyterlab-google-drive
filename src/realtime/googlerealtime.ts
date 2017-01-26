@@ -52,7 +52,7 @@ import {
 } from './realtimemap';
 
 import {
-  CollaboratorMap
+  CollaboratorMap, GoogleRealtimeCollaborator
 } from './collaborator';
 
 declare let gapi : any;
@@ -190,14 +190,16 @@ class GoogleRealtime implements IRealtime {
 export
 class GoogleRealtimeHandler implements IRealtimeHandler {
   constructor( fileId : string = '' ) {
-    this.ready = new Promise<void>( (resolve, reject) => {
+    this._ready = new Promise<void>( (resolve, reject) => {
       if (fileId) {
         this._fileId = fileId;
         loadRealtimeDocument(this._fileId).then( (doc : gapi.drive.realtime.Document) => {
           this._doc = doc;
           this._model = this._doc.getModel();
           this._collaborators = new CollaboratorMap(doc);
-          resolve();
+          this._collaborators.ready.then(()=>{
+            resolve();
+          });
         }).catch( () => {
           console.log("gapi: unable to load realtime document")
           reject();
@@ -209,7 +211,9 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
             this._doc = doc;
             this._model = this._doc.getModel();
             this._collaborators = new CollaboratorMap(doc);
-            resolve();
+            this._collaborators.ready.then(()=>{
+              resolve();
+            });
           });
         }).catch( () => {
           console.log("gapi: unable to create realtime document")
@@ -217,6 +221,13 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         });
       }
     });
+  }
+
+  /**
+   * Get whether the handler is ready to be used.
+   */
+  get ready(): Promise<void> {
+    return this._ready;
   }
 
   /**
@@ -230,7 +241,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    * Get the unique identifier for the collaborative
    * editing session of the local user.
    */
-  get localCollaborator(): string {
+  get localCollaborator(): GoogleRealtimeCollaborator {
     return this._collaborators.localCollaborator;
   }
 
@@ -340,5 +351,5 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
   private _doc: gapi.drive.realtime.Document = null;
   private _model: gapi.drive.realtime.Model = null;
   private _rtObjects: any[] = [];
-  ready : Promise<void> = null;
+  private _ready : Promise<void> = null;
 }

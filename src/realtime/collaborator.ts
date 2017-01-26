@@ -24,91 +24,91 @@ export
 class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
 
   constructor(doc: gapi.drive.realtime.Document) {
+    this._ready = new Promise<void>((resolve,reject)=>{
+      //Get the map with the collaborators, or
+      //create it if it does not exist.
+      let id = 'collaborators:map';
+      this._doc = doc;
+      this._map = doc.getModel().getRoot().get(id);
 
-    //Get the map with the collaborators, or
-    //create it if it does not exist.
-    let id = 'collaborators:map';
-    this._doc = doc;
-    this._map = doc.getModel().getRoot().get(id);
-
-    //We need to create the map
-    if(!this._map) {
-      this._map = doc.getModel().createMap<GoogleRealtimeCollaborator>();
-      doc.getModel().getRoot().set(id, this._map);
-    }
-
-    //Populate the map with its initial values.
-    //Even if the map already exists, it is easy to miss
-    //some collaborator events (if, for instance, the
-    //realtime doc is not shut down properly).
-    //This is an opportunity to refresh it.
-    let initialCollaborators: any[] = doc.getCollaborators();
-
-    //remove stale collaborators
-    let initialSessions = new Set<string>();
-    for(let i=0; i<initialCollaborators.length; i++) {
-      initialSessions.add(initialCollaborators[i].sessionId);
-      if(initialCollaborators[i].isMe) {
-        this._sessionId = initialCollaborators[i].sessionId;
+      //We need to create the map
+      if(!this._map) {
+        this._map = doc.getModel().createMap<GoogleRealtimeCollaborator>();
+        doc.getModel().getRoot().set(id, this._map);
       }
-    }
-    for(let k of this._map.keys()) {
-      if(!initialSessions.has(k)) {
-        this._map.delete(k);
-      }
-    }
-    //Now add the remaining collaborators
-    for(let i=0; i<initialCollaborators.length; i++) {
-      let collaborator = initialCollaborators[i];
-      if(!this._map.has(collaborator.sessionId)) {
-        this._map.set(collaborator.sessionId, {
-          userId: collaborator.userId,
-          sessionId: collaborator.sessionId,
-          displayName: collaborator.displayName,
-          color: collaborator.color,
-          position: {}
-        });
-      }
-    }
 
-    //Add event listeners to the CollaboratorMap
-    this._doc.addEventListener(
-      gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
-      (evt : any) => {
-        let collaborator = evt.collaborator;
-        this.set(collaborator.sessionId, {
-          userId: collaborator.userId,
-          sessionId: collaborator.sessionId,
-          displayName: collaborator.displayName,
-          color: collaborator.color,
-          position: {}
-        });
-        if(collaborator.isMe) {
-          this._sessionId = collaborator.sessionId;
+      //Populate the map with its initial values.
+      //Even if the map already exists, it is easy to miss
+      //some collaborator events (if, for instance, the
+      //realtime doc is not shut down properly).
+      //This is an opportunity to refresh it.
+      let initialCollaborators: any[] = doc.getCollaborators();
+
+      //remove stale collaborators
+      let initialSessions = new Set<string>();
+      for(let i=0; i<initialCollaborators.length; i++) {
+        initialSessions.add(initialCollaborators[i].sessionId);
+        if(initialCollaborators[i].isMe) {
+          this._localCollaborator = initialCollaborators[i];
         }
       }
-    );
-    this._doc.addEventListener(
-      gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
-      (evt : any) => {
-        this.delete(evt.collaborator.sessionId);
+      for(let k of this._map.keys()) {
+        if(!initialSessions.has(k)) {
+          this._map.delete(k);
+        }
       }
-    );
-
-    this._map.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
-        if(!evt.isLocal) {
-          this.changed.emit({
-            type: evt.oldValue ? 'change' : 'add',
-            key: evt.property,
-            oldValue: evt.oldValue,
-            newValue: evt.newValue
+      //Now add the remaining collaborators
+      for(let i=0; i<initialCollaborators.length; i++) {
+        let collaborator = initialCollaborators[i];
+        if(!this._map.has(collaborator.sessionId)) {
+          this._map.set(collaborator.sessionId, {
+            userId: collaborator.userId,
+            sessionId: collaborator.sessionId,
+            displayName: collaborator.displayName,
+            color: collaborator.color,
+            position: {}
           });
         }
       }
-    );
 
+      //Add event listeners to the CollaboratorMap
+      this._doc.addEventListener(
+        gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
+        (evt : any) => {
+          let collaborator = evt.collaborator;
+          this.set(collaborator.sessionId, {
+            userId: collaborator.userId,
+            sessionId: collaborator.sessionId,
+            displayName: collaborator.displayName,
+            color: collaborator.color,
+            position: {}
+          });
+          if(collaborator.isMe) {
+            this._localCollaborator = collaborator;
+          }
+        }
+      );
+      this._doc.addEventListener(
+        gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
+        (evt : any) => {
+          this.delete(evt.collaborator.sessionId);
+        }
+      );
 
+      this._map.addEventListener(
+        gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+          if(!evt.isLocal) {
+            this.changed.emit({
+              type: evt.oldValue ? 'change' : 'add',
+              key: evt.property,
+              oldValue: evt.oldValue,
+              newValue: evt.newValue
+            });
+          }
+        }
+      );
+      resolve(void 0);
+    });
   }
   /**
    * A signal emitted when the map has changed.
@@ -129,6 +129,10 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     return this._map.size;
   }
 
+  get ready(): Promise<void> {
+    return this._ready;
+  }
+
   /**
    * Whether this map has been disposed.
    */
@@ -136,8 +140,8 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     return this._isDisposed;
   }
 
-  get localCollaborator(): string {
-    return this._sessionId;
+  get localCollaborator(): GoogleRealtimeCollaborator {
+    return this._localCollaborator;
   }
 
   /**
@@ -261,10 +265,11 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     this._isDisposed = true;
   }
 
-  private _sessionId: string = '';
+  private _localCollaborator: GoogleRealtimeCollaborator = null;
   private _doc : gapi.drive.realtime.Document = null;
   private _map : gapi.drive.realtime.CollaborativeMap<GoogleRealtimeCollaborator> = null;
   private _isDisposed : boolean = false;
+  private _ready: Promise<void> = null;
 }
 
 // Define the signal for the collaborator map.

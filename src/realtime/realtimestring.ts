@@ -61,6 +61,13 @@ class GoogleRealtimeString implements IObservableString {
   readonly isLinkable: boolean = false;
 
   /**
+   * Whether this string is linkable.
+   *
+   * @returns `false'
+   */
+  readonly isLinked: boolean = false;
+
+  /**
    * Set the value of the string.
    */
   set text( value: string ) {
