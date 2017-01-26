@@ -98,8 +98,19 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       this._map.addEventListener(
         gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
           if(!evt.isLocal) {
+            let changeType: ObservableMap.ChangeType;
+            if(evt.oldValue && evt.newValue) {
+              changeType = 'change';
+            } else if (evt.oldValue && !evt.newValue) {
+              changeType = 'remove';
+            } else {
+              changeType = 'add';
+            }
+            if(evt.newValue && evt.newValue.isMe) {
+              this._localCollaborator = evt.newValue;
+            }
             this.changed.emit({
-              type: evt.oldValue ? 'change' : 'add',
+              type: changeType,
               key: evt.property,
               oldValue: evt.oldValue,
               newValue: evt.newValue
