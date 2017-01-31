@@ -183,7 +183,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
       baseName = 'untitled';
       model = {
         type: 'file',
-        content: 'Hello world',
+        content: '',
         mimetype: 'text/plain',
         format: 'text'
       };

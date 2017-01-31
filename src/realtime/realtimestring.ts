@@ -9,15 +9,20 @@ import {
   IObservableString, ObservableString
 } from 'jupyterlab/lib/common/observablestring';
 
+import {
+  IObservableMap
+} from 'jupyterlab/lib/common/observablemap';
+
 declare let gapi : any;
 
 export
 class GoogleRealtimeString implements IObservableString {
-  constructor(model : any, id : string, initialValue?: string) {
-    this._str = model.getRoot().get(id);
+  constructor(model: any, id : string, parent?: IObservableMap<any>, initialValue?: string) {
+    let hostMap: any = parent ? parent : model.getRoot();
+    this._str = hostMap.get(id);
     if(!this._str) {
       this._str = model.createString(initialValue);
-      model.getRoot().set(id, this._str);
+      hostMap.set(id, this._str);
     }
 
     //Add event listeners to the collaborativeString
@@ -85,6 +90,14 @@ class GoogleRealtimeString implements IObservableString {
    */
   get text(): string {
     return this._str.getText();
+  }
+
+  /**
+   * Get the underlying collaborative object
+   * for this string.
+   */
+  get googleObject(): gapi.drive.realtime.CollaborativeObject {
+    return this._str;
   }
 
   /**
@@ -165,7 +178,6 @@ class GoogleRealtimeString implements IObservableString {
     this._isDisposed = true;
   }
 
-  private _model : gapi.drive.realtime.Model = null;
   private _str : gapi.drive.realtime.CollaborativeString = null;
   private _isDisposed : boolean = false;
 }

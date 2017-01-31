@@ -17,27 +17,45 @@ import {
   IObservableMap, ObservableMap
 } from 'jupyterlab/lib/common/observablemap';
 
+import {
+  toSynchronizable, fromSynchronizable
+} from './googlerealtime';
+
 declare let gapi : any;
 
 export
 class GoogleRealtimeMap<T> implements IObservableMap<T> {
 
-  constructor(model: gapi.drive.realtime.Model, id: string, initialValue?: IObservableMap<T>) {
+  constructor(model: gapi.drive.realtime.Model, id: string, parent?: IObservableMap<any>, initialValue?: IObservableMap<T>) {
 
-    //Create and populate the internal vectors
-    this._map = model.getRoot().get(id);
-    if(!this._map) {
+    let hostMap: any = parent ? parent : model.getRoot();
+    //Create and populate the internal maps
+    this._map = new ObservableMap<T>();
+    this._gmap = hostMap.get(id);
+    if(!this._gmap) {
       //Does not exist, use initial values
-      this._map = model.createMap<T>();
-      model.getRoot().set(id, this._map);
+      this._gmap = model.createMap<T>();
+      hostMap.set(id, this._gmap);
 
       let keys = initialValue.keys();
       for(let i=0; i < keys.length; i++) {
-        this._map.set(keys[i], initialValue.get(keys[i]));
+        let value: any = initialValue.get(keys[i]);
+        if(!value.isLinkable) {
+          this._gmap.set(keys[i], toSynchronizable(value));
+          this._map.set(keys[i], value);
+        }
+      }
+    } else {
+      //Already exists, populate with that
+      let keys = this._gmap.keys();
+      for(let i=0; i < keys.length; i++) {
+        this._map.set(keys[i], 
+                      fromSynchronizable(this._gmap.get(keys[i])));
       }
     }
 
-    this._map.addEventListener(
+
+    this._gmap.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
         if(!evt.isLocal) {
           let changeType: ObservableMap.ChangeType;
@@ -48,6 +66,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
           } else {
             changeType = 'add';
           }
+          this._map.set(evt.property, fromSynchronizable(evt.newValue));
           this.changed.emit({
             type: changeType,
             key: evt.property,
@@ -82,7 +101,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    * The number of key-value pairs in the map.
    */
   get size(): number {
-    return this._map.size;
+    return this._gmap.size;
   }
 
   /**
@@ -90,6 +109,14 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  /**
+   * Get the underlying collaborative object
+   * for this map.
+   */
+  get googleObject(): gapi.drive.realtime.CollaborativeObject {
+    return this._gmap;
   }
 
   /**
@@ -104,6 +131,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    */
   set(key: string, value: T): T {
     let oldVal = this._map.get(key);
+    this._gmap.set(key, toSynchronizable(value));
     this._map.set(key, value);
     this.changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -166,6 +194,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
   delete(key: string): T {
     let oldVal = this._map.get(key);
     this._map.delete(key);
+    this._gmap.delete(key);
     this.changed.emit({
       type: 'remove',
       key: key,
@@ -201,6 +230,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
     let keyList = this.keys();
     for(let i=0; i<keyList.length; i++) {
       this.delete(keyList[i]);
+      this._gmap.delete(keyList[i]);
     }
   }
 
@@ -212,13 +242,15 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
       return;
     }
     clearSignalData(this);
-    this._map.removeAllEventListeners();
     this._map.clear();
-    this._map = null;
+    this._gmap.removeAllEventListeners();
+    this._gmap.clear();
+    this._gmap = null;
     this._isDisposed = true;
   }
 
-  private _map : gapi.drive.realtime.CollaborativeMap<T> = null;
+  private _gmap : gapi.drive.realtime.CollaborativeMap<T> = null;
+  private _map : ObservableMap<T> = null;
   private _isDisposed : boolean = false;
 }
 

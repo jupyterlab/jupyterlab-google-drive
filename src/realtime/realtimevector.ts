@@ -23,6 +23,10 @@ import {
 } from 'jupyterlab/lib/common/observablevector';
 
 import {
+  IObservableMap
+} from 'jupyterlab/lib/common/observablemap';
+
+import {
   IObservableUndoableVector,
 } from 'jupyterlab/lib/common/undoablevector';
 
@@ -36,16 +40,17 @@ declare let gapi : any;
 export
 class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableUndoableVector<T> {
 
-  constructor(factory: (value: JSONObject)=>T, model : any, id : string, initialValue?: IObservableVector<T>) {
+  constructor(factory: (value: JSONObject)=>T, model : any, id : string, parent?: IObservableMap<any>, initialValue?: IObservableVector<T>) {
     this._factory = factory;
+    let hostMap: any = parent ? parent : model.getRoot();
 
     //Create and populate the internal vectors
     this._vec = new ObservableVector<T>();
-    this._gvec = model.getRoot().get(id);
+    this._gvec = hostMap.get(id);
     if(!this._gvec) {
       //Does not exist, use initial values
       this._gvec = model.createList(this._toJSONArray(toArray(initialValue)));
-      model.getRoot().set(id, this._gvec);
+      hostMap.set(id, this._gvec);
       for(let i=0; i < initialValue.length; i++) {
         let val: T = initialValue.at(i);
         this._connectToSync(val);
@@ -265,6 +270,14 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   get back(): T {
     return this.at(this.length-1);
+  }
+
+  /**
+   * Get the underlying collaborative object
+   * for this vector.
+   */
+  get googleObject(): gapi.drive.realtime.CollaborativeObject {
+    return this._gvec;
   }
 
   /**
@@ -687,7 +700,6 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   }
 
   private _factory: (value: JSONObject) => T = null;
-  private _model : gapi.drive.realtime.Model = null;
   //Google collaborativeList of JSONObjects that shadows the ObservableVector
   //which represents the canonical vector of objects.
   private _gvec : gapi.drive.realtime.CollaborativeList<JSONObject> = null;

@@ -134,6 +134,13 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
   readonly isLinkable: boolean = false;
 
   /**
+   * Get whether this map is linked to another.
+   *
+   * @returns `false`,
+   */
+  readonly isLinked: boolean = false;
+
+  /**
    * The number of key-value pairs in the map.
    */
   get size(): number {

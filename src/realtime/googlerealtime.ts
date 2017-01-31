@@ -14,17 +14,20 @@ import {
 } from 'jupyterlab/lib/common/dialog';
 
 import {
-  IObservableMap
+  IObservableMap, ObservableMap
 } from 'jupyterlab/lib/common/observablemap';
 
 import {
-  IObservableString
+  IObservableString, ObservableString
 } from 'jupyterlab/lib/common/observablestring';
 
 import {
-  IObservableUndoableVector
-} from 'jupyterlab/lib/common/undoablevector';
+  IObservableVector, ObservableVector
+} from 'jupyterlab/lib/common/observablevector';
 
+import {
+  IObservableUndoableVector, ObservableUndoableVector
+} from 'jupyterlab/lib/common/undoablevector';
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
@@ -252,17 +255,29 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    *
    * @returns a promise when the linking is done.
    */
-  linkMap<T>(map: IObservableMap<T>, id: string) : Promise<void> {
+  linkMap<T>(map: IObservableMap<T>, id: string, parent?: IObservableMap<any>) : Promise<void> {
     //Fail if the vector is not linkable.
     if(!map.isLinkable) {
       return Promise.reject(void 0);
     }
     return this.ready.then( () => {
       //Create the collaborative map
-      let gmap = new GoogleRealtimeMap<T>(this._model, id, map);
-      map.link(gmap);
+      let gmap = new GoogleRealtimeMap<T>(this._model, id, parent, map);
+      let keys = map.keys();
+      let promises: Promise<void>[] = [];
+      for(let key of keys) {
+        let value: any = map.get(key);
+        if(value instanceof ObservableMap) {
+          promises.push(this.linkMap(value, key, map));
+        } else if(value instanceof ObservableString) {
+          promises.push(this.linkString(value, key, map));
+        } else if(value instanceof ObservableUndoableVector) {
+          promises.push(this.linkVector(value, key, map));
+        }
+      }
       this._rtObjects.push(gmap);
-      return void 0;
+      map.link(gmap);
+      return Promise.all(promises).then(()=>{return void 0;});
     });
   }
 
@@ -273,14 +288,14 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    *
    * @returns a promise when the linking is done.
    */
-  linkString (str: IObservableString, id: string) : Promise<void> {
+  linkString (str: IObservableString, id: string, parent?: IObservableMap<any>) : Promise<void> {
     //Fail if the string is not linkable.
     if(!str.isLinkable) {
       return Promise.reject(void 0);
     }
     return this.ready.then( () => {
       //Create the collaborative string
-      let gstr = new GoogleRealtimeString(this._model, id, str.text);
+      let gstr = new GoogleRealtimeString(this._model, id, parent, str.text);
       str.link(gstr);
       this._rtObjects.push(gstr);
       return void 0;
@@ -294,15 +309,15 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    *
    * @returns a promise when the linking is done.
    */
-  linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>, id: string) : Promise<void> {
+  linkVector<T extends ISynchronizable<T>>(vec: IObservableUndoableVector<T>, id: string, parent?: IObservableMap<any>) : Promise<void> {
     //Fail if the vector is not linkable.
     if(!vec.isLinkable) {
       return Promise.reject(void 0);
     }
     return this.ready.then( () => {
-      //Create the collaborative string
+      //Create the collaborative vector
       let gvec = new GoogleRealtimeVector<T>
-        (vec.factory, this._model, id, vec);
+        (vec.factory, this._model, id, parent, vec);
       vec.link(gvec);
       this._rtObjects.push(gvec);
       return void 0;
@@ -352,4 +367,32 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
   private _model: gapi.drive.realtime.Model = null;
   private _rtObjects: any[] = [];
   private _ready : Promise<void> = null;
+}
+
+/**
+ * Take an item which is to be inserted into a collaborative
+ * map or vector, and convert it into a form that the Google
+ * Realtime API knows how to sync. In the case of primitives,
+ * or things that are already JSONObjects, this means no change.
+ */
+export
+function toSynchronizable(item: any): any {
+  return item.googleObject || item;
+}
+
+export
+function fromSynchronizable(item: any): any {
+  if(item.type && item.type === 'EditableString') {
+    return new ObservableString(item.getText());
+  } else if(item.type && item.type === 'List') {
+    return new ObservableVector(item.asArray());
+  } else if(item.type && item.type === 'Map') {
+    let map = new ObservableMap();
+    for (let key of item.keys()) {
+      map.set(key, item.get(key));
+    }
+    return map;
+  } else {
+    return item;
+  }
 }
