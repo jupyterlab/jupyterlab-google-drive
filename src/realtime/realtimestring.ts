@@ -10,48 +10,13 @@ import {
 } from 'jupyterlab/lib/common/observablestring';
 
 import {
-  IObservableMap
-} from 'jupyterlab/lib/common/observablemap';
+  GoogleRealtimeMap
+} from './realtimemap';
 
 declare let gapi : any;
 
 export
 class GoogleRealtimeString implements IObservableString {
-  constructor(model: any, id : string, parent?: IObservableMap<any>, initialValue?: string) {
-    let hostMap: any = parent ? parent : model.getRoot();
-    this._str = hostMap.get(id);
-    if(!this._str) {
-      this._str = model.createString(initialValue);
-      hostMap.set(id, this._str);
-    }
-
-    //Add event listeners to the collaborativeString
-    this._str.addEventListener(
-      gapi.drive.realtime.EventType.TEXT_INSERTED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          this.changed.emit({
-            type : 'insert',
-            start: evt.index,
-            end: evt.index + evt.text.length,
-            value: evt.text
-          });
-        }
-      });
-
-    this._str.addEventListener(
-      gapi.drive.realtime.EventType.TEXT_DELETED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          this.changed.emit({
-            type : 'remove',
-            start: evt.index,
-            end: evt.index + evt.text.length,
-            value: evt.text
-          });
-        }
-    });
-  }
 
   /**
    * A signal emitted when the string has changed.
@@ -96,8 +61,38 @@ class GoogleRealtimeString implements IObservableString {
    * Get the underlying collaborative object
    * for this string.
    */
-  get googleObject(): gapi.drive.realtime.CollaborativeObject {
+  get googleObject(): gapi.drive.realtime.CollaborativeString {
     return this._str;
+  }
+
+  set googleObject(str: gapi.drive.realtime.CollaborativeString) {
+    this._str = str;
+    //Add event listeners to the collaborativeString
+    this._str.addEventListener(
+      gapi.drive.realtime.EventType.TEXT_INSERTED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type : 'insert',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
+      });
+
+    this._str.addEventListener(
+      gapi.drive.realtime.EventType.TEXT_DELETED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type : 'remove',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
+    });
   }
 
   /**

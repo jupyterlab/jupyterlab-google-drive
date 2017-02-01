@@ -262,27 +262,62 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     }
     return this.ready.then( () => {
       //Create the collaborative map
-      let gmap = new GoogleRealtimeMap<T>(this._model, id, parent, map);
-      let keys = map.keys();
-      let promises: Promise<void>[] = [];
-      for(let key of keys) {
-        let value: any = map.get(key);
-        if(value instanceof ObservableMap) {
-          promises.push(this.linkMap(value, key, map));
-        } else if(value instanceof ObservableString) {
-          promises.push(this.linkString(value, key, map));
-        } else if(value instanceof ObservableUndoableVector) {
-          promises.push(this.linkVector(value, key, map));
-        }
+      let host = this._model.getRoot();
+      let gmap: GoogleRealtimeMap<T>;
+      if(host.has(id)) {
+        gmap = new GoogleRealtimeMap<T>();
+        gmap.googleObject = host.get(id);
+        this._linkMap(map, gmap);
+      } else {
+        gmap = this._createMap(map);
+        host.set(id, gmap.googleObject);
       }
-      this._rtObjects.push(gmap);
       map.link(gmap);
-      return Promise.all(promises).then(()=>{return void 0;});
+      this._rtObjects.push(gmap);
+      return void 0;
     });
   }
 
-  /**
-   * Create a string for the realtime model.
+  private _linkMap<T>(map: IObservableMap<T>, gmap: GoogleRealtimeMap<T>): void {
+    let keys = map.keys();
+    for(let key of keys) {
+      let value: any = map.get(key);
+      let shadowValue: any = gmap.get(key);
+      if(value instanceof ObservableMap) {
+        this._linkMap(value as any, shadowValue as any);
+        value.link(shadowValue);
+      } else if(value instanceof ObservableString) {
+        value.link(shadowValue);
+      } else if(value instanceof ObservableVector) {
+        //gmap.set(key, this._createVector(value));
+      }
+    }
+  }
+
+
+  private _createMap<T>(map: IObservableMap<T>): GoogleRealtimeMap<T> {
+    let gmap = new GoogleRealtimeMap<T>();
+    gmap.googleObject = this._model.createMap<T>();
+    let keys = map.keys();
+    for(let key of keys) {
+      let value: any = map.get(key);
+      if(value instanceof ObservableMap) {
+        let submap = this._createMap(value);
+        gmap.linkSet(key, value, submap);
+      } else if(value instanceof ObservableString) {
+        let substring = this._createString(value);
+        gmap.linkSet(key, value, substring);
+      } else if(value instanceof ObservableVector) {
+        //gmap.set(key, this._createVector(value));
+      } else {
+        gmap.set(key, value);
+      }
+    }
+    return gmap;
+  }
+
+/**
+* Create a string for the realtime model.
    *
    * @param str: the string to link to a realtime string.
    *
@@ -295,11 +330,26 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     }
     return this.ready.then( () => {
       //Create the collaborative string
-      let gstr = new GoogleRealtimeString(this._model, id, parent, str.text);
+      let gstr: GoogleRealtimeString;
+      let host = this._model.getRoot();
+
+      if(host.has(id)) {
+        gstr = new GoogleRealtimeString();
+        gstr.googleObject = host.get(id);
+      } else {
+        gstr = this._createString(str);
+        host.set(id, gstr);
+      }
       str.link(gstr);
       this._rtObjects.push(gstr);
       return void 0;
     });
+  }
+
+  private _createString(str: IObservableString): GoogleRealtimeString {
+    let gstr = new GoogleRealtimeString();
+    gstr.googleObject = this._model.createString(str.text);
+    return gstr;
   }
 
   /**
@@ -317,7 +367,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     return this.ready.then( () => {
       //Create the collaborative vector
       let gvec = new GoogleRealtimeVector<T>
-        (vec.factory, this._model, id, parent, vec);
+        (vec.factory, this._model, id, this._getGoogleObject(parent), vec);
       vec.link(gvec);
       this._rtObjects.push(gvec);
       return void 0;
@@ -359,6 +409,16 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     this._isDisposed = true;
   }
 
+  private _getGoogleObject(item: any): any {
+    if( item && item.isLinked ) {
+      return item._parent.googleObject;
+    } else if (item && item.googleObject) {
+      return item.googleObject;
+    } else {
+      return this._model.getRoot();
+    }
+  }
+
 
   private _isDisposed: boolean = false;
   private _collaborators: CollaboratorMap = null;
@@ -383,14 +443,15 @@ function toSynchronizable(item: any): any {
 export
 function fromSynchronizable(item: any): any {
   if(item.type && item.type === 'EditableString') {
-    return new ObservableString(item.getText());
+    let str = new GoogleRealtimeString();
+    str.googleObject = item;
+    return str;
   } else if(item.type && item.type === 'List') {
-    return new ObservableVector(item.asArray());
+    //let vec = new GoogleRealtimeVector<any>();
+    //vec.googleObject = item;
   } else if(item.type && item.type === 'Map') {
-    let map = new ObservableMap();
-    for (let key of item.keys()) {
-      map.set(key, item.get(key));
-    }
+    let map = new GoogleRealtimeMap<any>();
+    map.googleObject = item;
     return map;
   } else {
     return item;

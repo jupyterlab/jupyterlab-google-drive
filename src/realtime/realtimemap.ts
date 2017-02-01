@@ -26,58 +26,6 @@ declare let gapi : any;
 export
 class GoogleRealtimeMap<T> implements IObservableMap<T> {
 
-  constructor(model: gapi.drive.realtime.Model, id: string, parent?: IObservableMap<any>, initialValue?: IObservableMap<T>) {
-
-    let hostMap: any = parent ? parent : model.getRoot();
-    //Create and populate the internal maps
-    this._map = new ObservableMap<T>();
-    this._gmap = hostMap.get(id);
-    if(!this._gmap) {
-      //Does not exist, use initial values
-      this._gmap = model.createMap<T>();
-      hostMap.set(id, this._gmap);
-
-      let keys = initialValue.keys();
-      for(let i=0; i < keys.length; i++) {
-        let value: any = initialValue.get(keys[i]);
-        if(!value.isLinkable) {
-          this._gmap.set(keys[i], toSynchronizable(value));
-          this._map.set(keys[i], value);
-        }
-      }
-    } else {
-      //Already exists, populate with that
-      let keys = this._gmap.keys();
-      for(let i=0; i < keys.length; i++) {
-        this._map.set(keys[i], 
-                      fromSynchronizable(this._gmap.get(keys[i])));
-      }
-    }
-
-
-    this._gmap.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
-        if(!evt.isLocal) {
-          let changeType: ObservableMap.ChangeType;
-          if(evt.oldValue && evt.newValue) {
-            changeType = 'change';
-          } else if (evt.oldValue && !evt.newValue) {
-            changeType = 'remove';
-          } else {
-            changeType = 'add';
-          }
-          this._map.set(evt.property, fromSynchronizable(evt.newValue));
-          this.changed.emit({
-            type: changeType,
-            key: evt.property,
-            oldValue: evt.oldValue,
-            newValue: evt.newValue
-          });
-        }
-      }
-    );
-  }
-
   /**
    * A signal emitted when the map has changed.
    */
@@ -115,8 +63,42 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    * Get the underlying collaborative object
    * for this map.
    */
-  get googleObject(): gapi.drive.realtime.CollaborativeObject {
+  get googleObject(): gapi.drive.realtime.CollaborativeMap<T> {
     return this._gmap;
+  }
+
+
+  set googleObject(map: gapi.drive.realtime.CollaborativeMap<T>) {
+    //Create and populate the internal maps
+    this._map = new ObservableMap<T>();
+    this._gmap = map;
+    let keys = this._gmap.keys();
+    for(let i=0; i < keys.length; i++) {
+      this._map.set(keys[i],
+                    fromSynchronizable(this._gmap.get(keys[i])));
+    }
+
+    this._gmap.addEventListener(
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+        if(!evt.isLocal) {
+          let changeType: ObservableMap.ChangeType;
+          if(evt.oldValue && evt.newValue) {
+            changeType = 'change';
+          } else if (evt.oldValue && !evt.newValue) {
+            changeType = 'remove';
+          } else {
+            changeType = 'add';
+          }
+          this._map.set(evt.property, fromSynchronizable(evt.newValue));
+          this.changed.emit({
+            type: changeType,
+            key: evt.property,
+            oldValue: evt.oldValue,
+            newValue: evt.newValue
+          });
+        }
+      }
+    );
   }
 
   /**
@@ -219,6 +201,12 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    */
   unlink(): void {
     //no-op
+  }
+
+  linkSet(key: string, val: any, shadowVal: any): void {
+    this._map.set(key, val as T);
+    this._gmap.set(key, toSynchronizable(shadowVal) as T);
+    val.link(shadowVal);
   }
 
   /**

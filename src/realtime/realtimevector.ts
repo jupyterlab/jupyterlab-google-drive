@@ -23,10 +23,6 @@ import {
 } from 'jupyterlab/lib/common/observablevector';
 
 import {
-  IObservableMap
-} from 'jupyterlab/lib/common/observablemap';
-
-import {
   IObservableUndoableVector,
 } from 'jupyterlab/lib/common/undoablevector';
 
@@ -34,23 +30,26 @@ import {
   ISynchronizable
 } from 'jupyterlab/lib/common/realtime';
 
+import {
+  GoogleRealtimeMap
+} from './realtimemap';
+
 declare let gapi : any;
 
 
 export
 class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableUndoableVector<T> {
 
-  constructor(factory: (value: JSONObject)=>T, model : any, id : string, parent?: IObservableMap<any>, initialValue?: IObservableVector<T>) {
+  constructor(factory: (value: JSONObject)=>T, model : any, id : string, parent: GoogleRealtimeMap<any>, initialValue?: IObservableVector<T>) {
     this._factory = factory;
-    let hostMap: any = parent ? parent : model.getRoot();
 
     //Create and populate the internal vectors
     this._vec = new ObservableVector<T>();
-    this._gvec = hostMap.get(id);
+    this._gvec = parent.get(id);
     if(!this._gvec) {
       //Does not exist, use initial values
       this._gvec = model.createList(this._toJSONArray(toArray(initialValue)));
-      hostMap.set(id, this._gvec);
+      parent.set(id, this._gvec);
       for(let i=0; i < initialValue.length; i++) {
         let val: T = initialValue.at(i);
         this._connectToSync(val);
