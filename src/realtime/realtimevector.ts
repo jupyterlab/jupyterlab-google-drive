@@ -7,12 +7,12 @@ import {
 } from 'phosphor/lib/algorithm/iteration';
 
 import {
-  indexOf
-} from 'phosphor/lib/algorithm/searching';
-
-import {
   JSONObject
 } from 'phosphor/lib/algorithm/json';
+
+import {
+  indexOf
+} from 'phosphor/lib/algorithm/searching';
 
 import {
   clearSignalData, defineSignal, ISignal
@@ -34,40 +34,43 @@ import {
   GoogleRealtimeMap
 } from './realtimemap';
 
+import {
+  toSynchronizable, fromSynchronizable
+} from './googlerealtime';
+
+
 declare let gapi : any;
 
 
 export
 class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableUndoableVector<T> {
 
-  constructor(factory: (value: JSONObject)=>T, model : any, id : string, parent: GoogleRealtimeMap<any>, initialValue?: IObservableVector<T>) {
+  constructor(factory: (value?: JSONObject)=>T ) {
     this._factory = factory;
+  }
 
+  get factory(): (value?: JSONObject)=>T {
+    return this._factory;
+  }
+
+  set googleObject(vec: gapi.drive.realtime.CollaborativeList<T>) {
     //Create and populate the internal vectors
     this._vec = new ObservableVector<T>();
-    this._gvec = parent.get(id);
-    if(!this._gvec) {
-      //Does not exist, use initial values
-      this._gvec = model.createList(this._toJSONArray(toArray(initialValue)));
-      parent.set(id, this._gvec);
-      for(let i=0; i < initialValue.length; i++) {
-        let val: T = initialValue.at(i);
-        this._connectToSync(val);
-        this._vec.pushBack(val);
-      }
-    } else {
-      //Already exists, populate with that.
-      let vals = this._gvec.asArray();
-      for(let i=0; i < this._gvec.length; i++) {
-        this._vec.pushBack(this._createFromJSON(this._gvec.get(i)));
-      }
+    this._gvec = vec;
+    
+    let vals = this._gvec.asArray();
+    for(let val of vals) {
+      let parentVal: any = fromSynchronizable(val);
+      let value = this._factory();
+      (value as any).link(parentVal);
+      this._vec.pushBack(value);
     }
 
     //Add event listeners to the collaborativeVector
     this._gvec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt : any) => {
-        let vals: T[] = this._fromJSONArray(evt.values);
+        let vals: T[] = this._fromSynchronizableArray(evt.values);
         if(!evt.isLocal) {
           this._vec.insertAll(evt.index, vals);
 
@@ -84,7 +87,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._gvec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_REMOVED,
       (evt : any) => {
-        let vals: T[] = this._fromJSONArray(evt.values);
+        let vals: T[] = this._fromSynchronizableArray(evt.values);
         if(!evt.isLocal) {
           this._vec.removeRange(evt.index, evt.index+vals.length);
 
@@ -101,8 +104,8 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._gvec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_SET,
       (evt : any) => {
-        let oldVals: T[] = this._fromJSONArray(evt.oldValues);
-        let newVals: T[] = this._fromJSONArray(evt.newValues);
+        let oldVals: T[] = this._fromSynchronizableArray(evt.oldValues);
+        let newVals: T[] = this._fromSynchronizableArray(evt.newValues);
         if(!evt.isLocal) {
           for(let i=0; i<oldVals.length; i++) {
             this._vec.set(evt.index+i, newVals[i]);
@@ -175,13 +178,6 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   get canUndo(): boolean {
     return false;
-  }
-
-  /**
-   * Get the factory object for deserialization.
-   */
-  get factory(): (value: JSONObject)=>T {
-    return this._factory;
   }
 
   /**
@@ -275,7 +271,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * Get the underlying collaborative object
    * for this vector.
    */
-  get googleObject(): gapi.drive.realtime.CollaborativeObject {
+  get googleObject(): gapi.drive.realtime.CollaborativeList<T> {
     return this._gvec;
   }
 
@@ -334,8 +330,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     let oldVal: T = this._vec.at(index);
 
     this._vec.set(index, value);
-    this._gvec.set(index, value.toJSON());
-    this._connectToSync(value);
+    this._gvec.set(index, toSynchronizable(value));
 
     this.changed.emit({
       type: 'set',
@@ -361,8 +356,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   pushBack(value: T): number {
     let len = this._vec.pushBack(value);
-    this._gvec.push(value.toJSON());
-    this._connectToSync(value);
+    this._gvec.push(toSynchronizable(value));
 
     this.changed.emit({
       type: 'add',
@@ -425,8 +419,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    */
   insert(index: number, value: T): number {
     this._vec.insert(index, value);
-    this._gvec.insert(index, value.toJSON());
-    this._connectToSync(value);
+    this._gvec.insert(index, toSynchronizable(value));
     this.changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -561,8 +554,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     let newValues = toArray(values);
     each(newValues, value => {
       this._vec.pushBack(value);
-      this._gvec.push(value.toJSON());
-      this._connectToSync(value);
+      this._gvec.push(toSynchronizable(value));
     });
     this.changed.emit({
       type: 'add',
@@ -601,8 +593,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     let i = index;
     each(newValues, value => {
       this._vec.insert(i, value);
-      this._gvec.insert(i, value.toJSON());
-      this._connectToSync(value);
+      this._gvec.insert(i, toSynchronizable(value));
       i++;
     });
     this.changed.emit({
@@ -657,6 +648,13 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     return this._isDisposed;
   }
 
+  linkPush(val: any, shadowVal: any): void {
+    this._vec.pushBack(val as T);
+    this._gvec.push(toSynchronizable(shadowVal) as T);
+    val.link(shadowVal);
+  }
+
+
   /**
    * Dispose of the resources held by the vector.
    */
@@ -670,40 +668,29 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._isDisposed = true;
   }
 
-  private _toJSONArray( array: T[] ): JSONObject[] {
-    let ret: JSONObject[] = [];
+  private _toSynchronizableArray( array: T[] ): any[] {
+    let ret: any[] = [];
     array.forEach( val => {
-      ret.push(val.toJSON());
+      ret.push(toSynchronizable(val));
     });
     return ret;
   }
-  private _fromJSONArray( array: JSONObject[] ): T[] {
+  private _fromSynchronizableArray( array: any[] ): T[] {
     let ret: T[] = [];
     array.forEach( val => {
-      ret.push(this._createFromJSON(val));
+      let parentVal: any = fromSynchronizable(val);
+      let value = this._factory();
+      (value as any).link(parentVal);
+      ret.push(value);
     });
     return ret;
   }
 
-  private _connectToSync( value: T ): void {
-    value.synchronizeRequest.connect( ()=>{
-      let index = indexOf(this._vec, value);
-      this._gvec.set(index, value.toJSON());
-    });
-  }
-
-  private _createFromJSON (value: JSONObject): T {
-    let val: T = this._factory(value);
-    this._connectToSync(val);
-    return val;
-  }
-
-  private _factory: (value: JSONObject) => T = null;
-  //Google collaborativeList of JSONObjects that shadows the ObservableVector
   //which represents the canonical vector of objects.
-  private _gvec : gapi.drive.realtime.CollaborativeList<JSONObject> = null;
+  private _gvec : gapi.drive.realtime.CollaborativeList<any> = null;
   //Canonical vector of objects.
   private _vec: ObservableVector<T> = null;
+  private _factory: (value?: JSONObject)=>T;
   private _isDisposed : boolean = false;
 }
 

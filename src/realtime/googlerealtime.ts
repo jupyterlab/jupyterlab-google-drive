@@ -289,7 +289,8 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       } else if(value instanceof ObservableString) {
         value.link(shadowValue);
       } else if(value instanceof ObservableVector) {
-        //gmap.set(key, this._createVector(value));
+        this._linkVector(value as any, shadowValue as any);
+        value.link(shadowValue);
       }
     }
   }
@@ -308,7 +309,8 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         let substring = this._createString(value);
         gmap.linkSet(key, value, substring);
       } else if(value instanceof ObservableVector) {
-        //gmap.set(key, this._createVector(value));
+        let subvec = this._createVector(value);
+        gmap.linkSet(key, value, subvec);
       } else {
         gmap.set(key, value);
       }
@@ -366,12 +368,63 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     }
     return this.ready.then( () => {
       //Create the collaborative vector
-      let gvec = new GoogleRealtimeVector<T>
-        (vec.factory, this._model, id, this._getGoogleObject(parent), vec);
+      let gvec: GoogleRealtimeVector<T>;
+      let host = this._model.getRoot();
+      if(host.has(id)) {
+        gvec = new GoogleRealtimeVector<T>((vec as any).factory);
+        gvec.googleObject = host.get(id);
+        this._linkVector(vec, gvec);
+      } else {
+        gvec = this._createVector(vec);
+        host.set(id, gvec.googleObject);
+      }
       vec.link(gvec);
       this._rtObjects.push(gvec);
       return void 0;
     });
+  }
+
+  private _linkVector<T extends ISynchronizable<T>>(vec: IObservableVector<T>, gvec: GoogleRealtimeVector<T>): void {
+    vec.clear();
+    for(let i=0; i<gvec.length; i++) {
+      let shadowValue: any = gvec.at(i);
+      let parentValue: any = fromSynchronizable(shadowValue);
+      let value = (vec as any).factory();
+      value.link(parentValue);
+
+      if(value instanceof ObservableMap) {
+        this._linkMap(value as any, shadowValue as any);
+        value.link(shadowValue);
+      } else if(value instanceof ObservableString) {
+        value.link(shadowValue);
+      } else if(value instanceof ObservableVector) {
+        this._linkVector(value as any, shadowValue as any);
+        value.link(shadowValue);
+      }
+      vec.pushBack(value);
+    }
+  }
+
+
+  private _createVector<T extends ISynchronizable<T>>(vec: IObservableVector<T>): GoogleRealtimeVector<T> {
+    let gvec = new GoogleRealtimeVector<T>((vec as any).factory);
+    gvec.googleObject = this._model.createList<T>();
+    for(let i=0; i<vec.length; i++) {
+      let value: any = vec.at(i);
+      if(value instanceof ObservableMap) {
+        let submap = this._createMap(value);
+        gvec.linkPush(value, submap);
+      } else if(value instanceof ObservableString) {
+        let substring = this._createString(value);
+        gvec.linkPush(value, substring);
+      } else if(value instanceof ObservableVector) {
+        let subvec = this._createVector(value);
+        gvec.linkPush(value, subvec);
+      } else {
+        gvec.set(i, value);
+      }
+    }
+    return gvec;
   }
 
   /**
@@ -437,6 +490,9 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
  */
 export
 function toSynchronizable(item: any): any {
+  if(item.isLinked) {
+    return item._parent.googleObject;
+  }
   return item.googleObject || item;
 }
 
