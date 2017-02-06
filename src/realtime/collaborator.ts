@@ -11,7 +11,7 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  ISynchronizable, ICollaborator
+  ICollaborator
 } from 'jupyterlab/lib/common/realtime';
 
 import {

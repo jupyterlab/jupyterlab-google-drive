@@ -23,11 +23,15 @@ import {
 } from 'jupyterlab/lib/common/observablevector';
 
 import {
-  IObservableUndoableVector,
-} from 'jupyterlab/lib/common/undoablevector';
+  IObservableMap, ObservableMap
+} from 'jupyterlab/lib/common/observablemap';
 
 import {
-  ISynchronizable
+  IObservableString, ObservableString
+} from 'jupyterlab/lib/common/observablestring';
+
+import {
+  Synchronizable
 } from 'jupyterlab/lib/common/realtime';
 
 import {
@@ -35,32 +39,57 @@ import {
 } from './realtimemap';
 
 import {
-  toSynchronizable, fromSynchronizable
+  toGoogleSynchronizable, fromGoogleSynchronizable, 
+  GoogleSynchronizable
 } from './googlerealtime';
 
+import {
+  createVector, linkVectorItems, createMap,
+  linkMapItems, createString, linkString
+} from './utils';
 
 declare let gapi : any;
 
 
 export
-class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableUndoableVector<T> {
+class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchronizable> {
 
-  constructor(factory: (value?: JSONObject)=>T ) {
+  constructor(model: gapi.drive.realtime.Model, factory: (value?: JSONObject)=>Synchronizable ) {
     this._factory = factory;
+    let tmpObj: any = this._factory();
+    if(tmpObj instanceof ObservableMap) {
+      this._gfactory = (val: Synchronizable): GoogleSynchronizable=>{
+        let gval = createMap(model, val as any);
+        (val as any).link(gval);
+        return gval as any;
+      };
+    } else if (tmpObj instanceof ObservableVector) {
+      this._gfactory = (val: Synchronizable)=>{
+        let gval = createVector(model, val as any);
+        (val as any).link(gval);
+        return gval as any;
+      };
+    } else if (tmpObj instanceof ObservableString) {
+      this._gfactory = (val: Synchronizable)=>{
+        let gval = createString(model, val as any);
+        (val as any).link(gval);
+        return gval as any;
+      };
+    }
   }
 
-  get factory(): (value?: JSONObject)=>T {
+  get factory(): (value?: JSONObject)=>Synchronizable {
     return this._factory;
   }
 
-  set googleObject(vec: gapi.drive.realtime.CollaborativeList<T>) {
+  set googleObject(vec: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
     //Create and populate the internal vectors
-    this._vec = new ObservableVector<T>();
+    this._vec = new ObservableVector<Synchronizable>();
     this._gvec = vec;
     
     let vals = this._gvec.asArray();
     for(let val of vals) {
-      let parentVal: any = fromSynchronizable(val);
+      let parentVal: any = fromGoogleSynchronizable(val);
       let value = this._factory();
       (value as any).link(parentVal);
       this._vec.pushBack(value);
@@ -70,10 +99,10 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._gvec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt : any) => {
-        let vals: T[] = this._fromSynchronizableArray(evt.values);
         if(!evt.isLocal) {
+          let vals: Synchronizable[] =
+            this._fromGoogleSynchronizableArray(evt.values);
           this._vec.insertAll(evt.index, vals);
-
           this.changed.emit({
             type: 'add',
             oldIndex: -1,
@@ -87,10 +116,10 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._gvec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_REMOVED,
       (evt : any) => {
-        let vals: T[] = this._fromSynchronizableArray(evt.values);
         if(!evt.isLocal) {
+          let vals: Synchronizable[] =
+            this._fromGoogleSynchronizableArray(evt.values);
           this._vec.removeRange(evt.index, evt.index+vals.length);
-
           this.changed.emit({
             type: 'remove',
             oldIndex: evt.index,
@@ -104,9 +133,11 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._gvec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_SET,
       (evt : any) => {
-        let oldVals: T[] = this._fromSynchronizableArray(evt.oldValues);
-        let newVals: T[] = this._fromSynchronizableArray(evt.newValues);
         if(!evt.isLocal) {
+          let oldVals: Synchronizable[] =
+            this._fromGoogleSynchronizableArray(evt.oldValues);
+          let newVals: Synchronizable[] =
+            this._fromGoogleSynchronizableArray(evt.newValues);
           for(let i=0; i<oldVals.length; i++) {
             this._vec.set(evt.index+i, newVals[i]);
           }
@@ -125,7 +156,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   /**
    * A signal emitted when the vector has changed.
    */
-  changed: ISignal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>;
+  changed: ISignal<IObservableVector<Synchronizable>, ObservableVector.IChangedArgs<Synchronizable>>;
 
   /**
    * Whether this string is linkable.
@@ -167,64 +198,12 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   }
 
   /**
-   * Whether the object can redo changes.
-   */
-  get canRedo(): boolean {
-    return false;
-  }
-
-  /**
-   * Whether the object can undo changes.
-   */
-  get canUndo(): boolean {
-    return false;
-  }
-
-  /**
-   * Begin a compound operation.
-   *
-   * @param isUndoAble - Whether the operation is undoable.
-   *   The default is `false`.
-   */
-  beginCompoundOperation(isUndoAble?: boolean): void {
-    //no-op
-  }
-
-  /**
-   * End a compound operation.
-   */
-  endCompoundOperation(): void {
-    //no-op
-  }
-
-  /**
-   * Undo an operation.
-   */
-  undo(): void {
-    //no-op
-  }
-
-  /**
-   * Redo an operation.
-   */
-  redo(): void {
-    //no-op
-  }
-
-  /**
-   * Clear the change stack.
-   */
-  clearUndo(): void {
-    //no-op
-  }
-
-  /**
    * Link the vector to another vector.
    * Any changes to either are mirrored in the other.
    *
    * @param vec: the parent vector.
    */
-  link(vec: IObservableVector<T>): void {
+  link(vec: IObservableVector<Synchronizable>): void {
     //no-op
   }
 
@@ -247,7 +226,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Iterator Validity
    * No changes.
    */
-  get front(): T {
+  get front(): Synchronizable {
     return this.at(0);
   }
 
@@ -263,7 +242,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Iterator Validity
    * No changes.
    */
-  get back(): T {
+  get back(): Synchronizable {
     return this.at(this.length-1);
   }
 
@@ -271,7 +250,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * Get the underlying collaborative object
    * for this vector.
    */
-  get googleObject(): gapi.drive.realtime.CollaborativeList<T> {
+  get googleObject(): gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> {
     return this._gvec;
   }
 
@@ -286,7 +265,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Iterator Validity
    * No changes.
    */
-  iter(): IIterator<T> {
+  iter(): IIterator<Synchronizable> {
     return this._vec.iter();
   }
 
@@ -306,7 +285,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Undefined Behavior
    * An `index` which is non-integral or out of range.
    */
-  at(index: number): T {
+  at(index: number): Synchronizable {
     return this._vec.at(index);
   }
 
@@ -326,11 +305,12 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Undefined Behavior
    * An `index` which is non-integral or out of range.
    */
-  set(index: number, value: T): void {
-    let oldVal: T = this._vec.at(index);
+  set(index: number, value: Synchronizable): void {
+    let oldVal: Synchronizable = this._vec.at(index);
 
     this._vec.set(index, value);
-    this._gvec.set(index, toSynchronizable(value));
+    let gval = this._gfactory(value);
+    this._gvec.set(index, toGoogleSynchronizable(gval));
 
     this.changed.emit({
       type: 'set',
@@ -354,9 +334,10 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Iterator Validity
    * No changes.
    */
-  pushBack(value: T): number {
+  pushBack(value: Synchronizable): number {
     let len = this._vec.pushBack(value);
-    this._gvec.push(toSynchronizable(value));
+    let gval = this._gfactory(value);
+    this._gvec.push(toGoogleSynchronizable(gval));
 
     this.changed.emit({
       type: 'add',
@@ -380,7 +361,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Iterator Validity
    * Iterators pointing at the removed value are invalidated.
    */
-  popBack(): T {
+  popBack(): Synchronizable {
     let last = this.length-1;
     let value = this.at(last);
     this._vec.removeAt(last);
@@ -417,9 +398,11 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Undefined Behavior
    * An `index` which is non-integral.
    */
-  insert(index: number, value: T): number {
+  insert(index: number, value: Synchronizable): number {
     this._vec.insert(index, value);
-    this._gvec.insert(index, toSynchronizable(value));
+    let gval = this._gfactory(value);
+    this._gvec.insert(index, toGoogleSynchronizable(gval));
+
     this.changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -447,7 +430,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Notes
    * Comparison is performed using strict `===` equality.
    */
-  remove(value: T): number {
+  remove(value: Synchronizable): number {
     let index = indexOf(this._vec, value);
     this.removeAt(index);
     return index;
@@ -470,7 +453,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Undefined Behavior
    * An `index` which is non-integral.
    */
-  removeAt(index: number): T {
+  removeAt(index: number): Synchronizable {
     let value = this.at(index);
     this._vec.removeAt(index);
     this._gvec.remove(index);
@@ -549,12 +532,13 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Iterator Validity
    * No changes.
    */
-  pushAll(values: IterableOrArrayLike<T>): number {
+  pushAll(values: IterableOrArrayLike<Synchronizable>): number {
     let newIndex = this.length;
     let newValues = toArray(values);
     each(newValues, value => {
       this._vec.pushBack(value);
-      this._gvec.push(toSynchronizable(value));
+      let gval = this._gfactory(value);
+      this._gvec.push(toGoogleSynchronizable(gval));
     });
     this.changed.emit({
       type: 'add',
@@ -587,13 +571,14 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * #### Undefined Behavior.
    * An `index` which is non-integral.
    */
-  insertAll(index: number, values: IterableOrArrayLike<T>): number {
+  insertAll(index: number, values: IterableOrArrayLike<Synchronizable>): number {
     let newIndex = index;
     let newValues = toArray(values);
     let i = index;
     each(newValues, value => {
       this._vec.insert(i, value);
-      this._gvec.insert(i, toSynchronizable(value));
+      let gval = this._gfactory(value);
+      this._gvec.insert(i, toGoogleSynchronizable(gval));
       i++;
     });
     this.changed.emit({
@@ -625,7 +610,7 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
    * A `startIndex` or `endIndex` which is non-integral.
    */
   removeRange(startIndex: number, endIndex: number): number {
-    let oldValues: T[] = [];
+    let oldValues: Synchronizable[] = [];
     for (let i = startIndex; i < endIndex; i++) {
       let val = this._vec.removeAt(startIndex);
       this._gvec.remove(startIndex);
@@ -649,8 +634,8 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
   }
 
   linkPush(val: any, shadowVal: any): void {
-    this._vec.pushBack(val as T);
-    this._gvec.push(toSynchronizable(shadowVal) as T);
+    this._vec.pushBack(val as Synchronizable);
+    this._gvec.push(toGoogleSynchronizable(shadowVal));
     val.link(shadowVal);
   }
 
@@ -668,17 +653,17 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     this._isDisposed = true;
   }
 
-  private _toSynchronizableArray( array: T[] ): any[] {
-    let ret: any[] = [];
+  private _toGoogleSynchronizableArray( array: Synchronizable[] ): GoogleSynchronizable[] {
+    let ret: GoogleSynchronizable[] = [];
     array.forEach( val => {
-      ret.push(toSynchronizable(val));
+      ret.push(toGoogleSynchronizable(val));
     });
     return ret;
   }
-  private _fromSynchronizableArray( array: any[] ): T[] {
-    let ret: T[] = [];
+  private _fromGoogleSynchronizableArray( array: GoogleSynchronizable[] ): Synchronizable[] {
+    let ret: Synchronizable[] = [];
     array.forEach( val => {
-      let parentVal: any = fromSynchronizable(val);
+      let parentVal = fromGoogleSynchronizable(val);
       let value = this._factory();
       (value as any).link(parentVal);
       ret.push(value);
@@ -686,12 +671,21 @@ class GoogleRealtimeVector<T extends ISynchronizable<T>> implements IObservableU
     return ret;
   }
 
+  private _maybeLink( item: Synchronizable, otherItem: any) {
+    if(otherItem.type === 'EditableString' ||
+       otherItem.type === 'Map' ||
+       otherItem.type === 'List') {
+      (item as any).link(otherItem);
+    }
+  }
+
   //which represents the canonical vector of objects.
-  private _gvec : gapi.drive.realtime.CollaborativeList<any> = null;
+  private _gvec : gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> = null;
   //Canonical vector of objects.
-  private _vec: ObservableVector<T> = null;
-  private _factory: (value?: JSONObject)=>T;
+  private _vec: ObservableVector<Synchronizable> = null;
+  private _factory: (value?: JSONObject)=>Synchronizable;
   private _isDisposed : boolean = false;
+  private _gfactory: (value: Synchronizable)=>GoogleSynchronizable;
 }
 
 // Define the signals for the Google realtime vector.
