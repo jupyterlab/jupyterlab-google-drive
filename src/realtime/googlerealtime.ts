@@ -270,7 +270,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let host = this._model.getRoot();
       let gmap: GoogleRealtimeMap<Synchronizable>;
       if(host.has(id)) {
-        gmap = new GoogleRealtimeMap<Synchronizable>();
+        gmap = new GoogleRealtimeMap<Synchronizable>(map);
         gmap.googleObject = host.get(id);
         linkMapItems(map, gmap);
       } else {
@@ -401,35 +401,3 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
 
 export
 type GoogleSynchronizable = JSONObject | gapi.drive.realtime.CollaborativeObject;
-/**
- * Take an item which is to be inserted into a collaborative
- * map or vector, and convert it into a form that the Google
- * Realtime API knows how to sync. In the case of primitives,
- * or things that are already JSONObjects, this means no change.
- */
-export
-function toGoogleSynchronizable(item: any): GoogleSynchronizable {
-  if(item.isLinked) {
-    return item._parent.googleObject;
-  }
-  return (item.googleObject || item) as GoogleSynchronizable;
-}
-
-export
-function fromGoogleSynchronizable(item: any): Synchronizable {
-  if(item.type && item.type === 'EditableString') {
-    let str = new GoogleRealtimeString();
-    str.googleObject = item;
-    return str;
-  } else if(item.type && item.type === 'List') {
-    //let vec = new GoogleRealtimeVector<GoogleSynchronizable>();
-    //vec.googleObject = item;
-    //return vec;
-  } else if(item.type && item.type === 'Map') {
-    let map = new GoogleRealtimeMap<GoogleSynchronizable>();
-    map.googleObject = item;
-    return map;
-  } else {
-    return item as Synchronizable;
-  }
-}

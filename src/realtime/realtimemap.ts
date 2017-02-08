@@ -18,14 +18,27 @@ import {
 } from 'jupyterlab/lib/common/observablemap';
 
 import {
-  toGoogleSynchronizable, fromGoogleSynchronizable,
   GoogleSynchronizable
 } from './googlerealtime';
+
+import {
+  toGoogleSynchronizable, fromGoogleSynchronizable,
+} from './utils';
 
 declare let gapi : any;
 
 export
 class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable> {
+
+  /**
+   * Constructor
+   */
+  constructor( map: IObservableMap<Synchronizable>) {
+    this._map = new ObservableMap<Synchronizable>();
+    for(let key of map.keys()) {
+      this._map.set(key, map.get(key));
+    }
+  }
 
   /**
    * A signal emitted when the map has changed.
@@ -71,12 +84,13 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
 
   set googleObject(map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
     //Create and populate the internal maps
-    this._map = new ObservableMap<Synchronizable>();
     this._gmap = map;
-    let keys = this._gmap.keys();
-    for(let i=0; i < keys.length; i++) {
-      this._map.set(keys[i],
-                    fromGoogleSynchronizable(this._gmap.get(keys[i])) as any);
+    for (let key of this._gmap.keys()) {
+      if(this._map.has(key) && (this._map.get(key) as any).fromJSON) {
+        this._map.set(key, (this._map.get(key) as any).fromJSON(this._gmap.get(key)))
+      } else {
+        this._map.set(key, fromGoogleSynchronizable(this._gmap.get(key)) as any);
+      }
     }
 
     this._gmap.addEventListener(
@@ -90,7 +104,11 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
           } else {
             changeType = 'add';
           }
-          this._map.set(evt.property, fromGoogleSynchronizable(evt.newValue) as any);
+          if(this._map.has(evt.property) && (this._map.get(evt.property) as any).fromJSON) {
+            this._map.set(evt.property, (this._map.get(evt.property) as any).fromJSON(evt.newValue))
+          } else {
+            this._map.set(evt.property, fromGoogleSynchronizable(evt.newValue) as any);
+          }
           this.changed.emit({
             type: changeType,
             key: evt.property,

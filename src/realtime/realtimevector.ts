@@ -39,13 +39,13 @@ import {
 } from './realtimemap';
 
 import {
-  toGoogleSynchronizable, fromGoogleSynchronizable, 
   GoogleSynchronizable
 } from './googlerealtime';
 
 import {
   createVector, linkVectorItems, createMap,
-  linkMapItems, createString, linkString
+  linkMapItems, createString, linkString,
+  toGoogleSynchronizable, fromGoogleSynchronizable
 } from './utils';
 
 declare let gapi : any;
@@ -56,26 +56,11 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
 
   constructor(model: gapi.drive.realtime.Model, factory: (value?: JSONObject)=>Synchronizable ) {
     this._factory = factory;
-    let tmpObj: any = this._factory();
-    if(tmpObj instanceof ObservableMap) {
-      this._gfactory = (val: Synchronizable): GoogleSynchronizable=>{
-        let gval = createMap(model, val as any);
-        (val as any).link(gval);
-        return gval as any;
-      };
-    } else if (tmpObj instanceof ObservableVector) {
-      this._gfactory = (val: Synchronizable)=>{
-        let gval = createVector(model, val as any);
-        (val as any).link(gval);
-        return gval as any;
-      };
-    } else if (tmpObj instanceof ObservableString) {
-      this._gfactory = (val: Synchronizable)=>{
-        let gval = createString(model, val as any);
-        (val as any).link(gval);
-        return gval as any;
-      };
-    }
+    this._gfactory = (val: Synchronizable): GoogleSynchronizable=>{
+      let gval = createMap(model, val as any);
+      (val as any).link(gval);
+      return gval as any;
+    };
   }
 
   get factory(): (value?: JSONObject)=>Synchronizable {
@@ -90,7 +75,11 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
     let vals = this._gvec.asArray();
     for(let val of vals) {
       let parentVal: any = fromGoogleSynchronizable(val);
-      let value = this._factory();
+      let value = this._factory(this._JSONHack(parentVal));
+      if(parentVal.has('outputs')) {
+        (value as any).get('outputs').fromJSON(parentVal.get('outputs'));
+        parentVal.set('outputs', (value as any).get('outputs'))
+      }
       (value as any).link(parentVal);
       this._vec.pushBack(value);
     }
@@ -664,20 +653,25 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
     let ret: Synchronizable[] = [];
     array.forEach( val => {
       let parentVal = fromGoogleSynchronizable(val);
-      let value = this._factory();
+      let value = this._factory(this._JSONHack(parentVal));
       (value as any).link(parentVal);
       ret.push(value);
     });
     return ret;
   }
 
-  private _maybeLink( item: Synchronizable, otherItem: any) {
-    if(otherItem.type === 'EditableString' ||
-       otherItem.type === 'Map' ||
-       otherItem.type === 'List') {
-      (item as any).link(otherItem);
+  private _JSONHack(parentVal: any): any {
+    let cell: any = {
+      cell_type: parentVal.get('cell_type'),
+      outputs: [],
+      executionCount: null,
+      metadata: {},
+      source: ''
     }
+    return cell;
   }
+
+
 
   //which represents the canonical vector of objects.
   private _gvec : gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> = null;
