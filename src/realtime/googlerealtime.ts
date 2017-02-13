@@ -270,7 +270,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let host = this._model.getRoot();
       let gmap: GoogleRealtimeMap<Synchronizable>;
       if(host.has(id)) {
-        gmap = new GoogleRealtimeMap<Synchronizable>(map);
+        gmap = new GoogleRealtimeMap<Synchronizable>(this._model);
         gmap.googleObject = host.get(id);
         linkMapItems(map, gmap);
       } else {
@@ -330,7 +330,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let gvec: GoogleRealtimeVector<Synchronizable>;
       let host = this._model.getRoot();
       if(host.has(id)) {
-        gvec = new GoogleRealtimeVector<Synchronizable>(this._model, (vec as any).factory);
+        gvec = new GoogleRealtimeVector<Synchronizable>(this._model, (vec as any)._fromMapFactory);
         gvec.googleObject = host.get(id);
         linkVectorItems(vec, gvec);
       } else {

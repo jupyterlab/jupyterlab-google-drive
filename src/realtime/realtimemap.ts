@@ -18,8 +18,20 @@ import {
 } from 'jupyterlab/lib/common/observablemap';
 
 import {
+  IObservableVector
+} from 'jupyterlab/lib/common/observablevector';
+
+import {
   GoogleSynchronizable
 } from './googlerealtime';
+
+import {
+  GoogleRealtimeVector
+} from './realtimevector';
+
+import {
+  GoogleRealtimeString
+} from './realtimestring';
 
 import {
   toGoogleSynchronizable, fromGoogleSynchronizable,
@@ -33,11 +45,14 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
   /**
    * Constructor
    */
-  constructor( map: IObservableMap<Synchronizable>) {
-    this._map = new ObservableMap<Synchronizable>();
-    for(let key of map.keys()) {
-      this._map.set(key, map.get(key));
+  constructor( model: gapi.drive.realtime.Model, factory?: (item: any)=>Synchronizable) {
+    if(factory) {
+      this._factory = factory;
+    } else {
+      this._factory = (item: any)=>item;
     }
+    this._map = new ObservableMap<Synchronizable>();
+    this._model = model;
   }
 
   /**
@@ -86,11 +101,8 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
     //Create and populate the internal maps
     this._gmap = map;
     for (let key of this._gmap.keys()) {
-      if(this._map.has(key) && (this._map.get(key) as any).fromJSON) {
-        this._map.set(key, (this._map.get(key) as any).fromJSON(this._gmap.get(key)))
-      } else {
-        this._map.set(key, fromGoogleSynchronizable(this._gmap.get(key)) as any);
-      }
+      let entry = this._createNewEntry(this._gmap.get(key));
+      this._map.set(key, entry);
     }
 
     this._gmap.addEventListener(
@@ -104,11 +116,8 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
           } else {
             changeType = 'add';
           }
-          if(this._map.has(evt.property) && (this._map.get(evt.property) as any).fromJSON) {
-            this._map.set(evt.property, (this._map.get(evt.property) as any).fromJSON(evt.newValue))
-          } else {
-            this._map.set(evt.property, fromGoogleSynchronizable(evt.newValue) as any);
-          }
+          let entry = this._createNewEntry(evt.newValue);
+          this._map.set(evt.property, entry);
           this.changed.emit({
             type: changeType,
             key: evt.property,
@@ -249,13 +258,34 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
       return;
     }
     clearSignalData(this);
-    this._map.clear();
     this._gmap.removeAllEventListeners();
-    this._gmap.clear();
+    this._map.clear();
     this._gmap = null;
     this._isDisposed = true;
   }
 
+  private _createNewEntry(item: any): any {
+    if(item.type && item.type==='List') {
+      let vec = new GoogleRealtimeVector<Synchronizable>(this._model);
+      vec.googleObject = item;
+      let newEntry = this._factory(vec);
+      (newEntry as any).link(vec);
+      return newEntry;
+    } else if(item.type && item.type === 'EditableString') {
+      let str = new GoogleRealtimeString();
+      str.googleObject = item;
+      return str;
+    } else if(item.type && item.type === 'Map') {
+      let map = new GoogleRealtimeMap<Synchronizable>(this._model);
+      map.googleObject = item;
+      return map;
+    } else {
+      return item;
+    }
+  }
+
+  private _model: gapi.drive.realtime.Model = null;
+  private _factory: (value?: any)=>Synchronizable = null;
   private _gmap : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _map : ObservableMap<Synchronizable> = null;
   private _isDisposed : boolean = false;

@@ -58,7 +58,7 @@ function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeM
 
 export
 function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchronizable>): GoogleRealtimeMap<Synchronizable> {
-  let gmap = new GoogleRealtimeMap<Synchronizable>(map);
+  let gmap = new GoogleRealtimeMap<Synchronizable>(model, (map as any)._fromVecFactory);
   gmap.googleObject = model.createMap<GoogleSynchronizable>();
   let keys = map.keys();
   for(let key of keys) {
@@ -107,18 +107,7 @@ function createVector<Synchronizable>(model: gapi.drive.realtime.Model, vec: IOb
   gvec.googleObject = model.createList<GoogleSynchronizable>();
   for(let i=0; i<vec.length; i++) {
     let value: Synchronizable = vec.at(i);
-    if(value instanceof ObservableMap) {
-      let submap = createMap(model, value);
-      gvec.linkPush(value, submap);
-    } else if(value instanceof ObservableString) {
-      let substring = createString(model, value);
-      gvec.linkPush(value, substring);
-    } else if(value instanceof ObservableVector) {
-      let subvec = createVector(model, value);
-      gvec.linkPush(value, subvec);
-    } else {
-      gvec.set(i, value);
-    }
+    gvec.pushBack(value);
   }
   return gvec;
 }
@@ -136,31 +125,26 @@ function toGoogleSynchronizable(item: any): GoogleSynchronizable {
     return item._parent.googleObject;
   } else if (item.googleObject) {
     return item.googleObject;
-  } else if (item.toJSON) {
-    return item.toJSON();
   } else {
     return item;
   }
 }
 
 export
-function fromGoogleSynchronizable(item: any, target?: any): Synchronizable {
+function fromGoogleSynchronizable(item: any, model: gapi.drive.realtime.Model): Synchronizable {
   if(!item) return item;
   if(item.type && item.type === 'EditableString') {
     let str = new GoogleRealtimeString();
     str.googleObject = item;
     return str;
   } else if(item.type && item.type === 'List') {
-    //let vec = new GoogleRealtimeVector<GoogleSynchronizable>();
-    //vec.googleObject = item;
-    //return vec;
+    let vec = new GoogleRealtimeVector<Synchronizable>(model);
+    vec.googleObject = item;
+    return vec;
   } else if(item.type && item.type === 'Map') {
-    let map = new GoogleRealtimeMap<GoogleSynchronizable>(item);
+    let map = new GoogleRealtimeMap<Synchronizable>(model, item._fromVecFactory);
     map.googleObject = item;
     return map;
-  } else if( target && target.fromJSON) {
-    target.fromJSON(item);
-    return target;
   } else {
     return item as Synchronizable;
   }
