@@ -330,7 +330,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let gvec: GoogleRealtimeVector<Synchronizable>;
       let host = this._model.getRoot();
       if(host.has(id)) {
-        gvec = new GoogleRealtimeVector<Synchronizable>(this._model, (vec as any)._fromMapFactory);
+        gvec = new GoogleRealtimeVector<Synchronizable>(this._model, (vec as any)._converter);
         gvec.googleObject = host.get(id);
         linkVectorItems(vec, gvec);
       } else {

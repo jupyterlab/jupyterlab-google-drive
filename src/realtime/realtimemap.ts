@@ -11,6 +11,7 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
+  IRealtimeConverter
 } from 'jupyterlab/lib/common/realtime';
 
 import {
@@ -34,7 +35,7 @@ import {
 } from './realtimestring';
 
 import {
-  toGoogleSynchronizable, fromGoogleSynchronizable,
+  toGoogleSynchronizable, DefaultConverter
 } from './utils';
 
 declare let gapi : any;
@@ -45,12 +46,9 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
   /**
    * Constructor
    */
-  constructor( model: gapi.drive.realtime.Model, factory?: (item: any)=>Synchronizable) {
-    if(factory) {
-      this._factory = factory;
-    } else {
-      this._factory = (item: any)=>item;
-    }
+  constructor( model: gapi.drive.realtime.Model, converter?: IRealtimeConverter<Synchronizable>) {
+    this._converter = converter ||
+      new DefaultConverter<Synchronizable>();
     this._map = new ObservableMap<Synchronizable>();
     this._model = model;
   }
@@ -265,10 +263,11 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
   }
 
   private _createNewEntry(item: any): any {
+    if(!item) return item;
     if(item.type && item.type==='List') {
       let vec = new GoogleRealtimeVector<Synchronizable>(this._model);
       vec.googleObject = item;
-      let newEntry = this._factory(vec);
+      let newEntry = this._converter.from(vec);
       (newEntry as any).link(vec);
       return newEntry;
     } else if(item.type && item.type === 'EditableString') {
@@ -285,7 +284,7 @@ class GoogleRealtimeMap<Synchronizable> implements IObservableMap<Synchronizable
   }
 
   private _model: gapi.drive.realtime.Model = null;
-  private _factory: (value?: any)=>Synchronizable = null;
+  private _converter: IRealtimeConverter<Synchronizable> = null;
   private _gmap : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _map : ObservableMap<Synchronizable> = null;
   private _isDisposed : boolean = false;

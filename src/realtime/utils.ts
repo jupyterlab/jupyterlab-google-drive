@@ -15,7 +15,7 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  Synchronizable, ICollaborator
+  Synchronizable, ICollaborator, IRealtimeConverter
 } from 'jupyterlab/lib/common/realtime';
 
 import {
@@ -58,7 +58,7 @@ function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeM
 
 export
 function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchronizable>): GoogleRealtimeMap<Synchronizable> {
-  let gmap = new GoogleRealtimeMap<Synchronizable>(model, (map as any)._fromVecFactory);
+  let gmap = new GoogleRealtimeMap<Synchronizable>(model, (map as any)._converter);
   gmap.googleObject = model.createMap<GoogleSynchronizable>();
   let keys = map.keys();
   for(let key of keys) {
@@ -103,7 +103,7 @@ function linkVectorItems(vec: IObservableVector<Synchronizable>, gvec: GoogleRea
 
 export
 function createVector<Synchronizable>(model: gapi.drive.realtime.Model, vec: IObservableVector<Synchronizable>): GoogleRealtimeVector<Synchronizable> {
-  let gvec = new GoogleRealtimeVector<Synchronizable>(model, (vec as any)._factory);
+  let gvec = new GoogleRealtimeVector<Synchronizable>(model, (vec as any)._converter);
   gvec.googleObject = model.createList<GoogleSynchronizable>();
   for(let i=0; i<vec.length; i++) {
     let value: Synchronizable = vec.at(i);
@@ -131,21 +131,11 @@ function toGoogleSynchronizable(item: any): GoogleSynchronizable {
 }
 
 export
-function fromGoogleSynchronizable(item: any, model: gapi.drive.realtime.Model): Synchronizable {
-  if(!item) return item;
-  if(item.type && item.type === 'EditableString') {
-    let str = new GoogleRealtimeString();
-    str.googleObject = item;
-    return str;
-  } else if(item.type && item.type === 'List') {
-    let vec = new GoogleRealtimeVector<Synchronizable>(model);
-    vec.googleObject = item;
-    return vec;
-  } else if(item.type && item.type === 'Map') {
-    let map = new GoogleRealtimeMap<Synchronizable>(model, item._fromVecFactory);
-    map.googleObject = item;
-    return map;
-  } else {
-    return item as Synchronizable;
+class DefaultConverter<T> implements IRealtimeConverter<T>{
+  from(value: Synchronizable): T {
+    return value as any as T;
+  }
+  to(value: T): Synchronizable {
+    return value as any as Synchronizable
   }
 }

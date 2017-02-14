@@ -31,7 +31,7 @@ import {
 } from 'jupyterlab/lib/common/observablestring';
 
 import {
-  Synchronizable
+  Synchronizable, IRealtimeConverter
 } from 'jupyterlab/lib/common/realtime';
 
 import {
@@ -49,32 +49,28 @@ import {
 import {
   createVector, linkVectorItems, createMap,
   linkMapItems, createString, linkString,
-  toGoogleSynchronizable, fromGoogleSynchronizable
+  toGoogleSynchronizable, DefaultConverter
 } from './utils';
 
 declare let gapi : any;
 
 
 export
-class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchronizable> {
+class GoogleRealtimeVector<T> implements IObservableVector<T> {
 
-  constructor(model: gapi.drive.realtime.Model, factory?: (value: any)=>Synchronizable ) {
-    if(factory) {
-      this._factory = factory;
-    } else {
-      this._factory = (item: any)=>item;
-    }
-
+  constructor(model: gapi.drive.realtime.Model, converter?: IRealtimeConverter<T> ) {
+    this._converter = converter ||
+      new DefaultConverter<T>();
     this._model = model;
   }
 
-  get factory(): (value?: JSONObject)=>Synchronizable {
+  get factory(): (value?: JSONObject)=>T {
     return null;
   }
 
   set googleObject(vec: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
     //Create and populate the internal vectors
-    this._vec = new ObservableVector<Synchronizable>();
+    this._vec = new ObservableVector<T>();
     this._gvec = vec;
     
     let vals = this._fromGoogleSynchronizableArray(this._gvec.asArray());
@@ -85,7 +81,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt : any) => {
         if(!evt.isLocal) {
-          let vals: Synchronizable[] =
+          let vals: T[] =
             this._fromGoogleSynchronizableArray(evt.values);
           this._vec.insertAll(evt.index, vals);
           this.changed.emit({
@@ -102,7 +98,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
       gapi.drive.realtime.EventType.VALUES_REMOVED,
       (evt : any) => {
         if(!evt.isLocal) {
-          let vals: Synchronizable[] =
+          let vals: T[] =
             this._fromGoogleSynchronizableArray(evt.values);
           this._vec.removeRange(evt.index, evt.index+vals.length);
           this.changed.emit({
@@ -119,9 +115,9 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
       gapi.drive.realtime.EventType.VALUES_SET,
       (evt : any) => {
         if(!evt.isLocal) {
-          let oldVals: Synchronizable[] =
+          let oldVals: T[] =
             this._fromGoogleSynchronizableArray(evt.oldValues);
-          let newVals: Synchronizable[] =
+          let newVals: T[] =
             this._fromGoogleSynchronizableArray(evt.newValues);
           for(let i=0; i<oldVals.length; i++) {
             this._vec.set(evt.index+i, newVals[i]);
@@ -141,7 +137,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
   /**
    * A signal emitted when the vector has changed.
    */
-  changed: ISignal<IObservableVector<Synchronizable>, ObservableVector.IChangedArgs<Synchronizable>>;
+  changed: ISignal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>;
 
   /**
    * Whether this string is linkable.
@@ -188,7 +184,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    *
    * @param vec: the parent vector.
    */
-  link(vec: IObservableVector<Synchronizable>): void {
+  link(vec: IObservableVector<T>): void {
     //no-op
   }
 
@@ -211,7 +207,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Iterator Validity
    * No changes.
    */
-  get front(): Synchronizable {
+  get front(): T {
     return this.at(0);
   }
 
@@ -227,7 +223,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Iterator Validity
    * No changes.
    */
-  get back(): Synchronizable {
+  get back(): T {
     return this.at(this.length-1);
   }
 
@@ -250,7 +246,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Iterator Validity
    * No changes.
    */
-  iter(): IIterator<Synchronizable> {
+  iter(): IIterator<T> {
     return this._vec.iter();
   }
 
@@ -270,7 +266,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Undefined Behavior
    * An `index` which is non-integral or out of range.
    */
-  at(index: number): Synchronizable {
+  at(index: number): T {
     return this._vec.at(index);
   }
 
@@ -290,8 +286,8 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Undefined Behavior
    * An `index` which is non-integral or out of range.
    */
-  set(index: number, value: Synchronizable): void {
-    let oldVal: Synchronizable = this._vec.at(index);
+  set(index: number, value: T): void {
+    let oldVal: T = this._vec.at(index);
 
     this._vec.set(index, value);
     let gval = this._createNewGoogleEntry(value);
@@ -319,7 +315,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Iterator Validity
    * No changes.
    */
-  pushBack(value: Synchronizable): number {
+  pushBack(value: T): number {
     let len = this._vec.pushBack(value);
     let gval = this._createNewGoogleEntry(value);
     this._gvec.push(gval);
@@ -346,7 +342,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Iterator Validity
    * Iterators pointing at the removed value are invalidated.
    */
-  popBack(): Synchronizable {
+  popBack(): T {
     let last = this.length-1;
     let value = this.at(last);
     this._vec.removeAt(last);
@@ -383,7 +379,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Undefined Behavior
    * An `index` which is non-integral.
    */
-  insert(index: number, value: Synchronizable): number {
+  insert(index: number, value: T): number {
     this._vec.insert(index, value);
     let gval = this._createNewGoogleEntry(value);
     this._gvec.insert(index, gval);
@@ -415,7 +411,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Notes
    * Comparison is performed using strict `===` equality.
    */
-  remove(value: Synchronizable): number {
+  remove(value: T): number {
     let index = indexOf(this._vec, value);
     this.removeAt(index);
     return index;
@@ -438,7 +434,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Undefined Behavior
    * An `index` which is non-integral.
    */
-  removeAt(index: number): Synchronizable {
+  removeAt(index: number): T {
     let value = this.at(index);
     this._vec.removeAt(index);
     this._gvec.remove(index);
@@ -517,7 +513,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Iterator Validity
    * No changes.
    */
-  pushAll(values: IterableOrArrayLike<Synchronizable>): number {
+  pushAll(values: IterableOrArrayLike<T>): number {
     let newIndex = this.length;
     let newValues = toArray(values);
     each(newValues, value => {
@@ -556,7 +552,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * #### Undefined Behavior.
    * An `index` which is non-integral.
    */
-  insertAll(index: number, values: IterableOrArrayLike<Synchronizable>): number {
+  insertAll(index: number, values: IterableOrArrayLike<T>): number {
     let newIndex = index;
     let newValues = toArray(values);
     let i = index;
@@ -595,7 +591,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
    * A `startIndex` or `endIndex` which is non-integral.
    */
   removeRange(startIndex: number, endIndex: number): number {
-    let oldValues: Synchronizable[] = [];
+    let oldValues: T[] = [];
     for (let i = startIndex; i < endIndex; i++) {
       let val = this._vec.removeAt(startIndex);
       this._gvec.remove(startIndex);
@@ -631,8 +627,8 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
     this._isDisposed = true;
   }
 
-  private _fromGoogleSynchronizableArray( array: GoogleSynchronizable[] ): Synchronizable[] {
-    let ret: Synchronizable[] = [];
+  private _fromGoogleSynchronizableArray( array: GoogleSynchronizable[] ): T[] {
+    let ret: T[] = [];
     array.forEach( val => {
       ret.push(this._createNewEntry(val));
     });
@@ -646,10 +642,10 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
       str.googleObject = item;
       return str;
     } else if(item.type && item.type === 'Map') {
-      let map = new GoogleRealtimeMap<Synchronizable>(this._model);
+      let map = new GoogleRealtimeMap<T>(this._model);
       map.googleObject = item;
-      let newEntry = this._factory(map);
-      map = new GoogleRealtimeMap<Synchronizable>(this._model, (newEntry as any)._fromVecFactory);
+      let newEntry = this._converter.from(map);
+      map = new GoogleRealtimeMap<T>(this._model, (newEntry as any)._converter);
       map.googleObject = item;
       (newEntry as any).link(map);
       return newEntry;
@@ -658,7 +654,7 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
     }
   }
 
-  private _createNewGoogleEntry(item: Synchronizable): GoogleSynchronizable {
+  private _createNewGoogleEntry(item: T): GoogleSynchronizable {
     if( item instanceof ObservableMap) {
       let newItem = createMap(this._model, item as any);
       (item as any).link(newItem);
@@ -672,10 +668,11 @@ class GoogleRealtimeVector<Synchronizable> implements IObservableVector<Synchron
   private _gvec : gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> = null;
   private _model: gapi.drive.realtime.Model = null;
   //Canonical vector of objects.
-  private _vec: ObservableVector<Synchronizable> = null;
-  private _factory: (value: any)=>Synchronizable = null;
+  private _vec: ObservableVector<T> = null;
+  private _converter: IRealtimeConverter<T> = null;
   private _isDisposed : boolean = false;
 }
 
 // Define the signals for the Google realtime vector.
 defineSignal(GoogleRealtimeVector.prototype, 'changed');
+
