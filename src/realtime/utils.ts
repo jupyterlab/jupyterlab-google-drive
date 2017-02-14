@@ -58,7 +58,7 @@ function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeM
 
 export
 function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchronizable>): GoogleRealtimeMap<Synchronizable> {
-  let gmap = new GoogleRealtimeMap<Synchronizable>(model, (map as any)._converter);
+  let gmap = new GoogleRealtimeMap<Synchronizable>(model, (map as any)._converters);
   gmap.googleObject = model.createMap<GoogleSynchronizable>();
   let keys = map.keys();
   for(let key of keys) {

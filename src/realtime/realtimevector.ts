@@ -645,7 +645,7 @@ class GoogleRealtimeVector<T> implements IObservableVector<T> {
       let map = new GoogleRealtimeMap<T>(this._model);
       map.googleObject = item;
       let newEntry = this._converter.from(map);
-      map = new GoogleRealtimeMap<T>(this._model, (newEntry as any)._converter);
+      map = new GoogleRealtimeMap<T>(this._model, (newEntry as any)._converters);
       map.googleObject = item;
       (newEntry as any).link(map);
       return newEntry;

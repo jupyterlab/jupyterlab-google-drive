@@ -270,7 +270,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let host = this._model.getRoot();
       let gmap: GoogleRealtimeMap<Synchronizable>;
       if(host.has(id)) {
-        gmap = new GoogleRealtimeMap<Synchronizable>(this._model);
+        gmap = new GoogleRealtimeMap<Synchronizable>(this._model, (map as any)._converters);
         gmap.googleObject = host.get(id);
         linkMapItems(map, gmap);
       } else {
