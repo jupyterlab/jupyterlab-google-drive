@@ -76,7 +76,7 @@ function driveApiRequest( request: any, successCode: number = 200) : Promise<any
   });
 }
 
-let authorizeRefresh: number = null;
+let authorizeRefresh: any = null;
 
 export
 function authorize (): Promise<void> {
