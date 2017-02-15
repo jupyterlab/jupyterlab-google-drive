@@ -11,7 +11,7 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  ICollaborator
+  ICollaborator, IRealtimeConverter
 } from 'jupyterlab/lib/common/realtime';
 
 import {
@@ -139,6 +139,8 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    * @returns `false`,
    */
   readonly isLinked: boolean = false;
+
+  readonly converters: Map<string, IRealtimeConverter<GoogleRealtimeCollaborator>> = null;
 
   /**
    * The number of key-value pairs in the map.

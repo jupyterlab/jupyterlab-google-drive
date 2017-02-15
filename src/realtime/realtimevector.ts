@@ -645,9 +645,9 @@ class GoogleRealtimeVector<T> implements IObservableVector<T> {
       let map = new GoogleRealtimeMap<T>(this._model);
       map.googleObject = item;
       let newEntry = this._converter.from(map);
-      map = new GoogleRealtimeMap<T>(this._model, (newEntry as any)._converters);
+      map = new GoogleRealtimeMap<T>(this._model, (this._converter.to(newEntry) as any).converters);
       map.googleObject = item;
-      (newEntry as any).link(map);
+      (this._converter.to(newEntry) as any).link(map)
       return newEntry;
     } else {
       return item;
@@ -655,12 +655,13 @@ class GoogleRealtimeVector<T> implements IObservableVector<T> {
   }
 
   private _createNewGoogleEntry(item: T): GoogleSynchronizable {
-    if( item instanceof ObservableMap) {
-      let newItem = createMap(this._model, item as any);
-      (item as any).link(newItem);
+    let val: any = this._converter.to(item);
+    if( val instanceof ObservableMap) {
+      let newItem = createMap(this._model, val as any);
+      (val as any).link(newItem);
       return toGoogleSynchronizable(newItem);
     } else {
-      return item as any;
+      return val as any;
     }
   }
 

@@ -71,6 +71,8 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    */
   readonly isLinked: boolean = false;
 
+  readonly converters: Map<string, IRealtimeConverter<T>> = null;
+
   /**
    * The number of key-value pairs in the map.
    */
@@ -231,7 +233,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
   linkSet(key: string, val: any, shadowVal: any): void {
     this._map.set(key, val as T);
     this._gmap.set(key, toGoogleSynchronizable(shadowVal));
-    val.link(shadowVal);
   }
 
   /**
@@ -268,7 +269,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
       vec.googleObject = item;
       if(this._converters.has(key)) {
         let newEntry = this._converters.get(key).from(vec);
-        (newEntry as any).link(vec);
+        (this._converters.get(key).to(newEntry) as any).link(vec);
         return newEntry;
       } else return vec;
     } else if(item.type && item.type === 'EditableString') {

@@ -58,22 +58,31 @@ function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeM
 
 export
 function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchronizable>): GoogleRealtimeMap<Synchronizable> {
-  let gmap = new GoogleRealtimeMap<Synchronizable>(model, (map as any)._converters);
+  let gmap = new GoogleRealtimeMap<Synchronizable>(model, map.converters);
   gmap.googleObject = model.createMap<GoogleSynchronizable>();
   let keys = map.keys();
   for(let key of keys) {
     let value: Synchronizable = map.get(key);
-    if(value instanceof ObservableMap) {
-      let submap = createMap(model, value);
+    let gvalue: any;
+    if(map.converters.has(key)) {
+      gvalue = map.converters.get(key).to(value);
+    } else {
+      gvalue = value;
+    }
+    if(gvalue instanceof ObservableMap) {
+      let submap = createMap(model, gvalue);
+      gvalue.link(submap);
       gmap.linkSet(key, value, submap);
-    } else if(value instanceof ObservableString) {
-      let substring = createString(model, value);
+    } else if(gvalue instanceof ObservableString) {
+      let substring = createString(model, gvalue);
+      gvalue.link(substring);
       gmap.linkSet(key, value, substring);
-    } else if(value instanceof ObservableVector) {
-      let subvec = createVector(model, value);
+    } else if(gvalue instanceof ObservableVector) {
+      let subvec = createVector(model, gvalue);
+      gvalue.link(subvec);
       gmap.linkSet(key, value, subvec);
     } else {
-      gmap.set(key, value);
+      gmap.set(key, gvalue);
     }
   }
   return gmap;
