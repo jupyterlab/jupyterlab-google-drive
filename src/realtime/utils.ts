@@ -49,15 +49,13 @@ function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeM
     } else if(value instanceof ObservableString) {
       value.link(shadowValue as IObservableString);
     } else if(value instanceof ObservableVector) {
-      linkVectorItems(value as IObservableVector<Synchronizable>, 
-                            shadowValue as GoogleRealtimeVector<Synchronizable>);
-      value.link(shadowValue as IObservableVector<Synchronizable>);
+      value.link(shadowValue as GoogleRealtimeVector<Synchronizable>);
     }
   }
 }
 
 export
-function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchronizable>): GoogleRealtimeMap<Synchronizable> {
+function createMap(map: IObservableMap<Synchronizable>, model: gapi.drive.realtime.Model): GoogleRealtimeMap<Synchronizable> {
   let googleObject = model.createMap<GoogleSynchronizable>();
   let gmap = new GoogleRealtimeMap<Synchronizable>(
     googleObject, model, map.converters);
@@ -71,15 +69,15 @@ function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchro
       gvalue = value;
     }
     if(gvalue instanceof ObservableMap) {
-      let submap = createMap(model, gvalue);
+      let submap = createMap(gvalue, model);
       gvalue.link(submap);
       gmap.linkSet(key, value, submap);
     } else if(gvalue instanceof ObservableString) {
-      let substring = createString(model, gvalue);
+      let substring = createString(gvalue, model);
       gvalue.link(substring);
       gmap.linkSet(key, value, substring);
     } else if(gvalue instanceof ObservableVector) {
-      let subvec = createVector(model, gvalue);
+      let subvec = createVector(gvalue, model);
       gvalue.link(subvec);
       gmap.linkSet(key, value, subvec);
     } else {
@@ -89,33 +87,28 @@ function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchro
   return gmap;
 }
 
+/**
+ * Create a new GoogleRealtimeString, with `str`
+ * as the initial value.
+ */
 export
-function createString(model: gapi.drive.realtime.Model, str: IObservableString): GoogleRealtimeString {
+function createString(str: IObservableString, model: gapi.drive.realtime.Model): GoogleRealtimeString {
   let googleObject = model.createString(str.text);
   let gstr = new GoogleRealtimeString(googleObject);
   return gstr;
 }
 
+/**
+ * Given an IObservableVector, create a collaborative
+ * GoogleRealtimeVector that has identical entries.
+ */
 export
-function linkString(str: IObservableString, gstr: GoogleRealtimeString): void {
-  str.link(gstr);
-}
-
-export
-function linkVectorItems(vec: IObservableVector<Synchronizable>, gvec: GoogleRealtimeVector<Synchronizable>): void {
-  vec.clear();
-  for(let i=0; i<gvec.length; i++) {
-    let value: Synchronizable = gvec.at(i);
-    vec.pushBack(value);
-  }
-}
-
-
-export
-function createVector<Synchronizable>(model: gapi.drive.realtime.Model, vec: IObservableVector<Synchronizable>): GoogleRealtimeVector<Synchronizable> {
+function createVector<Synchronizable>(vec: IObservableVector<Synchronizable>, model: gapi.drive.realtime.Model): GoogleRealtimeVector<Synchronizable> {
+  //Create a new GoogleRealtimeVector
   let googleObject = model.createList<GoogleSynchronizable>();
   let gvec = new GoogleRealtimeVector<Synchronizable>(
-    googleObject, model, (vec as any)._converter);
+    googleObject, model, vec.converter);
+  //Copy the vectory items into the newly created vector.
   for(let i=0; i<vec.length; i++) {
     let value: Synchronizable = vec.at(i);
     gvec.pushBack(value);

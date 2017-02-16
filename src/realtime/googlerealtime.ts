@@ -59,8 +59,8 @@ import {
 } from './collaborator';
 
 import {
-  createVector, linkVectorItems, createMap,
-  linkMapItems, createString, linkString
+  createVector, createMap,
+  linkMapItems, createString
 } from './utils';
 
 declare let gapi : any;
@@ -272,10 +272,10 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       if(host.has(id)) {
         let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>;
         gmap = new GoogleRealtimeMap<Synchronizable>(
-          googleObject, this._model, (map as any)._converters);
+          googleObject, this._model, map.converters);
         linkMapItems(map, gmap);
       } else {
-        gmap = createMap(this._model, map);
+        gmap = createMap(map, this._model);
         host.set(id, gmap.googleObject);
       }
       map.link(gmap);
@@ -305,7 +305,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeString;;
         gstr = new GoogleRealtimeString(googleObject);
       } else {
-        gstr = createString(this._model, str);
+        gstr = createString(str, this._model);
         host.set(id, gstr);
       }
       str.link(gstr);
@@ -333,9 +333,8 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       if(host.has(id)) {
         let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>;
         gvec = new GoogleRealtimeVector<Synchronizable>(googleObject, this._model, (vec as any)._converter);
-        linkVectorItems(vec, gvec);
       } else {
-        gvec = createVector(this._model, vec);
+        gvec = createVector(vec, this._model);
         host.set(id, gvec.googleObject);
       }
       vec.link(gvec);
@@ -378,17 +377,6 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     this._doc = null;
     this._isDisposed = true;
   }
-
-  private _getGoogleObject(item: any): any {
-    if( item && item.isLinked ) {
-      return item._parent.googleObject;
-    } else if (item && item.googleObject) {
-      return item.googleObject;
-    } else {
-      return this._model.getRoot();
-    }
-  }
-
 
   private _isDisposed: boolean = false;
   private _collaborators: CollaboratorMap = null;

@@ -47,8 +47,7 @@ import {
 } from './googlerealtime';
 
 import {
-  createVector, linkVectorItems, createMap,
-  linkMapItems, createString, linkString,
+  createMap, createString,
   toGoogleSynchronizable, DefaultConverter
 } from './utils';
 
@@ -151,6 +150,10 @@ class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObj
    * @returns `false`.
    */
   readonly isLinked: boolean = false;
+
+  get converter(): IRealtimeConverter<T> {
+    return this._converter;
+  }
 
   /**
    * The length of the sequence.
@@ -653,7 +656,7 @@ class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObj
   private _createNewGoogleEntry(item: T): GoogleSynchronizable {
     let val: any = this._converter.to(item);
     if( val instanceof ObservableMap) {
-      let newItem = createMap(this._model, val as any);
+      let newItem = createMap(val as ObservableMap<Synchronizable>, this._model);
       (val as any).link(newItem);
       return toGoogleSynchronizable(newItem);
     } else {
