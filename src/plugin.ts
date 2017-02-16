@@ -19,7 +19,7 @@ import {
 
 import {
   ICommandPalette, IStateDB,
-  showDialog, Dialog
+  showDialog, Dialog, ILayoutRestorer
 } from '@jupyterlab/apputils';
 
 import {
@@ -50,6 +50,11 @@ import {
   GoogleDriveServiceManager
 } from './drive/contents';
 
+/**
+ * Google Drive filebrowser plugin state namespace.
+ */
+const NAMESPACE = 'google-drive-filebrowser';
+
 const realtimePlugin: JupyterLabPlugin<IRealtime> = {
   id: 'jupyter.services.realtime',
   requires: [ICommandPalette],
@@ -60,7 +65,7 @@ const realtimePlugin: JupyterLabPlugin<IRealtime> = {
 
 const fileBrowserPlugin: JupyterLabPlugin<IPathTracker> = {
   id: 'jupyter.services.google-drive',
-  requires: [IDocumentRegistry, IRealtime,  IStateDB],
+  requires: [IDocumentRegistry, IRealtime, ILayoutRestorer, IStateDB],
   provides: IPathTracker,
   activate: activateFileBrowser,
   autoStart: true
@@ -87,7 +92,7 @@ function activateRealtime(app: JupyterLab, commandPalette: ICommandPalette): IRe
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realtime: IRealtime, state: IStateDB): IPathTracker {
+function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realtime: IRealtime, restorer: ILayoutRestorer, state: IStateDB): IPathTracker {
   let { commands } = app;
   let serviceManager = new GoogleDriveServiceManager(registry);
 
@@ -115,6 +120,28 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
     manager: documentManager,
     model: fbModel
   });
+
+  // Add the file browser widget to the application restorer
+  restorer.add(fbWidget, NAMESPACE);
+
+  // Restore the state of the file browser on reload.
+  const key = `${NAMESPACE}:cwd`;
+  let connect = () => {
+    // Save the subsequent state of the file browser in the state database.
+    fbModel.pathChanged.connect((sender, args) => {
+      state.save(key, { path: args.newValue });
+    });
+  };
+  Promise.all([state.fetch(key), app.started, serviceManager.ready]).then(([cwd]) => {
+    if (!cwd) {
+      return;
+    }
+    let path = cwd['path'] as string;
+    return serviceManager.contents.get(path)
+      .then(() => fbModel.cd(path))
+      .catch(() => state.remove(key));
+  }).then(connect)
+    .catch(() => state.remove(key).then(connect));
 
   // Add a context menu to the dir listing.
   let node = fbWidget.node.getElementsByClassName('jp-DirListing-content')[0];
