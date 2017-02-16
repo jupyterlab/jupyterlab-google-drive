@@ -58,8 +58,9 @@ function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeM
 
 export
 function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchronizable>): GoogleRealtimeMap<Synchronizable> {
-  let gmap = new GoogleRealtimeMap<Synchronizable>(model, map.converters);
-  gmap.googleObject = model.createMap<GoogleSynchronizable>();
+  let googleObject = model.createMap<GoogleSynchronizable>();
+  let gmap = new GoogleRealtimeMap<Synchronizable>(
+    googleObject, model, map.converters);
   let keys = map.keys();
   for(let key of keys) {
     let value: Synchronizable = map.get(key);
@@ -90,8 +91,8 @@ function createMap(model: gapi.drive.realtime.Model, map: IObservableMap<Synchro
 
 export
 function createString(model: gapi.drive.realtime.Model, str: IObservableString): GoogleRealtimeString {
-  let gstr = new GoogleRealtimeString();
-  gstr.googleObject = model.createString(str.text);
+  let googleObject = model.createString(str.text);
+  let gstr = new GoogleRealtimeString(googleObject);
   return gstr;
 }
 
@@ -112,8 +113,9 @@ function linkVectorItems(vec: IObservableVector<Synchronizable>, gvec: GoogleRea
 
 export
 function createVector<Synchronizable>(model: gapi.drive.realtime.Model, vec: IObservableVector<Synchronizable>): GoogleRealtimeVector<Synchronizable> {
-  let gvec = new GoogleRealtimeVector<Synchronizable>(model, (vec as any)._converter);
-  gvec.googleObject = model.createList<GoogleSynchronizable>();
+  let googleObject = model.createList<GoogleSynchronizable>();
+  let gvec = new GoogleRealtimeVector<Synchronizable>(
+    googleObject, model, (vec as any)._converter);
   for(let i=0; i<vec.length; i++) {
     let value: Synchronizable = vec.at(i);
     gvec.pushBack(value);

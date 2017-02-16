@@ -13,10 +13,44 @@ import {
   GoogleRealtimeMap
 } from './realtimemap';
 
+import {
+  GoogleRealtimeObject
+} from './googlerealtime';
+
 declare let gapi : any;
 
 export
-class GoogleRealtimeString implements IObservableString {
+class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
+
+  constructor (str: gapi.drive.realtime.CollaborativeString) {
+    this._str = str;
+    //Add event listeners to the collaborativeString
+    this._str.addEventListener(
+      gapi.drive.realtime.EventType.TEXT_INSERTED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type : 'insert',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
+      });
+
+    this._str.addEventListener(
+      gapi.drive.realtime.EventType.TEXT_DELETED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          this.changed.emit({
+            type : 'remove',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
+    });
+  }
 
   /**
    * A signal emitted when the string has changed.
@@ -31,7 +65,7 @@ class GoogleRealtimeString implements IObservableString {
   readonly isLinkable: boolean = false;
 
   /**
-   * Whether this string is linkable.
+   * Whether this string is linked.
    *
    * @returns `false'
    */
@@ -63,36 +97,6 @@ class GoogleRealtimeString implements IObservableString {
    */
   get googleObject(): gapi.drive.realtime.CollaborativeString {
     return this._str;
-  }
-
-  set googleObject(str: gapi.drive.realtime.CollaborativeString) {
-    this._str = str;
-    //Add event listeners to the collaborativeString
-    this._str.addEventListener(
-      gapi.drive.realtime.EventType.TEXT_INSERTED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          this.changed.emit({
-            type : 'insert',
-            start: evt.index,
-            end: evt.index + evt.text.length,
-            value: evt.text
-          });
-        }
-      });
-
-    this._str.addEventListener(
-      gapi.drive.realtime.EventType.TEXT_DELETED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          this.changed.emit({
-            type : 'remove',
-            start: evt.index,
-            end: evt.index + evt.text.length,
-            value: evt.text
-          });
-        }
-    });
   }
 
   /**

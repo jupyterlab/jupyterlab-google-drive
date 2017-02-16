@@ -23,7 +23,7 @@ import {
 } from 'jupyterlab/lib/common/observablevector';
 
 import {
-  GoogleSynchronizable
+  GoogleSynchronizable, GoogleRealtimeObject
 } from './googlerealtime';
 
 import {
@@ -41,15 +41,48 @@ import {
 declare let gapi : any;
 
 export
-class GoogleRealtimeMap<T> implements IObservableMap<T> {
+class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
 
   /**
    * Constructor
    */
-  constructor( model: gapi.drive.realtime.Model, converters?: Map<string, IRealtimeConverter<T>>) {
-    this._converters = converters || new Map<string, IRealtimeConverter<T>>();
-    this._map = new ObservableMap<T>();
+  constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>, model: gapi.drive.realtime.Model, converters?: Map<string, IRealtimeConverter<T>>) {
     this._model = model;
+
+    //Use the provided converters, otherwise make an empty dummy map.
+    this._converters = converters || new Map<string, IRealtimeConverter<T>>();
+
+    //Create and populate the internal maps
+    this._map = new ObservableMap<T>();
+    this._gmap = map;
+    for (let key of this._gmap.keys()) {
+      let entry = this._createNewEntry(key, this._gmap.get(key));
+      this._map.set(key, entry);
+    }
+
+    //Hook up event listeners
+    this._gmap.addEventListener(
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+        if(!evt.isLocal) {
+          let changeType: ObservableMap.ChangeType;
+          if(evt.oldValue && evt.newValue) {
+            changeType = 'change';
+          } else if (evt.oldValue && !evt.newValue) {
+            changeType = 'remove';
+          } else {
+            changeType = 'add';
+          }
+          let entry = this._createNewEntry(evt.property, evt.newValue);
+          this._map.set(evt.property, entry);
+          this.changed.emit({
+            type: changeType,
+            key: evt.property,
+            oldValue: evt.oldValue,
+            newValue: evt.newValue
+          });
+        }
+      }
+    );
   }
 
   /**
@@ -58,18 +91,19 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
   changed: ISignal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>>;
 
   /**
-   * Get whether this map can be linked to another.
+   * Whether this map is linkable.
    *
-   * @returns `false`,
+   * @returns `false'
    */
   readonly isLinkable: boolean = false;
 
   /**
-   * Get whether this map is linked to another.
+   * Whether this map is linked.
    *
-   * @returns `false`,
+   * @returns `false'
    */
   readonly isLinked: boolean = false;
+
 
   readonly converters: Map<string, IRealtimeConverter<T>> = null;
 
@@ -93,39 +127,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
    */
   get googleObject(): gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> {
     return this._gmap;
-  }
-
-
-  set googleObject(map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
-    //Create and populate the internal maps
-    this._gmap = map;
-    for (let key of this._gmap.keys()) {
-      let entry = this._createNewEntry(key, this._gmap.get(key));
-      this._map.set(key, entry);
-    }
-
-    this._gmap.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
-        if(!evt.isLocal) {
-          let changeType: ObservableMap.ChangeType;
-          if(evt.oldValue && evt.newValue) {
-            changeType = 'change';
-          } else if (evt.oldValue && !evt.newValue) {
-            changeType = 'remove';
-          } else {
-            changeType = 'add';
-          }
-          let entry = this._createNewEntry(evt.property, evt.newValue);
-          this._map.set(evt.property, entry);
-          this.changed.emit({
-            type: changeType,
-            key: evt.property,
-            oldValue: evt.oldValue,
-            newValue: evt.newValue
-          });
-        }
-      }
-    );
   }
 
   /**
@@ -265,20 +266,17 @@ class GoogleRealtimeMap<T> implements IObservableMap<T> {
   private _createNewEntry(key: string, item: any): any {
     if(!item) return item;
     if(item.type && item.type==='List') {
-      let vec = new GoogleRealtimeVector<T>(this._model);
-      vec.googleObject = item;
+      let vec = new GoogleRealtimeVector<T>(item, this._model);
       if(this._converters.has(key)) {
         let newEntry = this._converters.get(key).from(vec);
         (this._converters.get(key).to(newEntry) as any).link(vec);
         return newEntry;
       } else return vec;
     } else if(item.type && item.type === 'EditableString') {
-      let str = new GoogleRealtimeString();
-      str.googleObject = item;
+      let str = new GoogleRealtimeString(item);
       return str;
     } else if(item.type && item.type === 'Map') {
-      let map = new GoogleRealtimeMap<T>(this._model);
-      map.googleObject = item;
+      let map = new GoogleRealtimeMap<T>(item, this._model);
       return map;
     } else {
       return item;

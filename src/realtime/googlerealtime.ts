@@ -270,8 +270,9 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let host = this._model.getRoot();
       let gmap: GoogleRealtimeMap<Synchronizable>;
       if(host.has(id)) {
-        gmap = new GoogleRealtimeMap<Synchronizable>(this._model, (map as any)._converters);
-        gmap.googleObject = host.get(id);
+        let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>;
+        gmap = new GoogleRealtimeMap<Synchronizable>(
+          googleObject, this._model, (map as any)._converters);
         linkMapItems(map, gmap);
       } else {
         gmap = createMap(this._model, map);
@@ -301,8 +302,8 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let host = this._model.getRoot();
 
       if(host.has(id)) {
-        gstr = new GoogleRealtimeString();
-        gstr.googleObject = host.get(id);
+        let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeString;;
+        gstr = new GoogleRealtimeString(googleObject);
       } else {
         gstr = createString(this._model, str);
         host.set(id, gstr);
@@ -330,8 +331,8 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
       let gvec: GoogleRealtimeVector<Synchronizable>;
       let host = this._model.getRoot();
       if(host.has(id)) {
-        gvec = new GoogleRealtimeVector<Synchronizable>(this._model, (vec as any)._converter);
-        gvec.googleObject = host.get(id);
+        let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>;
+        gvec = new GoogleRealtimeVector<Synchronizable>(googleObject, this._model, (vec as any)._converter);
         linkVectorItems(vec, gvec);
       } else {
         gvec = createVector(this._model, vec);
@@ -399,5 +400,23 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
 }
 
 
+/**
+ * An base class for wrappers around collaborative strings,
+ * maps, and lists.
+ */
+export
+interface GoogleRealtimeObject {
+  /**
+   * Access to the underlying collaborative object.
+   */
+  readonly googleObject: gapi.drive.realtime.CollaborativeObject;
+}
+
+/**
+ * A type alias for the types of objects which may be inserted into
+ * a Google Realtime Map/List and function correctly. More complex
+ * models/objects will not work, and must be converted to/from one
+ * of these types before insertion.
+ */
 export
 type GoogleSynchronizable = JSONObject | gapi.drive.realtime.CollaborativeObject;

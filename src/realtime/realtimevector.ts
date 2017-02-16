@@ -43,7 +43,7 @@ import {
 } from './realtimestring';
 
 import {
-  GoogleSynchronizable
+  GoogleSynchronizable, GoogleRealtimeObject
 } from './googlerealtime';
 
 import {
@@ -56,22 +56,17 @@ declare let gapi : any;
 
 
 export
-class GoogleRealtimeVector<T> implements IObservableVector<T> {
+class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
-  constructor(model: gapi.drive.realtime.Model, converter?: IRealtimeConverter<T> ) {
+  constructor(vector: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>, model: gapi.drive.realtime.Model, converter?: IRealtimeConverter<T> ) {
+    this._model = model;
+    //Use the converter if provided, otherwise use the default converter
     this._converter = converter ||
       new DefaultConverter<T>();
-    this._model = model;
-  }
 
-  get factory(): (value?: JSONObject)=>T {
-    return null;
-  }
-
-  set googleObject(vec: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
     //Create and populate the internal vectors
     this._vec = new ObservableVector<T>();
-    this._gvec = vec;
+    this._gvec = vector;
     
     let vals = this._fromGoogleSynchronizableArray(this._gvec.asArray());
     this._vec.pushAll(vals);
@@ -132,6 +127,10 @@ class GoogleRealtimeVector<T> implements IObservableVector<T> {
           });
         }
       });
+  }
+
+  get factory(): (value?: JSONObject)=>T {
+    return null;
   }
 
   /**
@@ -638,15 +637,12 @@ class GoogleRealtimeVector<T> implements IObservableVector<T> {
   private _createNewEntry(item: any): any {
     if(!item) return item;
     else if(item.type && item.type === 'EditableString') {
-      let str = new GoogleRealtimeString();
-      str.googleObject = item;
+      let str = new GoogleRealtimeString(item);
       return str;
     } else if(item.type && item.type === 'Map') {
-      let map = new GoogleRealtimeMap<T>(this._model);
-      map.googleObject = item;
+      let map = new GoogleRealtimeMap<T>(item, this._model);
       let newEntry = this._converter.from(map);
-      map = new GoogleRealtimeMap<T>(this._model, (this._converter.to(newEntry) as any).converters);
-      map.googleObject = item;
+      map = new GoogleRealtimeMap<T>(item, this._model, (this._converter.to(newEntry) as any).converters);
       (this._converter.to(newEntry) as any).link(map)
       return newEntry;
     } else {
