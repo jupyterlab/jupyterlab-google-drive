@@ -59,8 +59,7 @@ import {
 } from './collaborator';
 
 import {
-  createVector, createMap,
-  linkMapItems, createString
+  createVector, createMap, createString
 } from './utils';
 
 declare let gapi : any;
@@ -273,7 +272,6 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
         let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>;
         gmap = new GoogleRealtimeMap<Synchronizable>(
           googleObject, this._model, map.converters);
-        linkMapItems(map, gmap);
       } else {
         gmap = createMap(map, this._model);
         host.set(id, gmap.googleObject);
