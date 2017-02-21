@@ -48,9 +48,6 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       let initialSessions = new Set<string>();
       for(let i=0; i<initialCollaborators.length; i++) {
         initialSessions.add(initialCollaborators[i].sessionId);
-        if(initialCollaborators[i].isMe) {
-          this._localCollaborator = initialCollaborators[i];
-        }
       }
       for(let k of this._map.keys()) {
         if(!initialSessions.has(k)) {
@@ -59,31 +56,32 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       }
       //Now add the remaining collaborators
       for(let i=0; i<initialCollaborators.length; i++) {
-        let collaborator = initialCollaborators[i];
-        if(!this._map.has(collaborator.sessionId)) {
-          this._map.set(collaborator.sessionId, {
-            userId: collaborator.userId,
-            sessionId: collaborator.sessionId,
-            displayName: collaborator.displayName,
-            color: collaborator.color,
-            position: {}
-          });
+        let collaborator: GoogleRealtimeCollaborator = {
+          userId: initialCollaborators[i].userId,
+          sessionId: initialCollaborators[i].sessionId,
+          displayName: initialCollaborators[i].displayName,
+          color: initialCollaborators[i].color
         }
+        if(!this._map.has(collaborator.sessionId)) {
+          this._map.set(collaborator.sessionId, collaborator);
+          if(initialCollaborators[i].isMe) {
+            this._localCollaborator = collaborator;
+          }
+        } 
       }
 
       //Add event listeners to the CollaboratorMap
       this._doc.addEventListener(
         gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
         (evt : any) => {
-          let collaborator = evt.collaborator;
-          this.set(collaborator.sessionId, {
-            userId: collaborator.userId,
-            sessionId: collaborator.sessionId,
-            displayName: collaborator.displayName,
-            color: collaborator.color,
-            position: {}
-          });
-          if(collaborator.isMe) {
+          let collaborator: GoogleRealtimeCollaborator = {
+            userId: evt.collaborator.userId,
+            sessionId: evt.collaborator.sessionId,
+            displayName: evt.collaborator.displayName,
+            color: evt.collaborator.color
+          }
+          this.set(collaborator.sessionId, collaborator);
+          if(evt.collaborator.isMe) {
             this._localCollaborator = collaborator;
           }
         }
@@ -105,9 +103,6 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
               changeType = 'remove';
             } else {
               changeType = 'add';
-            }
-            if(evt.newValue && evt.newValue.isMe) {
-              this._localCollaborator = evt.newValue;
             }
             this.changed.emit({
               type: changeType,
@@ -320,12 +315,4 @@ class GoogleRealtimeCollaborator implements ICollaborator {
    * UI elements.
    */
   readonly color: string;
-
-  /**
-   * A representation of the position of the collaborator
-   * in the collaborative document. This can include, but
-   * is not limited to, the cursor position. Different
-   * widgets are responsible for setting/reading this value.
-   */
-  position: any;
 }
