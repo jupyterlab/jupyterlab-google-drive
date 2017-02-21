@@ -19,8 +19,12 @@ import {
 } from 'jupyterlab/lib/common/observablemap';
 
 import {
-  IObservableVector
+  IObservableVector, ObservableVector
 } from 'jupyterlab/lib/common/observablevector';
+
+import {
+  IObservableString, ObservableString
+} from 'jupyterlab/lib/common/observablestring';
 
 import {
   GoogleSynchronizable, GoogleRealtimeObject
@@ -35,7 +39,7 @@ import {
 } from './realtimestring';
 
 import {
-  toGoogleSynchronizable, DefaultConverter
+  createMap, createString, createVector
 } from './utils';
 
 declare let gapi : any;
@@ -231,11 +235,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     //no-op
   }
 
-  linkSet(key: string, val: any, shadowVal: any): void {
-    this._map.set(key, val as T);
-    this._gmap.set(key, toGoogleSynchronizable(shadowVal));
-  }
-
   /**
    * Set the ObservableMap to an empty map.
    */
@@ -284,11 +283,24 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   }
 
   private _createNewGoogleEntry(key: string, item: any): GoogleSynchronizable {
+    let entry: Synchronizable = item;
     if(this._converters.has(key)) {
-      let newItem: Synchronizable = this._converters.get(key).to(item);
-      return toGoogleSynchronizable(newItem);
+      entry = this._converters.get(key).to(item);
+    }
+    if (entry instanceof ObservableMap) {
+      let gmap = createMap(entry, this._model);
+      (entry as ObservableMap<Synchronizable>).link(gmap);
+      return gmap.googleObject;
+    } else if (entry instanceof ObservableString) {
+      let gstr = createString(entry, this._model);
+      (entry as ObservableString).link(gstr);
+      return gstr.googleObject;
+    } else if (entry instanceof ObservableVector) {
+      let gvec = createVector(entry, this._model);
+      (entry as ObservableVector<any>).link(gvec);
+      return gvec.googleObject;
     } else {
-      return item;
+      return entry as GoogleSynchronizable;
     }
   }
 

@@ -37,24 +37,6 @@ import {
 declare let gapi : any;
 
 export
-function linkMapItems(map: IObservableMap<Synchronizable>, gmap: GoogleRealtimeMap<Synchronizable>): void {
-  let keys = map.keys();
-  for(let key of keys) {
-    let value: Synchronizable = map.get(key);
-    let shadowValue: Synchronizable = gmap.get(key);
-    if(value instanceof ObservableMap) {
-      linkMapItems(value as IObservableMap<Synchronizable>, 
-                         shadowValue as GoogleRealtimeMap<Synchronizable>);
-      value.link(shadowValue as IObservableMap<Synchronizable>);
-    } else if(value instanceof ObservableString) {
-      value.link(shadowValue as IObservableString);
-    } else if(value instanceof ObservableVector) {
-      value.link(shadowValue as GoogleRealtimeVector<Synchronizable>);
-    }
-  }
-}
-
-export
 function createMap(map: IObservableMap<Synchronizable>, model: gapi.drive.realtime.Model): GoogleRealtimeMap<Synchronizable> {
   let googleObject = model.createMap<GoogleSynchronizable>();
   let gmap = new GoogleRealtimeMap<Synchronizable>(
@@ -62,27 +44,7 @@ function createMap(map: IObservableMap<Synchronizable>, model: gapi.drive.realti
   let keys = map.keys();
   for(let key of keys) {
     let value: Synchronizable = map.get(key);
-    let gvalue: any;
-    if(map.converters.has(key)) {
-      gvalue = map.converters.get(key).to(value);
-    } else {
-      gvalue = value;
-    }
-    if(gvalue instanceof ObservableMap) {
-      let submap = createMap(gvalue, model);
-      gvalue.link(submap);
-      gmap.linkSet(key, value, submap);
-    } else if(gvalue instanceof ObservableString) {
-      let substring = createString(gvalue, model);
-      gvalue.link(substring);
-      gmap.linkSet(key, value, substring);
-    } else if(gvalue instanceof ObservableVector) {
-      let subvec = createVector(gvalue, model);
-      gvalue.link(subvec);
-      gmap.linkSet(key, value, subvec);
-    } else {
-      gmap.set(key, gvalue);
-    }
+    gmap.set(key, value);
   }
   return gmap;
 }
