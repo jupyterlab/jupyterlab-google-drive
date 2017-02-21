@@ -94,7 +94,7 @@ function activateRealtime(app: JupyterLab, commandPalette: ICommandPalette): IRe
     caption: 'Share this file',
     execute: ()=> {
       let widget = app.shell.currentWidget;
-      let model = realtimeServices.checkTrackers(widget);
+      let [model, cb] = realtimeServices.checkTrackers(widget);
       if(model) {
         realtimeServices.addCollaborator(model);
       }
@@ -122,7 +122,7 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
         app.shell.addToMainArea(widget);
       }
       app.shell.activateMain(widget.id);
-      let model = realtime.checkTrackers(widget);
+      let [model, callback] = realtime.checkTrackers(widget);
       if(model) {
         let context: any = (widget as any).context;
         let path: string = context.path;
@@ -130,10 +130,7 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
         context.ready.then(()=>{
           getResourceForPath(path).then( (resource: any)=>{
             realtime.shareModel(model, resource.id).then( ()=>{
-              //model.realtimeHandler.ready.then(()=>{
-              //  (widget as any).editor.uuid =
-              //    model.realtimeHandler.localCollaborator.sessionId;
-              //});
+              callback(widget);
             });
           });
         });

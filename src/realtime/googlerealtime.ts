@@ -151,8 +151,12 @@ class GoogleRealtime implements IRealtime {
    *   and returns an object that implements `IRealtimeModel`,
    *   the actual collaborative data model.
    */
-  addTracker(tracker: InstanceTracker<Widget>, getModel: (widget: Widget)=>IRealtimeModel): void {
-    this._trackerSet.add([tracker, getModel]);
+  addTracker(tracker: InstanceTracker<Widget>, getModel: (widget: Widget)=>IRealtimeModel, callback?: (widget: Widget)=>void): void {
+    let cb = (widget: Widget)=>{};
+    if(callback) {
+      cb = callback;
+    }
+    this._trackerSet.add([tracker, getModel, cb]);
   }
 
   /**
@@ -165,14 +169,16 @@ class GoogleRealtime implements IRealtime {
    * @returns an `IRealtimeModel` if `widget` belongs
    * to one of the realtime trackers, `null` otherwise.
    */
-  checkTrackers( widget: Widget ): IRealtimeModel {
+  checkTrackers( widget: Widget ): [IRealtimeModel, (widget: Widget)=>void] {
     let model: IRealtimeModel = null;
-    this._trackerSet.forEach( ([tracker, getModel]) => {
+    let cb: (widget: Widget)=>void = null;
+    this._trackerSet.forEach( ([tracker, getModel, callback]) => {
       if (tracker.has(widget)) {
         model = getModel(widget);
+        cb = callback;
       }
     });
-    return model;
+    return [model, cb];
   }
 
   protected _shareRealtimeDocument( model: IRealtimeModel, emailAddress : string) : Promise<void> {
@@ -191,7 +197,7 @@ class GoogleRealtime implements IRealtime {
     });
   }
 
-  private _trackerSet = new Set<[InstanceTracker<Widget>, (widget: Widget)=>IRealtimeModel]>();
+  private _trackerSet = new Set<[InstanceTracker<Widget>, (widget: Widget)=>IRealtimeModel, (widget: Widget)=>void]>();
 }
 
 export
