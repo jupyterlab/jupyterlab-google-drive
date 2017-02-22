@@ -29,6 +29,8 @@ const INSTALL_SCOPE = 'https://www.googleapis.com/auth/drive.install'
 const SCOPE = [FULL_OAUTH_SCOPE];
 //const SCOPE = [FILES_OAUTH_SCOPE, METADATA_OAUTH_SCOPE];
 
+const RATE_LIMIT_ERROR = 403;
+
 export
 let gapiLoaded = new Promise<void>( (resolve, reject) => {
   //get the gapi script from Google
@@ -55,8 +57,15 @@ let gapiAuthorized = new utils.PromiseDelegate<void>();
 export
 let driveReady = gapiAuthorized.promise;
 
+const MAX_API_REQUESTS = 7;
+const BACKOFF_FACTOR = 2.0;
+const INITIAL_DELAY = 250; //250 ms
+
 export
-function driveApiRequest( request: any, successCode: number = 200) : Promise<any> {
+function driveApiRequest( request: any, successCode: number = 200, attemptNumber: number = 0) : Promise<any> {
+  if(attemptNumber === MAX_API_REQUESTS) {
+    return Promise.reject(new Error('Maximum number of API retries reached.'));
+  }
   return new Promise<any>((resolve, reject)=>{
     driveReady.then(()=>{
       request.then( (response: any)=> {
@@ -68,9 +77,19 @@ function driveApiRequest( request: any, successCode: number = 200) : Promise<any
           resolve(response.result);
         }
       }, (response: any)=>{ //Some other error
-        console.log("gapi: Drive API Error.");
-        console.log(response, request);
-        reject(response);
+        if(response.status === RATE_LIMIT_ERROR) {
+          console.log("gapi: Throttling...");
+          window.setTimeout( ()=>{
+            //Try again after a delay.
+            driveApiRequest(request, successCode, attemptNumber+1)
+            .then((result: any)=>{
+              resolve(result);
+            });
+          }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
+        } else {
+          console.log(response, request);
+          reject(response);
+        }
       });
     });
   });

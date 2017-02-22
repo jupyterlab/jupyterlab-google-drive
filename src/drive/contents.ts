@@ -394,8 +394,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
     });
   }
 
-  private _lastRevisionMap: any = {};
-  private _baseUrl = '';
+  private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
   private _ajaxSettings: IAjaxSettings = null;
   private _authorized: Promise<void> = null;
