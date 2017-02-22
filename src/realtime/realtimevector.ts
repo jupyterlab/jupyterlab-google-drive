@@ -649,7 +649,7 @@ class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObj
       (this._converter.to(newEntry) as any).link(map)
       return newEntry;
     } else {
-      return item;
+      return this._converter.from(item);
     }
   }
 
