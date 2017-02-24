@@ -775,7 +775,18 @@ function downloadResource(resource: any): Promise<any> {
    fileId: resource.id,
    alt: 'media'
   });
-  return driveApiRequest(request);
+  return driveApiRequest(request).then((result:any)=>{
+    //If the request failed, there may be insufficient
+    //permissions to download this file. Try to choose
+    //it with a picker to explicitly grant permission.
+    if(result === false) {
+      return pickFile(resource).then(()=>{
+        return downloadResource(resource);
+      });
+    } else {
+      return result;
+    }
+  });
 }
 
 namespace Private {
