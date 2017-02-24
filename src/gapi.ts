@@ -34,7 +34,7 @@ let gapiLoaded = new Promise<void>( (resolve, reject) => {
   $.getScript('https://apis.google.com/js/api.js')
   .done( (script, textStatus)=> {
     //load overall API
-    (window as any).gapi.load('auth:client,drive-realtime,drive-share', ()=> {
+    (window as any).gapi.load('auth:client,drive-realtime,drive-share,picker', ()=> {
       //load client library (for some reason different
       //from the toplevel API)
       gapi.client.load('drive', 'v3').then(()=>{
@@ -151,5 +151,33 @@ function authorize (): Promise<void> {
       client_id: CLIENT_ID,
       scope: SCOPE,
       immediate: true}, handleAuthorization);
+  });
+}
+
+export
+function pickFile(resource: any): Promise<any> {
+  return new Promise<any>((resolve,reject)=>{
+    let pickerCallback = (response: any)=> {
+      if(response.action === 'picked') {
+        resolve();
+      }
+    }
+    driveReady.then(()=>{
+      showDialog({
+        title: 'Proceed to Google Picker?',
+        okText: 'OK'
+      }).then( result => {
+      let picker = new google.picker.PickerBuilder()
+        .addView(google.picker.ViewId.DOCS)
+        .enableFeature(google.picker.Feature.NAV_HIDDEN)
+        .setAppId(APP_ID)
+      //  .setDeveloperKey(DEVELOPER_KEY)
+        .setOAuthToken(gapi.auth.getToken()['access_token'])
+        .setCallback(pickerCallback)
+        //.setOrigin(window.location.protocol+'//'+window.location.host)
+        .build();
+      picker.setVisible(true);
+      });
+    });
   });
 }

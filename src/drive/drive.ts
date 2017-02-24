@@ -17,7 +17,7 @@ import {
 } from 'jupyterlab/lib/common/dialog';
 
 import {
-  driveApiRequest, driveReady
+  driveApiRequest, driveReady, pickFile
 } from '../gapi';
 
 //TODO: Complete gapi typings and commit upstream
