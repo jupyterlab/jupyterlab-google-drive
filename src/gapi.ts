@@ -15,19 +15,16 @@ import {
 
 //TODO: Complete gapi typings and commit upstream
 declare let gapi: any;
-
-export
-enum FileType {FILE=1, FOLDER=2};
+declare let google: any;
 
 const CLIENT_ID = '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.googleusercontent.com';
+const APP_ID = '625147942732';
+const DEVELOPER_KEY = 'AIzaSyCTshlUaUbTvNQAktOsc6ql-wJFa4DX77g'
 
-const FULL_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive';
 const FILES_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const METADATA_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.metadata';
-const INSTALL_SCOPE = 'https://www.googleapis.com/auth/drive.install'
 
-const SCOPE = [FULL_OAUTH_SCOPE];
-//const SCOPE = [FILES_OAUTH_SCOPE, METADATA_OAUTH_SCOPE];
+const SCOPE = [FILES_OAUTH_SCOPE, METADATA_OAUTH_SCOPE];
 
 const RATE_LIMIT_ERROR = 403;
 
@@ -74,7 +71,16 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
           console.log(response, request);
           reject(response.result);
         } else { //Success
-          resolve(response.result);
+          //For some reason, response.result is 
+          //sometimes empty, but the required
+          //result is in response.body. This is
+          //not really documented anywhere I can
+          //find, but this seems to fix it.
+          if(response.result === false) {
+            resolve(response.body);
+          } else {
+            resolve(response.result);
+          }
         }
       }, (response: any)=>{ //Some other error
         if(response.status === RATE_LIMIT_ERROR) {

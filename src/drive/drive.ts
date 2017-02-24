@@ -204,7 +204,8 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
     let mimeType: string;
     let format: Contents.FileFormat;
     if(resource.mimeType === 'application/ipynb' ||
-       resource.mimeType === 'application/json') {
+       resource.mimeType === 'application/json' ||
+       resource.name.indexOf('.ipynb') !== -1) {
       contentType = 'notebook';
       format = 'json';
       mimeType = null;
