@@ -770,23 +770,26 @@ function getResourceForPath(path: string): Promise<any> {
  *
  * @returns a promise fulfilled with the contents of the file.
  */
-function downloadResource(resource: any): Promise<any> {
+function downloadResource(resource: any, picked: boolean = false): Promise<any> {
   let request: any = gapi.client.drive.files.get({
    fileId: resource.id,
    alt: 'media'
   });
   return driveApiRequest(request).then((result: any)=>{
     return result;
-  }).catch((result: any)=>{
+  }).catch((error: any)=>{
     //If the request failed, there may be insufficient
     //permissions to download this file. Try to choose
     //it with a picker to explicitly grant permission.
-    if(result.error.errors[0].reason === 'appNotAuthorizedToFile') {
+    if(error.xhr.responseText === 'appNotAuthorizedToFile'
+       && picked === false) {
       return pickFile(resource).then(()=>{
-        return downloadResource(resource);
+        return downloadResource(resource, true);
+      }).catch(()=>{
+        throw error;
       });
     } else {
-      return result;
+      throw error;
     }
   });
 }

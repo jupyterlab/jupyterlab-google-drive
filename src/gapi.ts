@@ -71,7 +71,7 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
         if(response.status !== successCode) { //HTTP error
           console.log("gapi: Drive API error: ", response.status);
           console.log(response, request);
-          reject(response.result);
+          reject(makeError(response.result));
         } else { //Success
           //For some reason, response.result is 
           //sometimes empty, but the required
@@ -97,7 +97,7 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
         } else {
           console.log(response, request);
-          reject(response.result);
+          reject(makeError(response.result));
         }
       });
     });
@@ -160,8 +160,20 @@ export
 function pickFile(resource: any): Promise<any> {
   return new Promise<any>((resolve,reject)=>{
     let pickerCallback = (response: any)=> {
-      if(response.action === 'picked') {
-        resolve();
+      //Resolve if the user has picked the selected file.
+      if(response[google.picker.Response.ACTION] ===
+         google.picker.Action.PICKED &&
+         response[google.picker.Response.DOCUMENTS][0][google.picker.Document.ID] ===
+         resource.id) {
+        resolve(void 0);
+      } else if(response[google.picker.Response.ACTION] ===
+         google.picker.Action.PICKED &&
+         response[google.picker.Response.DOCUMENTS][0][google.picker.Document.ID] !==
+         resource.id) {
+        reject(new Error('Wrong file selected for permissions'));
+      } else if(response[google.picker.Response.ACTION] ===
+         google.picker.Action.CANCEL) {
+        reject(new Error('Insufficient permisson to open file'));
       }
     }
     driveReady.then(()=>{
@@ -181,4 +193,18 @@ function pickFile(resource: any): Promise<any> {
       picker.setVisible(true);
     });
   });
+}
+
+export
+function makeError(result: any): utils.IAjaxError {
+  let xhr = {
+    status: result.error.code,
+    responseText: result.error.errors[0].reason
+  };
+  return {
+    event: undefined,
+    xhr: xhr as XMLHttpRequest,
+    ajaxSettings: null,
+    throwError: xhr.responseText
+  };
 }
