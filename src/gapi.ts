@@ -61,6 +61,7 @@ const INITIAL_DELAY = 250; //250 ms
 export
 function driveApiRequest( request: any, successCode: number = 200, attemptNumber: number = 0) : Promise<any> {
   if(attemptNumber === MAX_API_REQUESTS) {
+    console.log(request);
     return Promise.reject(new Error('Maximum number of API retries reached.'));
   }
   return new Promise<any>((resolve, reject)=>{

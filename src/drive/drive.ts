@@ -139,6 +139,9 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
     return driveApiRequest(request);
   }).then( (result: any)=>{
     console.log("gapi: uploaded document to "+result.id);
+    //Update the cache
+    Private.resourceCache.set(path, result);
+
     return contentsModelFromFileResource(result, path, true);
   });
 }
@@ -178,6 +181,13 @@ function contentsModelFromFileResource(resource: any, path: string, includeConte
     if (includeContents) {
       let fileList: any[] = [];
       return searchDirectory(path).then( (resources: any[])=>{
+        //Update the cache.
+        Private.clearCacheDirectory(path);
+        for(let resource of resources) {
+          let filePath: string = (path ? path+'/' : '') + resource.name;
+          Private.resourceCache.set(filePath, resource);
+        }
+
         let currentContents = Promise.resolve({});
 
         for(let i = 0; i<resources.length; i++) {
@@ -346,6 +356,9 @@ function deleteFile(path: string): Promise<void> {
     let request: any = gapi.client.drive.files.delete({fileId: resource.id});
     return driveApiRequest(request, 204);
   }).then(()=>{
+    //Update the cache
+    Private.resourceCache.delete(path);
+
     return void 0;
   });
 }
@@ -440,7 +453,11 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
         });
         return driveApiRequest(request);
       }
-    }).then(()=>{
+    }).then((response:any)=>{
+      //Update the cache
+      Private.resourceCache.delete(oldPath);
+      Private.resourceCache.set(newPath, response);
+
       return contentsModelForPath(newPath);
     });
   }
@@ -707,6 +724,11 @@ function splitPath(path: string): string[] {
  */
 export
 function getResourceForPath(path: string): Promise<any> {
+  //First check the cache.
+  if( Private.resourceCache.has(path)) {
+    return Promise.resolve(Private.resourceCache.get(path));
+  }
+
   let components = splitPath(path);
 
   if (components.length === 0) {
@@ -734,6 +756,8 @@ function getResourceForPath(path: string): Promise<any> {
       currentResource = getResource(component, currentResource);
     }
 
+    //Update the cache
+    Private.resourceCache.set(path, currentResource);
     //Resolve with the final value of currentResource.
     return currentResource;
   }
@@ -752,4 +776,33 @@ function downloadResource(resource: any): Promise<any> {
    alt: 'media'
   });
   return driveApiRequest(request);
+}
+
+namespace Private {
+  /**
+   * A Map associating file paths with cached files
+   * resources. This can significantly cut down on
+   * API requests.
+   */
+  export
+  let resourceCache = new Map<string, any>();
+
+  /**
+   * When we list the contents of a directory we can
+   * use that opportunity to refresh the cached values
+   * for that directory. This function clears all
+   * the cached resources that are in a given directory.
+   */
+  export
+  function clearCacheDirectory(path: string): void {
+    //TODO: my TS compiler complains here?
+    let keys = (resourceCache as any).keys();
+    for(let key of keys) {
+      let enclosingFolderPath =
+        utils.urlPathJoin(...splitPath(key).slice(0,-1));
+      if(path === enclosingFolderPath) {
+        resourceCache.delete(key);
+      }
+    }
+  }
 }
