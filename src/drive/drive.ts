@@ -775,11 +775,13 @@ function downloadResource(resource: any): Promise<any> {
    fileId: resource.id,
    alt: 'media'
   });
-  return driveApiRequest(request).then((result:any)=>{
+  return driveApiRequest(request).then((result: any)=>{
+    return result;
+  }).catch((result: any)=>{
     //If the request failed, there may be insufficient
     //permissions to download this file. Try to choose
     //it with a picker to explicitly grant permission.
-    if(result === false) {
+    if(result.error.errors[0].reason === 'appNotAuthorizedToFile') {
       return pickFile(resource).then(()=>{
         return downloadResource(resource);
       });

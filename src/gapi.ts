@@ -26,7 +26,8 @@ const METADATA_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.metadata';
 
 const SCOPE = [FILES_OAUTH_SCOPE, METADATA_OAUTH_SCOPE];
 
-const RATE_LIMIT_ERROR = 403;
+const FORBIDDEN_ERROR = 403;
+const RATE_LIMIT_REASON = 'rateLimitExceeded';
 
 export
 let gapiLoaded = new Promise<void>( (resolve, reject) => {
@@ -84,7 +85,8 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
           }
         }
       }, (response: any)=>{ //Some other error
-        if(response.status === RATE_LIMIT_ERROR) {
+        if(response.status === FORBIDDEN_ERROR &&
+           response.result.error.errors[0].reason === RATE_LIMIT_REASON) {
           console.log("gapi: Throttling...");
           window.setTimeout( ()=>{
             //Try again after a delay.
@@ -95,7 +97,7 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
         } else {
           console.log(response, request);
-          reject(response);
+          reject(response.result);
         }
       });
     });
@@ -171,10 +173,8 @@ function pickFile(resource: any): Promise<any> {
         .addView(google.picker.ViewId.DOCS)
         .enableFeature(google.picker.Feature.NAV_HIDDEN)
         .setAppId(APP_ID)
-      //  .setDeveloperKey(DEVELOPER_KEY)
         .setOAuthToken(gapi.auth.getToken()['access_token'])
         .setCallback(pickerCallback)
-        //.setOrigin(window.location.protocol+'//'+window.location.host)
         .build();
       picker.setVisible(true);
       });
