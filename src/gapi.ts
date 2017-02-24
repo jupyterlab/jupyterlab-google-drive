@@ -165,19 +165,20 @@ function pickFile(resource: any): Promise<any> {
       }
     }
     driveReady.then(()=>{
-      showDialog({
-        title: 'Proceed to Google Picker?',
-        okText: 'OK'
-      }).then( result => {
+      let pickerView = new google.picker.DocsView(google.picker.ViewId.DOCS)
+          .setMode(google.picker.DocsViewMode.LIST)
+          .setParent(resource.parents[0])
+          .setQuery(resource.name);
+
       let picker = new google.picker.PickerBuilder()
-        .addView(google.picker.ViewId.DOCS)
+        .addView(pickerView)
         .enableFeature(google.picker.Feature.NAV_HIDDEN)
         .setAppId(APP_ID)
         .setOAuthToken(gapi.auth.getToken()['access_token'])
+        .setTitle('Select to authorize opening this file with JupyterLab...')
         .setCallback(pickerCallback)
         .build();
       picker.setVisible(true);
-      });
     });
   });
 }
