@@ -99,18 +99,6 @@ class GoogleDriveContentsManager implements Contents.IManager {
   }
 
   /**
-   * Get a copy of the default ajax settings for the contents manager.
-   */
-  get ajaxSettings(): IAjaxSettings {
-    return {} as IAjaxSettings;
-  }
-  /**
-   * Set the default ajax settings for the contents manager.
-   */
-  set ajaxSettings(value: IAjaxSettings) {
-  }
-
-  /**
    * Get a file or directory.
    *
    * @param path: The path to the file.
@@ -396,7 +384,6 @@ class GoogleDriveContentsManager implements Contents.IManager {
 
   private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
-  private _ajaxSettings: IAjaxSettings = null;
   private _authorized: Promise<void> = null;
   private _docRegistry: IDocumentRegistry = null;
 }
