@@ -7,8 +7,8 @@ import {
 } from '@jupyterlab/services';
 
 import {
-  clearSignalData, defineSignal, ISignal
-} from 'phosphor/lib/core/signaling';
+  Signal, ISignal
+} from '@phosphor/signaling';
 
 import {
   IServiceManager
@@ -71,7 +71,9 @@ class GoogleDriveContentsManager implements Contents.IManager {
   /**
    * A signal emitted when a file operation takes place.
    */
-  fileChanged: ISignal<this, Contents.IChangedArgs>;
+  get fileChanged(): ISignal<this, Contents.IChangedArgs> {
+    return this._fileChanged;
+  }
 
   /**
    * Test whether the manager has been disposed.
@@ -88,7 +90,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
       return;
     }
     this._isDisposed = true;
-    clearSignalData(this);
+    Signal.clearData(this);
   }
 
   /**
@@ -192,7 +194,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
       path = utils.urlPathJoin(path, name);
       return drive.uploadFile(path, model as Contents.IModel, false);
     }).then((contents: Contents.IModel)=>{
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'new',
         oldValue: null,
         newValue: contents
@@ -210,7 +212,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    */
   delete(path: string): Promise<void> {
     return drive.deleteFile(path).then(()=>{
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'delete',
         oldValue: { path },
         newValue: null
@@ -234,7 +236,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
       return this.get(path);
     } else {
       return drive.moveFile(path, newPath).then((contents: Contents.IModel)=>{
-        this.fileChanged.emit({
+        this._fileChanged.emit({
           type: 'rename',
           oldValue: { path },
           newValue: contents
@@ -270,7 +272,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
       //The file does not exist already, create a new one.
       return drive.uploadFile(path, options, false)
     }).then((contents)=>{
-      this.fileChanged.emit({
+      this._fileChanged.emit({
         type: 'save',
         oldValue: null,
         newValue: contents
@@ -386,7 +388,5 @@ class GoogleDriveContentsManager implements Contents.IManager {
   private _isDisposed = false;
   private _authorized: Promise<void> = null;
   private _docRegistry: IDocumentRegistry = null;
+  private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }
-
-// Define the signals for the `GoogleDriveContentsManager` class.
-defineSignal(GoogleDriveContentsManager.prototype, 'fileChanged');

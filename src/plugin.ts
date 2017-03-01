@@ -3,15 +3,15 @@
 
 import {
   each, map, toArray
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   Menu
-} from 'phosphor/lib/ui/menu';
+} from '@phosphor/widgets';
 
 import {
   DisposableSet
-} from 'phosphor/lib/core/disposable';
+} from '@phosphor/disposable';
 
 import {
   IServiceManager
@@ -109,7 +109,7 @@ function activateRealtime(app: JupyterLab, commandPalette: ICommandPalette): IRe
  * Activate the file browser.
  */
 function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realtime: IRealtime, restorer: IInstanceRestorer, state: IStateDB): IPathTracker {
-  let { commands, keymap } = app;
+  let { commands } = app;
   let serviceManager = new GoogleDriveServiceManager(registry);
 
   let id = 1;
@@ -141,7 +141,6 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
   let fbModel = new FileBrowserModel({manager: serviceManager});
   let fbWidget = new FileBrowser({
     commands: commands,
-    keymap: keymap,
     manager: documentManager,
     model: fbModel
   });
@@ -182,7 +181,7 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
       let disposables = new DisposableSet();
       let command: string;
 
-      openWith = new Menu({ commands, keymap });
+      openWith = new Menu({ commands });
       openWith.title.label = 'Open With...';
       openWith.disposed.connect(() => { disposables.dispose(); });
 
@@ -217,8 +216,8 @@ export default plugins;
  * Create a context menu for the file browser listing.
  */
 function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
-  let { commands, keymap } = fbWidget;
-  let menu = new Menu({ commands, keymap });
+  let { commands } = fbWidget;
+  let menu = new Menu({ commands });
   let prefix = `google-drive-file-browser-${++Private.id}`;
   let disposables = new DisposableSet();
   let command: string;
@@ -236,7 +235,7 @@ function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
   menu.addItem({ command });
 
   if (openWith) {
-    menu.addItem({ type: 'submenu', menu: openWith });
+    menu.addItem({ type: 'submenu', submenu: openWith });
   }
 
   command = `${prefix}:rename`;

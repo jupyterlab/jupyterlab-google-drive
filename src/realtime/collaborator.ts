@@ -2,12 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  clearSignalData, defineSignal, ISignal
-} from 'phosphor/lib/core/signaling';
+  Signal, ISignal
+} from '@phosphor/signaling';
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
@@ -104,7 +104,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
             } else {
               changeType = 'add';
             }
-            this.changed.emit({
+            this._changed.emit({
               type: changeType,
               key: evt.property,
               oldValue: evt.oldValue,
@@ -116,10 +116,6 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       resolve(void 0);
     });
   }
-  /**
-   * A signal emitted when the map has changed.
-   */
-  changed: ISignal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleRealtimeCollaborator>>;
 
   /**
    * Get whether this map can be linked to another.
@@ -149,6 +145,14 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
   }
 
   /**
+   * A signal emitted when the map has changed.
+   */
+  get changed(): ISignal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleRealtimeCollaborator>> {
+    return this._changed;
+  }
+
+
+  /**
    * Whether this map has been disposed.
    */
   get isDisposed(): boolean {
@@ -172,7 +176,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
   set(key: string, value: GoogleRealtimeCollaborator): GoogleRealtimeCollaborator {
     let oldVal = this._map.get(key);
     this._map.set(key, value);
-    this.changed.emit({
+    this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
       oldValue: oldVal,
@@ -233,7 +237,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
   delete(key: string): GoogleRealtimeCollaborator {
     let oldVal = this._map.get(key);
     this._map.delete(key);
-    this.changed.emit({
+    this._changed.emit({
       type: 'remove',
       key: key,
       oldValue: oldVal,
@@ -273,7 +277,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     if(this._isDisposed) {
       return;
     }
-    clearSignalData(this);
+    Signal.clearData(this);
     this._map.removeAllEventListeners();
     this._map.clear();
     this._map = null;
@@ -285,10 +289,8 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
   private _map : gapi.drive.realtime.CollaborativeMap<GoogleRealtimeCollaborator> = null;
   private _isDisposed : boolean = false;
   private _ready: Promise<void> = null;
+  private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleRealtimeCollaborator>>(this);
 }
-
-// Define the signal for the collaborator map.
-defineSignal(CollaboratorMap.prototype, 'changed');
 
 export
 class GoogleRealtimeCollaborator implements ICollaborator {

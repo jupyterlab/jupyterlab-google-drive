@@ -2,12 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  clearSignalData, defineSignal, ISignal
-} from 'phosphor/lib/core/signaling';
+  Signal, ISignal
+} from '@phosphor/signaling';
 
 import {
   JSONObject
-} from 'phosphor/lib/algorithm/json';
+} from '@phosphor/coreutils';
 
 import {
   IRealtime,
@@ -78,7 +78,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
           }
           let entry = this._createNewEntry(evt.property, evt.newValue);
           this._map.set(evt.property, entry);
-          this.changed.emit({
+          this._changed.emit({
             type: changeType,
             key: evt.property,
             oldValue: evt.oldValue,
@@ -92,7 +92,9 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * A signal emitted when the map has changed.
    */
-  changed: ISignal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>>;
+  get changed(): ISignal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>> {
+    return this._changed;
+  }
 
   /**
    * Whether this map is linkable.
@@ -147,7 +149,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     let oldVal = this._map.get(key);
     this._gmap.set(key, this._createNewGoogleEntry(key, value) as any);
     this._map.set(key, value);
-    this.changed.emit({
+    this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
       oldValue: oldVal,
@@ -209,7 +211,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     let oldVal = this._map.get(key);
     this._map.delete(key);
     this._gmap.delete(key);
-    this.changed.emit({
+    this._changed.emit({
       type: 'remove',
       key: key,
       oldValue: oldVal,
@@ -255,7 +257,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     if(this._isDisposed) {
       return;
     }
-    clearSignalData(this);
+    Signal.clearData(this);
     this._gmap.removeAllEventListeners();
     this._map.clear();
     this._gmap = null;
@@ -305,12 +307,10 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     }
   }
 
+  private _changed = new Signal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>>(this);
   private _model: gapi.drive.realtime.Model = null;
   private _converters: Map<string, IRealtimeConverter<T>> = null;
   private _gmap : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _map : ObservableMap<T> = null;
   private _isDisposed : boolean = false;
 }
-
-// Define the signal for the collaborator map.
-defineSignal(GoogleRealtimeMap.prototype, 'changed');

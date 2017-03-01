@@ -6,7 +6,7 @@ import $ = require('jquery');
 
 import {
   map, filter, toArray
-} from 'phosphor/lib/algorithm/iteration';
+} from '@phosphor/algorithm';
 
 import {
   Contents, utils 

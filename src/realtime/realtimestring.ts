@@ -2,8 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  clearSignalData, defineSignal, ISignal
-} from 'phosphor/lib/core/signaling';
+  Signal, ISignal
+} from '@phosphor/signaling';
 
 import {
   IObservableString, ObservableString
@@ -29,7 +29,7 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
       gapi.drive.realtime.EventType.TEXT_INSERTED,
       (evt : any) => {
         if(!evt.isLocal) {
-          this.changed.emit({
+          this._changed.emit({
             type : 'insert',
             start: evt.index,
             end: evt.index + evt.text.length,
@@ -42,7 +42,7 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
       gapi.drive.realtime.EventType.TEXT_DELETED,
       (evt : any) => {
         if(!evt.isLocal) {
-          this.changed.emit({
+          this._changed.emit({
             type : 'remove',
             start: evt.index,
             end: evt.index + evt.text.length,
@@ -51,11 +51,6 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
         }
     });
   }
-
-  /**
-   * A signal emitted when the string has changed.
-   */
-  changed: ISignal<IObservableString, ObservableString.IChangedArgs>;
 
   /**
    * Whether this string is linkable.
@@ -76,7 +71,7 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
    */
   set text( value: string ) {
     this._str.setText(value);
-    this.changed.emit({
+    this._changed.emit({
       type: 'set',
       start: 0,
       end: value.length,
@@ -99,6 +94,15 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
     return this._str;
   }
 
+
+  /**
+   * A signal emitted when the string has changed.
+   */
+  get changed(): ISignal<IObservableString, ObservableString.IChangedArgs> {
+    return this._changed;
+  }
+
+
   /**
    * Insert a substring.
    *
@@ -108,7 +112,7 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
    */
   insert(index: number, text: string): void {
     this._str.insertString(index, text);
-    this.changed.emit({
+    this._changed.emit({
       type: 'insert',
       start: index,
       end: index + text.length,
@@ -126,7 +130,7 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
   remove(start: number, end: number): void {
     let oldValue: string = this.text.slice(start, end);
     this._str.removeRange(start, end);
-    this.changed.emit({
+    this._changed.emit({
       type: 'remove',
       start: start,
       end: end,
@@ -173,13 +177,11 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
       return;
     }
     this._str.removeAllEventListeners();
-    clearSignalData(this);
+    Signal.clearData(this);
     this._isDisposed = true;
   }
 
+  private _changed = new Signal<IObservableString, ObservableString.IChangedArgs>(this);
   private _str : gapi.drive.realtime.CollaborativeString = null;
   private _isDisposed : boolean = false;
 }
-
-// Define the signals for the Google realtime string.
-defineSignal(GoogleRealtimeString.prototype, 'changed');
