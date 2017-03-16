@@ -22,12 +22,12 @@ import {
 } from 'jupyterlab/lib/application';
 
 import {
-  IDocumentManager, DocumentManager
-} from 'jupyterlab/lib/docmanager';
-
-import {
   ICommandPalette
 } from 'jupyterlab/lib/apputils/commandpalette';
+
+import {
+  IDocumentManager, DocumentManager
+} from 'jupyterlab/lib/docmanager';
 
 import {
   IDocumentRegistry
