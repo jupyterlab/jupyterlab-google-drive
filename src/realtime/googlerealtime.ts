@@ -11,28 +11,32 @@ import {
 
 import {
   InstanceTracker
-} from 'jupyterlab/lib/common/instancetracker';
+} from 'jupyterlab/lib/apputils/instancetracker';
 
 import {
-  showDialog
-} from 'jupyterlab/lib/common/dialog';
+  Dialog, showDialog
+} from 'jupyterlab/lib/apputils/dialog';
 
 import {
   IObservableMap, ObservableMap
-} from 'jupyterlab/lib/common/observablemap';
+} from 'jupyterlab/lib/coreutils/observablemap';
 
 import {
   IObservableString, ObservableString
-} from 'jupyterlab/lib/common/observablestring';
+} from 'jupyterlab/lib/coreutils/observablestring';
 
 import {
   IObservableVector, ObservableVector
-} from 'jupyterlab/lib/common/observablevector';
+} from 'jupyterlab/lib/coreutils/observablevector';
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
   Synchronizable, ICollaborator
-} from 'jupyterlab/lib/common/realtime';
+} from 'jupyterlab/lib/coreutils/realtime';
+
+import {
+  IModelDB
+} from 'jupyterlab/lib/coreutils/modeldb';
 
 import {
   authorize, gapiAuthorized
@@ -57,10 +61,6 @@ import {
 import {
   CollaboratorMap, GoogleRealtimeCollaborator
 } from './collaborator';
-
-import {
-  createVector, createMap, createString
-} from './utils';
 
 declare let gapi : any;
 
@@ -89,9 +89,9 @@ class GoogleRealtime implements IRealtime {
       showDialog({
         title: 'Email address...',
         body: input,
-        okText: 'SHARE'
+        buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'SHARE'})]
       }).then(result => {
-        if (result.text === 'SHARE') {
+        if (result.accept) {
           this._shareRealtimeDocument(model, input.value).then( ()=> {
             resolve();
           }).catch( ()=>{
@@ -124,9 +124,9 @@ class GoogleRealtime implements IRealtime {
         showDialog({
           title: 'File ID...',
           body: input,
-          okText: 'OPEN'
+          buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'OPEN'})]
         }).then(result => {
-          if (result.text === 'OPEN') {
+          if (result.accept) {
             fileId = input.value;
           }
         });
@@ -200,6 +200,8 @@ class GoogleRealtime implements IRealtime {
   private _trackerSet = new Set<[InstanceTracker<Widget>, (widget: Widget)=>IRealtimeModel, (widget: Widget)=>void]>();
 }
 
+
+
 export
 class GoogleRealtimeHandler implements IRealtimeHandler {
   constructor( fileId : string = '' ) {
@@ -258,93 +260,8 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
     return this._collaborators.localCollaborator;
   }
 
-  /**
-   * Create a map for the realtime model.
-   *
-   * @param map: the string to link to a realtime map.
-   *
-   * @returns a promise when the linking is done.
-   */
-  linkMap(map: IObservableMap<Synchronizable>, id: string) : Promise<void> {
-    //Fail if the vector is not linkable.
-    if(!map.isLinkable) {
-      return Promise.reject(void 0);
-    }
-    return this.ready.then( () => {
-      //Create the collaborative map
-      let host = this._model.getRoot();
-      let gmap: GoogleRealtimeMap<Synchronizable>;
-      if(host.has(id)) {
-        let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>;
-        gmap = new GoogleRealtimeMap<Synchronizable>(
-          googleObject, this._model, map.converters);
-      } else {
-        gmap = createMap(map, this._model);
-        host.set(id, gmap.googleObject);
-      }
-      map.link(gmap);
-      this._rtObjects.push(gmap);
-      return void 0;
-    });
-  }
-
-/**
-* Create a string for the realtime model.
-   *
-   * @param str: the string to link to a realtime string.
-   *
-   * @returns a promise when the linking is done.
-   */
-  linkString (str: IObservableString, id: string) : Promise<void> {
-    //Fail if the string is not linkable.
-    if(!str.isLinkable) {
-      return Promise.reject(void 0);
-    }
-    return this.ready.then( () => {
-      //Create the collaborative string
-      let gstr: GoogleRealtimeString;
-      let host = this._model.getRoot();
-
-      if(host.has(id)) {
-        let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeString;;
-        gstr = new GoogleRealtimeString(googleObject);
-      } else {
-        gstr = createString(str, this._model);
-        host.set(id, gstr);
-      }
-      str.link(gstr);
-      this._rtObjects.push(gstr);
-      return void 0;
-    });
-  }
-
-  /**
-   * Create a vector for the realtime model.
-   *
-   * @param vec: the string to link to a realtime vector.
-   *
-   * @returns a promise when the linking is done.
-   */
-  linkVector(vec: IObservableVector<Synchronizable>, id: string) : Promise<void> {
-    //Fail if the vector is not linkable.
-    if(!vec.isLinkable) {
-      return Promise.reject(void 0);
-    }
-    return this.ready.then( () => {
-      //Create the collaborative vector
-      let gvec: GoogleRealtimeVector<Synchronizable>;
-      let host = this._model.getRoot();
-      if(host.has(id)) {
-        let googleObject = host.get(id) as gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>;
-        gvec = new GoogleRealtimeVector<Synchronizable>(googleObject, this._model, (vec as any)._converter);
-      } else {
-        gvec = createVector(vec, this._model);
-        host.set(id, gvec.googleObject);
-      }
-      vec.link(gvec);
-      this._rtObjects.push(gvec);
-      return void 0;
-    });
+  get modelDB(): IModelDB {
+    return this._modelDB;
   }
 
   /**
@@ -389,6 +306,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
   private _model: gapi.drive.realtime.Model = null;
   private _rtObjects: any[] = [];
   private _ready : Promise<void> = null;
+  private _modelDB: IModelDB;
 }
 
 
@@ -411,4 +329,4 @@ interface GoogleRealtimeObject {
  * of these types before insertion.
  */
 export
-type GoogleSynchronizable = JSONObject | gapi.drive.realtime.CollaborativeObject;
+type GoogleSynchronizable = any;

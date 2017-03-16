@@ -11,12 +11,12 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  ICollaborator, IRealtimeConverter
-} from 'jupyterlab/lib/common/realtime';
+  ICollaborator
+} from 'jupyterlab/lib/coreutils/realtime';
 
 import {
   IObservableMap, ObservableMap
-} from 'jupyterlab/lib/common/observablemap';
+} from 'jupyterlab/lib/coreutils/observablemap';
 
 declare let gapi : any;
 
@@ -117,21 +117,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     });
   }
 
-  /**
-   * Get whether this map can be linked to another.
-   *
-   * @returns `false`,
-   */
-  readonly isLinkable: boolean = false;
-
-  /**
-   * Get whether this map is linked to another.
-   *
-   * @returns `false`,
-   */
-  readonly isLinked: boolean = false;
-
-  readonly converters: Map<string, IRealtimeConverter<GoogleRealtimeCollaborator>> = null;
+  type: 'Map';
 
   /**
    * The number of key-value pairs in the map.
@@ -244,23 +230,6 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       newValue: undefined
     });
     return oldVal;
-  }
-
-  /**
-   * Link the map to another map.
-   * Any changes to either are mirrored in the other.
-   *
-   * @param map: the parent map.
-   */
-  link(map: IObservableMap<GoogleRealtimeCollaborator>): void {
-    //no-op
-  }
-
-  /**
-   * Unlink the map from its parent map.
-   */
-  unlink(): void {
-    //no-op
   }
 
   /**

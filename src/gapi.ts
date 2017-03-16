@@ -5,13 +5,17 @@
 import $ = require('jquery');
 
 import {
+  PromiseDelegate
+} from '@phosphor/coreutils';
+
+import {
   Contents, utils
 } from '@jupyterlab/services';
 
 
 import {
-  showDialog
-} from 'jupyterlab/lib/common/dialog';
+  Dialog, showDialog
+} from 'jupyterlab/lib/apputils/dialog';
 
 //TODO: Complete gapi typings and commit upstream
 declare let gapi: any;
@@ -50,7 +54,7 @@ let gapiLoaded = new Promise<void>( (resolve, reject) => {
 });
 
 export
-let gapiAuthorized = new utils.PromiseDelegate<void>();
+let gapiAuthorized = new PromiseDelegate<void>();
 
 export
 let driveReady = gapiAuthorized.promise;
@@ -119,7 +123,7 @@ function authorize (): Promise<void> {
           authorize();
         }, 750 * Number(authResult.expires_in));
         //resolve the exported promise
-        gapiAuthorized.resolve();
+        gapiAuthorized.resolve(void 0);
         return void 0;
       } else {
         popupAuthorization();
@@ -133,16 +137,16 @@ function authorize (): Promise<void> {
     let popupAuthorization = function() {
       showDialog({
         title: 'Proceed to Google Authorization?',
-        okText: 'OK'
+        buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'OK'})]
       }).then( result => {
-        if (result.text === 'OK') {
+        if (result.accept) {
           gapi.auth.authorize({
             client_id: CLIENT_ID,
             scope: SCOPE,
             immediate: false
           }, handleAuthorization);
         } else {
-          gapiAuthorized.reject();
+          gapiAuthorized.reject(void 0);
           throw new Error("gapi: unable to authorize");
         }
       });

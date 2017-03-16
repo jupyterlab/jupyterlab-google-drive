@@ -13,10 +13,6 @@ import {
 } from '@jupyterlab/services';
 
 import {
-  showDialog
-} from 'jupyterlab/lib/common/dialog';
-
-import {
   driveApiRequest, driveReady, pickFile
 } from '../gapi';
 

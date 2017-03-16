@@ -19,12 +19,13 @@
     "watch": "watch \"npm run build\" src --wait 10 --ignoreDotFiles"
   },
   "dependencies": {
-    "jupyterlab": "^0.17.0",
-    "@jupyterlab/services": "^0.39.1",
+    "jupyterlab": "^0.17.5",
+    "@jupyterlab/services": "^0.40.1",
+    "@phosphor/application": "^0.2.0",
     "@phosphor/algorithm": "^0.1.0",
     "@phosphor/coreutils": "^0.1.1",
     "@phosphor/signaling": "^0.1.1",
-    "@phosphor/widgets": "^0.1.4",
+    "@phosphor/widgets": "^0.2.0",
     "es6-promise": "^3.2.1",
     "jquery": "^2.2.0",
     "core-js": "^2.4.1"
@@ -33,7 +34,7 @@
     "fs-extra": "^0.30.0",
     "rimraf": "^2.5.4",
     "watch": "^0.17.1",
-    "@jupyterlab/extension-builder": "^0.10.1",
+    "@jupyterlab/extension-builder": "^0.11.0",
     "typescript": "~2.1.6",
     "@types/google-drive-realtime-api": "^0.0.33",
     "@types/jquery": "^2.0.32"

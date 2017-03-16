@@ -7,7 +7,7 @@ import {
 
 import {
   IObservableString, ObservableString
-} from 'jupyterlab/lib/common/observablestring';
+} from 'jupyterlab/lib/coreutils/observablestring';
 
 import {
   GoogleRealtimeMap
@@ -52,19 +52,7 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
     });
   }
 
-  /**
-   * Whether this string is linkable.
-   *
-   * @returns `false'
-   */
-  readonly isLinkable: boolean = false;
-
-  /**
-   * Whether this string is linked.
-   *
-   * @returns `false'
-   */
-  readonly isLinked: boolean = false;
+  type: 'String';
 
   /**
    * Set the value of the string.
@@ -143,23 +131,6 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
    */
   clear(): void {
     this.text = '';
-  }
-
-  /**
-   * Link the string to another string.
-   * Any changes to either are mirrored in the other.
-   *
-   * @param str: the parent string.
-   */
-  link(str: IObservableString): void {
-    //no-op
-  }
-
-  /**
-   * Unlink the string from its parent string.
-   */
-  unlink(): void {
-    //no-op
   }
 
   /**

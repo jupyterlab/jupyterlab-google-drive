@@ -7,6 +7,14 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES5",
-    "outDir": "../lib"
+    "outDir": "../lib",
+    "baseUrl": ".",
+    "paths": {
+      "@phosphor/widgets": ["../node_modules/@phosphor/widgets"],
+      "@phosphor/signaling": ["../node_modules/@phosphor/signaling"],
+      "@phosphor/coreutils": ["../node_modules/@phosphor/coreutils"],
+      "@phosphor/application": ["../node_modules/@phosphor/application"],
+      "@phosphor/algorithm": ["../node_modules/@phosphor/algorithm"]
+    }
   }
 }

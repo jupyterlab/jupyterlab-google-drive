@@ -2,8 +2,8 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  ServiceManager, ContentsManager, Contents,
-  IAjaxSettings, utils
+  IServiceManager, ContentsManager, Contents,
+  ServiceManager, IAjaxSettings, utils
 } from '@jupyterlab/services';
 
 import {
@@ -11,8 +11,8 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  IServiceManager
-} from 'jupyterlab/lib/services';
+  PathExt
+} from 'jupyterlab/lib/coreutils/path';
 
 import {
   IDocumentRegistry
@@ -151,7 +151,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
     if(options) {
       //Add leading `.` to extension if necessary.
       ext = options.ext ?
-            ContentsManager.normalizeExtension(options.ext) : ext;
+            PathExt.normalizeExtension(options.ext) : ext;
       //If we are not creating in the root directory
       path = options.path || '';
       contentType = options.type || 'notebook';

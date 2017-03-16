@@ -10,21 +10,20 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  IRealtime,
-  IRealtimeConverter, Synchronizable
-} from 'jupyterlab/lib/common/realtime';
+  IRealtime, Synchronizable
+} from 'jupyterlab/lib/coreutils/realtime';
 
 import {
   IObservableMap, ObservableMap
-} from 'jupyterlab/lib/common/observablemap';
+} from 'jupyterlab/lib/coreutils/observablemap';
 
 import {
   IObservableVector, ObservableVector
-} from 'jupyterlab/lib/common/observablevector';
+} from 'jupyterlab/lib/coreutils/observablevector';
 
 import {
   IObservableString, ObservableString
-} from 'jupyterlab/lib/common/observablestring';
+} from 'jupyterlab/lib/coreutils/observablestring';
 
 import {
   GoogleSynchronizable, GoogleRealtimeObject
@@ -38,10 +37,6 @@ import {
   GoogleRealtimeString
 } from './realtimestring';
 
-import {
-  createMap, createString, createVector
-} from './utils';
-
 declare let gapi : any;
 
 export
@@ -50,17 +45,14 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * Constructor
    */
-  constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>, model: gapi.drive.realtime.Model, converters?: Map<string, IRealtimeConverter<T>>) {
+  constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>, model: gapi.drive.realtime.Model) {
     this._model = model;
-
-    //Use the provided converters, otherwise make an empty dummy map.
-    this._converters = converters || new Map<string, IRealtimeConverter<T>>();
 
     //Create and populate the internal maps
     this._map = new ObservableMap<T>();
     this._gmap = map;
     for (let key of this._gmap.keys()) {
-      let entry = this._createNewEntry(key, this._gmap.get(key));
+      let entry = this._gmap.get(key);
       this._map.set(key, entry);
     }
 
@@ -76,7 +68,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
           } else {
             changeType = 'add';
           }
-          let entry = this._createNewEntry(evt.property, evt.newValue);
+          let entry = evt.newValue;
           this._map.set(evt.property, entry);
           this._changed.emit({
             type: changeType,
@@ -89,29 +81,14 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     );
   }
 
+  type: 'Map';
+
   /**
    * A signal emitted when the map has changed.
    */
   get changed(): ISignal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>> {
     return this._changed;
   }
-
-  /**
-   * Whether this map is linkable.
-   *
-   * @returns `false'
-   */
-  readonly isLinkable: boolean = false;
-
-  /**
-   * Whether this map is linked.
-   *
-   * @returns `false'
-   */
-  readonly isLinked: boolean = false;
-
-
-  readonly converters: Map<string, IRealtimeConverter<T>> = null;
 
   /**
    * The number of key-value pairs in the map.
@@ -147,7 +124,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    */
   set(key: string, value: T): T {
     let oldVal = this._map.get(key);
-    this._gmap.set(key, this._createNewGoogleEntry(key, value) as any);
+    this._gmap.set(key, value);
     this._map.set(key, value);
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -221,23 +198,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   }
 
   /**
-   * Link the map to another map.
-   * Any changes to either are mirrored in the other.
-   *
-   * @param map: the parent map.
-   */
-  link(map: IObservableMap<T>): void {
-    //no-op
-  }
-
-  /**
-   * Unlink the map from its parent map.
-   */
-  unlink(): void {
-    //no-op
-  }
-
-  /**
    * Set the ObservableMap to an empty map.
    */
   clear(): void {
@@ -264,52 +224,8 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     this._isDisposed = true;
   }
 
-  private _createNewEntry(key: string, item: any): any {
-    if(!item) return item;
-    if(item.type && item.type==='List') {
-      let vec = new GoogleRealtimeVector<T>(item, this._model);
-      if(this._converters.has(key)) {
-        let newEntry = this._converters.get(key).from(vec);
-        vec = new GoogleRealtimeVector<T>(item, this._model, (this._converters.get(key).to(newEntry) as any).converter);
-        (this._converters.get(key).to(newEntry) as any).link(vec);
-        return newEntry;
-      } else return vec;
-    } else if(item.type && item.type === 'EditableString') {
-      let str = new GoogleRealtimeString(item);
-      return str;
-    } else if(item.type && item.type === 'Map') {
-      let map = new GoogleRealtimeMap<T>(item, this._model);
-      return map;
-    } else {
-      return item;
-    }
-  }
-
-  private _createNewGoogleEntry(key: string, item: any): GoogleSynchronizable {
-    let entry: Synchronizable = item;
-    if(this._converters.has(key)) {
-      entry = this._converters.get(key).to(item);
-    }
-    if (entry instanceof ObservableMap) {
-      let gmap = createMap(entry, this._model);
-      (entry as ObservableMap<Synchronizable>).link(gmap);
-      return gmap.googleObject;
-    } else if (entry instanceof ObservableString) {
-      let gstr = createString(entry, this._model);
-      (entry as ObservableString).link(gstr);
-      return gstr.googleObject;
-    } else if (entry instanceof ObservableVector) {
-      let gvec = createVector(entry, this._model);
-      (entry as ObservableVector<any>).link(gvec);
-      return gvec.googleObject;
-    } else {
-      return entry as GoogleSynchronizable;
-    }
-  }
-
   private _changed = new Signal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>>(this);
   private _model: gapi.drive.realtime.Model = null;
-  private _converters: Map<string, IRealtimeConverter<T>> = null;
   private _gmap : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _map : ObservableMap<T> = null;
   private _isDisposed : boolean = false;
