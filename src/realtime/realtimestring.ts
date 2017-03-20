@@ -7,7 +7,7 @@ import {
 
 import {
   IObservableString, ObservableString
-} from 'jupyterlab/lib/coreutils/observablestring';
+} from '@jupyterlab/coreutils';
 
 import {
   GoogleRealtimeMap

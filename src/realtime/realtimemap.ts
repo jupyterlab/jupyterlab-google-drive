@@ -10,20 +10,11 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  IRealtime, Synchronizable
-} from 'jupyterlab/lib/coreutils/realtime';
-
-import {
-  IObservableMap, ObservableMap
-} from 'jupyterlab/lib/coreutils/observablemap';
-
-import {
-  IObservableVector, ObservableVector
-} from 'jupyterlab/lib/coreutils/observablevector';
-
-import {
+  IRealtime, Synchronizable,
+  IObservableMap, ObservableMap,
+  IObservableVector, ObservableVector,
   IObservableString, ObservableString
-} from 'jupyterlab/lib/coreutils/observablestring';
+} from '@jupyterlab/coreutils';
 
 import {
   GoogleSynchronizable, GoogleRealtimeObject

@@ -10,33 +10,18 @@ import {
 } from '@phosphor/coreutils';
 
 import {
+  Dialog, showDialog,
   InstanceTracker
-} from 'jupyterlab/lib/apputils/instancetracker';
+} from '@jupyterlab/apputils';
 
 import {
-  Dialog, showDialog
-} from 'jupyterlab/lib/apputils/dialog';
-
-import {
-  IObservableMap, ObservableMap
-} from 'jupyterlab/lib/coreutils/observablemap';
-
-import {
-  IObservableString, ObservableString
-} from 'jupyterlab/lib/coreutils/observablestring';
-
-import {
-  IObservableVector, ObservableVector
-} from 'jupyterlab/lib/coreutils/observablevector';
-
-import {
+  IObservableMap, ObservableMap,
+  IObservableString, ObservableString,
+  IObservableVector, ObservableVector,
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  Synchronizable, ICollaborator
-} from 'jupyterlab/lib/coreutils/realtime';
-
-import {
-  IModelDB
-} from 'jupyterlab/lib/coreutils/modeldb';
+  Synchronizable, ICollaborator,
+  IModelDB,
+} from '@jupyterlab/coreutils';
 
 import {
   authorize, gapiAuthorized

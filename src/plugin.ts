@@ -19,31 +19,27 @@ import {
 
 import {
   JupyterLab, JupyterLabPlugin
-} from 'jupyterlab/lib/application';
+} from '@jupyterlab/application';
 
 import {
-  ICommandPalette
-} from 'jupyterlab/lib/apputils/commandpalette';
+  ICommandPalette, IStateDB
+} from '@jupyterlab/apputils';
 
 import {
   IDocumentManager, DocumentManager
-} from 'jupyterlab/lib/docmanager';
+} from '@jupyterlab/docmanager';
 
 import {
   IDocumentRegistry
-} from 'jupyterlab/lib/docregistry';
+} from '@jupyterlab/docregistry';
 
 import {
   IRealtime
-} from 'jupyterlab/lib/coreutils/realtime';
-
-import {
-  IStateDB
-} from 'jupyterlab/lib/apputils/statedb';
+} from '@jupyterlab/coreutils';
 
 import {
   FileBrowserModel, IPathTracker, FileBrowser
-} from 'jupyterlab/lib/filebrowser';
+} from '@jupyterlab/filebrowser';
 
 import {
   GoogleRealtime
@@ -89,11 +85,6 @@ function activateRealtime(app: JupyterLab, commandPalette: ICommandPalette): IRe
     label: 'Share file',
     caption: 'Share this file',
     execute: ()=> {
-      let widget = app.shell.currentWidget;
-      let [model, cb] = realtimeServices.checkTrackers(widget);
-      if(model) {
-        realtimeServices.addCollaborator(model);
-      }
     }
   });
   commandPalette.addItem({command, category: 'Realtime'});
@@ -118,19 +109,6 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
         app.shell.addToMainArea(widget);
       }
       app.shell.activateById(widget.id);
-      let [model, callback] = realtime.checkTrackers(widget);
-      if(model) {
-        let context: any = (widget as any).context;
-        let path: string = context.path;
-
-        context.ready.then(()=>{
-          getResourceForPath(path).then( (resource: any)=>{
-            realtime.shareModel(model, resource.id).then( ()=>{
-              callback(widget);
-            });
-          });
-        });
-      }
     }
   };
   let documentManager = new DocumentManager({ registry, manager: serviceManager, opener });

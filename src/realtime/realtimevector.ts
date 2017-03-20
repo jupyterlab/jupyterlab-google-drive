@@ -15,20 +15,11 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  IObservableVector, ObservableVector
-} from 'jupyterlab/lib/coreutils/observablevector';
-
-import {
-  IObservableMap, ObservableMap
-} from 'jupyterlab/lib/coreutils/observablemap';
-
-import {
-  IObservableString, ObservableString
-} from 'jupyterlab/lib/coreutils/observablestring';
-
-import {
+  IObservableVector, ObservableVector,
+  IObservableMap, ObservableMap,
+  IObservableString, ObservableString,
   Synchronizable
-} from 'jupyterlab/lib/coreutils/realtime';
+} from '@jupyterlab/coreutils';
 
 import {
   GoogleRealtimeMap

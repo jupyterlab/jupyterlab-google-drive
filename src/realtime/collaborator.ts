@@ -11,12 +11,8 @@ import {
 
 import {
   IRealtime, IRealtimeHandler, IRealtimeModel,
-  ICollaborator
-} from 'jupyterlab/lib/coreutils/realtime';
-
-import {
-  IObservableMap, ObservableMap
-} from 'jupyterlab/lib/coreutils/observablemap';
+  ICollaborator, IObservableMap, ObservableMap
+} from '@jupyterlab/coreutils';
 
 declare let gapi : any;
 

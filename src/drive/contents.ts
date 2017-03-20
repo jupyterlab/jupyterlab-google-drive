@@ -12,11 +12,11 @@ import {
 
 import {
   PathExt
-} from 'jupyterlab/lib/coreutils/path';
+} from '@jupyterlab/coreutils';
 
 import {
   IDocumentRegistry
-} from 'jupyterlab/lib/docregistry';
+} from '@jupyterlab/docregistry';
 
 import {
   authorize
