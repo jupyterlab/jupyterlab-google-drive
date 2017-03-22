@@ -12,17 +12,11 @@ import {
 import {
   IRealtime, Synchronizable,
   IObservableMap, ObservableMap,
-  IObservableVector, ObservableVector,
-  IObservableString, ObservableString
 } from '@jupyterlab/coreutils';
 
 import {
   GoogleSynchronizable, GoogleRealtimeObject
 } from './googlerealtime';
-
-import {
-  GoogleRealtimeVector
-} from './realtimevector';
 
 import {
   GoogleRealtimeString
@@ -36,19 +30,10 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * Constructor
    */
-  constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>, model: gapi.drive.realtime.Model) {
-    this._model = model;
-
-    //Create and populate the internal maps
-    this._map = new ObservableMap<T>();
-    this._gmap = map;
-    for (let key of this._gmap.keys()) {
-      let entry = this._gmap.get(key);
-      this._map.set(key, entry);
-    }
-
+  constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
     //Hook up event listeners
-    this._gmap.addEventListener(
+    this._map = map;
+    this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
         if(!evt.isLocal) {
           let changeType: ObservableMap.ChangeType;
@@ -59,8 +44,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
           } else {
             changeType = 'add';
           }
-          let entry = evt.newValue;
-          this._map.set(evt.property, entry);
           this._changed.emit({
             type: changeType,
             key: evt.property,
@@ -85,7 +68,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    * The number of key-value pairs in the map.
    */
   get size(): number {
-    return this._gmap.size;
+    return this._map.size;
   }
 
   /**
@@ -100,7 +83,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    * for this map.
    */
   get googleObject(): gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> {
-    return this._gmap;
+    return this._map;
   }
 
   /**
@@ -115,7 +98,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    */
   set(key: string, value: T): T {
     let oldVal = this._map.get(key);
-    this._gmap.set(key, value);
     this._map.set(key, value);
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -178,7 +160,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   delete(key: string): T {
     let oldVal = this._map.get(key);
     this._map.delete(key);
-    this._gmap.delete(key);
     this._changed.emit({
       type: 'remove',
       key: key,
@@ -197,7 +178,6 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     let keyList = this.keys();
     for(let i=0; i<keyList.length; i++) {
       this.delete(keyList[i]);
-      this._gmap.delete(keyList[i]);
     }
   }
 
@@ -209,15 +189,12 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
       return;
     }
     Signal.clearData(this);
-    this._gmap.removeAllEventListeners();
-    this._map.clear();
-    this._gmap = null;
+    this._map.removeAllEventListeners();
+    this._map = null;
     this._isDisposed = true;
   }
 
   private _changed = new Signal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>>(this);
-  private _model: gapi.drive.realtime.Model = null;
-  private _gmap : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
-  private _map : ObservableMap<T> = null;
+  private _map : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _isDisposed : boolean = false;
 }

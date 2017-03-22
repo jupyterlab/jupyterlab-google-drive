@@ -53,6 +53,10 @@ import {
   GoogleDriveServiceManager
 } from './drive/contents';
 
+import {
+  GoogleModelDBFactory
+} from './realtime/modeldb';
+
 /**
  * Google Drive filebrowser plugin state namespace.
  */
@@ -111,7 +115,8 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, realt
       app.shell.activateById(widget.id);
     }
   };
-  let documentManager = new DocumentManager({ registry, manager: serviceManager, opener });
+  let modelDBFactory = new GoogleModelDBFactory();
+  let documentManager = new DocumentManager({ registry, manager: serviceManager, opener, modelDBFactory });
   let fbModel = new FileBrowserModel({manager: serviceManager});
   let fbWidget = new FileBrowser({
     commands: commands,
