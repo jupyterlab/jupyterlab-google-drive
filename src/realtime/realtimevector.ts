@@ -30,55 +30,7 @@ export
 class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
   constructor(vector: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
-    this._vec = vector;
-    
-    //Add event listeners to the collaborativeVector
-    this._vec.addEventListener(
-      gapi.drive.realtime.EventType.VALUES_ADDED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          let vals: T[] = evt.values;
-          this._changed.emit({
-            type: 'add',
-            oldIndex: -1,
-            newIndex: evt.index,
-            oldValues: [],
-            newValues: vals
-          });
-        }
-      });
-
-    this._vec.addEventListener(
-      gapi.drive.realtime.EventType.VALUES_REMOVED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          let vals: T[] = evt.values;
-          this._changed.emit({
-            type: 'remove',
-            oldIndex: evt.index,
-            newIndex: -1,
-            oldValues: vals,
-            newValues: []
-          });
-        }
-      });
-
-    this._vec.addEventListener(
-      gapi.drive.realtime.EventType.VALUES_SET,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          let oldVals: T[] = evt.oldValues;
-          let newVals: T[] = evt.newValues;
-
-          this._changed.emit({
-            type: 'set',
-            oldIndex: evt.index,
-            newIndex: evt.index,
-            oldValues: oldVals,
-            newValues: newVals
-          });
-        }
-      });
+    this.googleObject = vector;
   }
 
   type: 'Vector';
@@ -155,6 +107,65 @@ class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObj
     return this._vec;
   }
 
+  set googleObject(vec: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
+    if(this._vec) {
+      this.clear();
+      for(let i = 0; i < vec.length; i++) {
+        this.pushBack(vec.get(i));
+        this._vec.removeAllEventListeners();
+      }
+    }
+
+    this._vec = vec;
+
+    //Add event listeners to the collaborativeVector
+    this._vec.addEventListener(
+      gapi.drive.realtime.EventType.VALUES_ADDED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          let vals: T[] = evt.values;
+          this._changed.emit({
+            type: 'add',
+            oldIndex: -1,
+            newIndex: evt.index,
+            oldValues: [],
+            newValues: vals
+          });
+        }
+      });
+
+    this._vec.addEventListener(
+      gapi.drive.realtime.EventType.VALUES_REMOVED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          let vals: T[] = evt.values;
+          this._changed.emit({
+            type: 'remove',
+            oldIndex: evt.index,
+            newIndex: -1,
+            oldValues: vals,
+            newValues: []
+          });
+        }
+      });
+
+    this._vec.addEventListener(
+      gapi.drive.realtime.EventType.VALUES_SET,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          let oldVals: T[] = evt.oldValues;
+          let newVals: T[] = evt.newValues;
+
+          this._changed.emit({
+            type: 'set',
+            oldIndex: evt.index,
+            newIndex: evt.index,
+            oldValues: oldVals,
+            newValues: newVals
+          });
+        }
+      });
+  }
   /**
    * Create an iterator over the values in the vector.
    *

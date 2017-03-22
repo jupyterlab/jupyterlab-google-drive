@@ -31,28 +31,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    * Constructor
    */
   constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
-    //Hook up event listeners
-    this._map = map;
-    this._map.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
-        if(!evt.isLocal) {
-          let changeType: ObservableMap.ChangeType;
-          if(evt.oldValue && evt.newValue) {
-            changeType = 'change';
-          } else if (evt.oldValue && !evt.newValue) {
-            changeType = 'remove';
-          } else {
-            changeType = 'add';
-          }
-          this._changed.emit({
-            type: changeType,
-            key: evt.property,
-            oldValue: evt.oldValue,
-            newValue: evt.newValue
-          });
-        }
-      }
-    );
+    this.googleObject = map;
   }
 
   type: 'Map';
@@ -86,6 +65,38 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     return this._map;
   }
 
+  set googleObject(map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
+    if(this._map) {
+      this._map.clear();
+      for(let key of map.keys()) {
+        this.set(key, map.get(key));
+      }
+      this._map.removeAllEventListeners();
+    }
+
+    //Hook up event listeners
+    this._map = map;
+    this._map.addEventListener(
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+        if(!evt.isLocal) {
+          let changeType: ObservableMap.ChangeType;
+          if(evt.oldValue && evt.newValue) {
+            changeType = 'change';
+          } else if (evt.oldValue && !evt.newValue) {
+            changeType = 'remove';
+          } else {
+            changeType = 'add';
+          }
+          this._changed.emit({
+            type: changeType,
+            key: evt.property,
+            oldValue: evt.oldValue,
+            newValue: evt.newValue
+          });
+        }
+      }
+    );
+  }
   /**
    * Set a key-value pair in the map
    *

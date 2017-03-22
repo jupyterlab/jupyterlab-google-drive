@@ -23,33 +23,7 @@ export
 class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
 
   constructor (str: gapi.drive.realtime.CollaborativeString) {
-    this._str = str;
-    //Add event listeners to the collaborativeString
-    this._str.addEventListener(
-      gapi.drive.realtime.EventType.TEXT_INSERTED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          this._changed.emit({
-            type : 'insert',
-            start: evt.index,
-            end: evt.index + evt.text.length,
-            value: evt.text
-          });
-        }
-      });
-
-    this._str.addEventListener(
-      gapi.drive.realtime.EventType.TEXT_DELETED,
-      (evt : any) => {
-        if(!evt.isLocal) {
-          this._changed.emit({
-            type : 'remove',
-            start: evt.index,
-            end: evt.index + evt.text.length,
-            value: evt.text
-          });
-        }
-    });
+    this.googleObject = str;
   }
 
   type: 'String';
@@ -82,6 +56,41 @@ class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
     return this._str;
   }
 
+  set googleObject(str: gapi.drive.realtime.CollaborativeString) {
+    if(this._str) {
+      this._str.removeAllEventListeners();
+    }
+    this._str = str;
+    //Add event listeners to the collaborativeString
+    this._str.addEventListener(
+      gapi.drive.realtime.EventType.TEXT_INSERTED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          this._changed.emit({
+            type : 'insert',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
+      });
+
+    this._str.addEventListener(
+      gapi.drive.realtime.EventType.TEXT_DELETED,
+      (evt : any) => {
+        if(!evt.isLocal) {
+          this._changed.emit({
+            type : 'remove',
+            start: evt.index,
+            end: evt.index + evt.text.length,
+            value: evt.text
+          });
+        }
+    });
+
+    //Trigger text set event
+    this.text = this._str.getText();
+  }
 
   /**
    * A signal emitted when the string has changed.
