@@ -10,7 +10,7 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  IRealtime, IRealtimeHandler, IRealtimeModel,
+  IRealtime, IRealtimeHandler,
   ICollaborator, IObservableMap, ObservableMap
 } from '@jupyterlab/coreutils';
 

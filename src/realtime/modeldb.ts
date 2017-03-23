@@ -6,7 +6,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  JSONValue
+  JSONValue, PromiseDelegate
 } from '@phosphor/coreutils';
 
 import {
@@ -38,13 +38,6 @@ import {
 
 
 export
-class GoogleModelDBFactory implements IModelDBFactory {
-  createNew(path: string): GoogleModelDB {
-    return new GoogleModelDB({filePath: path});
-  }
-}
-
-export
 class GoogleModelDB implements IModelDB {
   constructor(options: GoogleModelDB.ICreateOptions) {
     this._basePath = options.basePath || '';
@@ -60,10 +53,11 @@ class GoogleModelDB implements IModelDB {
       if(options.model) {
         this._model = options.model;
       } else {
-        let doc = gapi.drive.realtime.newInMemoryDocument();
-        this._model = doc.getModel();
+        this._doc = gapi.drive.realtime.newInMemoryDocument();
+        this._model = this._doc.getModel();
         getResourceForPath(options.filePath).then((resource: any) => {
           loadRealtimeDocument(resource.id).then((doc: gapi.drive.realtime.Document) => {
+            this._doc = doc;
             this._model = doc.getModel();
             let oldDB = this._db;
             this._db = new GoogleRealtimeMap(this._model.getRoot());
@@ -79,6 +73,7 @@ class GoogleModelDB implements IModelDB {
                 this._db.set(key, gval);
               }
             }
+            this._connected.resolve(void 0);
           });
         });
       }
@@ -95,12 +90,20 @@ class GoogleModelDB implements IModelDB {
     return this._model;
   }
 
+  get doc(): gapi.drive.realtime.Document {
+    return this._doc;
+  }
+
   get basePath(): string {
     return this._basePath;
   }
 
   get changed(): ISignal<this, ModelDB.IChangedArgs> {
     return this._changed;
+  }
+
+  get connected(): Promise<void> {
+    return this._connected.promise;
   }
 
   get(path: string): IObservable {
@@ -182,8 +185,10 @@ class GoogleModelDB implements IModelDB {
   private _db: GoogleRealtimeMap<GoogleSynchronizable>;
   private _localDB = new Map<string, any>();
   private _model: gapi.drive.realtime.Model;
+  private _doc: gapi.drive.realtime.Document;
   private _basePath: string;
   private _baseDB: IModelDB = null;
+  private _connected = new PromiseDelegate<void>()
 }
 
 export
