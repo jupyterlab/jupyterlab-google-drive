@@ -62,15 +62,27 @@ class GoogleModelDB implements IModelDB {
             let oldDB = this._db;
             this._db = new GoogleRealtimeMap(this._model.getRoot());
             for(let key of oldDB.keys()) {
+              let val = this._localDB.get(key);
               if(this._db.has(key)) {
-                let val = this._localDB.get(key);
                 let gval = this._db.get(key);
                 if(val.googleObject) {
                   val.googleObject = gval;
                 }
               } else {
-                let gval = oldDB.get(key);
-                this._db.set(key, gval);
+                if(val.googleObject) {
+                  let newVal: gapi.drive.realtime.CollaborativeObject;
+                  if(val.googleObject.type === 'EditableString') {
+                    newVal = this._model.createString(val.text);
+                  } else if (val.googleObject.type === 'List') {
+                    newVal = this._model.createList(val.googleObjec.asArray());
+                  } else if (val.googleObject.type === 'Map') {
+                    newVal = this._model.createMap();
+                    for(key of val.keys()) {
+                      (newVal as any).set(key, val.get(key));
+                    }
+                  }
+                  val.googleObject = newVal;
+                }
               }
             }
             this._connected.resolve(void 0);
