@@ -41,9 +41,9 @@ export
 class GoogleModelDB implements IModelDB {
   constructor(options: GoogleModelDB.ICreateOptions) {
     this._basePath = options.basePath || '';
+    this._filePath = options.filePath;
     if(options.baseDB) {
       this._baseDB = options.baseDB;
-      this._model = options.baseDB.model;
       this._baseDB.changed.connect((db, args)=>{
         this._changed.emit({
           path: args.path
@@ -74,14 +74,17 @@ class GoogleModelDB implements IModelDB {
                   if(val.googleObject.type === 'EditableString') {
                     newVal = this._model.createString(val.text);
                   } else if (val.googleObject.type === 'List') {
-                    newVal = this._model.createList(val.googleObjec.asArray());
+                    newVal = this._model.createList(val.googleObject.asArray());
                   } else if (val.googleObject.type === 'Map') {
                     newVal = this._model.createMap();
-                    for(key of val.keys()) {
-                      (newVal as any).set(key, val.get(key));
+                    for(let item of val.keys()) {
+                      (newVal as any).set(item, val.get(item));
                     }
                   }
                   val.googleObject = newVal;
+                  this._db.set(key, newVal);
+                } else {
+                  this._db.set(key, val);
                 }
               }
             }
@@ -99,7 +102,11 @@ class GoogleModelDB implements IModelDB {
   }
 
   get model(): gapi.drive.realtime.Model {
-    return this._model;
+    if(this._baseDB) {
+      return this._baseDB.model;
+    } else {
+      return this._model;
+    }
   }
 
   get doc(): gapi.drive.realtime.Document {
@@ -122,9 +129,25 @@ class GoogleModelDB implements IModelDB {
     return this._localDB.get(path);
   }
 
+  getGoogleObject(path: string): any {
+    if(this._baseDB) {
+      return this._baseDB.get(this._basePath+'/'+path);
+    } else {
+      return this._db.get(path);
+    }
+  }
+
+  has(path: string): boolean {
+    if(this._baseDB) {
+      return this._baseDB.has(this._basePath+'/'+path);
+    } else {
+      return this._db.has(path);
+    }
+  }
+
   set(path: string, value: IObservable): void {
     let toSet: any;
-    if((value as any).googleObject) {
+    if(value && (value as any).googleObject) {
       toSet = (value as any).googleObject;
     } else if (value instanceof ObservableValue) {
       toSet = (value as any).get();
@@ -132,7 +155,7 @@ class GoogleModelDB implements IModelDB {
       toSet = value;
     }
     if(this._baseDB) {
-      this._baseDB.set(this._basePath+'/'+path, toSet);
+      this._baseDB.set(this._basePath+'/'+path, value);
     } else {
       this._db.set(path, toSet);
     }
@@ -141,65 +164,62 @@ class GoogleModelDB implements IModelDB {
 
   createString(path: string): IObservableString {
     let str: gapi.drive.realtime.CollaborativeString;
-    if(this._db.has(path)) {
-      str = this._db.get(path);
+    if(this.has(path)) {
+      str = this.getGoogleObject(path);
     } else {
-      str = this._model.createString();
+      str = this.model.createString();
     }
     let newStr = new GoogleRealtimeString(str);
-    this._localDB.set(path, newStr);
-    this._db.set(path, str);
+    this.set(path, newStr);
     return newStr;
   }
 
   createVector(path: string): IObservableVector<JSONValue> {
     let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
-    if(this._db.has(path)) {
-      vec = this._db.get(path);
+    if(this.has(path)) {
+      vec = this.getGoogleObject(path);
     } else {
-      vec = this._model.createList<JSONValue>();
+      vec = this.model.createList<JSONValue>();
     }
     let newVec = new GoogleRealtimeVector<JSONValue>(vec);
-    this._localDB.set(path, newVec);
-    this._db.set(path, vec);
+    this.set(path, newVec);
     return newVec;
   }
 
   createMap(path: string): IObservableMap<JSONValue> {
     let map: gapi.drive.realtime.CollaborativeMap<JSONValue>;
-    if(this._db.has(path)) {
-      map = this._db.get(path);
+    if(this.has(path)) {
+      map = this.getGoogleObject(path);
     } else {
-      map = this._model.createMap<JSONValue>();
+      map = this.model.createMap<JSONValue>();
     }
     let newMap = new GoogleRealtimeMap<JSONValue>(map);
-    this._localDB.set(path, newMap);
-    this._db.set(path, map);
+    this.set(path, newMap);
     return newMap;
   }
 
   createValue(path: string): IObservableValue {
     let val: JSONValue = null;
-    if(this._db.has(path)) {
-      val = this._db.get(path);
+    if(this.has(path)) {
+      val = this.getGoogleObject(path);
     }
     let newVal = new ObservableValue(val);
-    this._db.set(path, val);
-    this._localDB.set(path, newVal);
+    this.set(path, newVal);
     return newVal;
   }
 
-  view(basePath: string): ModelDB {
-    return new ModelDB({basePath, baseDB: this});
+  view(basePath: string): GoogleModelDB {
+    return new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
   }
 
+  private _filePath: string;
   private _changed = new Signal<this, ModelDB.IChangedArgs>(this);
   private _db: GoogleRealtimeMap<GoogleSynchronizable>;
   private _localDB = new Map<string, any>();
   private _model: gapi.drive.realtime.Model;
   private _doc: gapi.drive.realtime.Document;
   private _basePath: string;
-  private _baseDB: IModelDB = null;
+  private _baseDB: GoogleModelDB = null;
   private _connected = new PromiseDelegate<void>()
 }
 
