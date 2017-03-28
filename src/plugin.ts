@@ -46,7 +46,7 @@ import {
 } from './realtime/googlerealtime';
 
 import {
-  getResourceForPath
+  getResourceForPath, createPermissions
 } from './drive/drive';
 
 import {
@@ -260,6 +260,25 @@ function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
     execute: () => fbWidget.shutdownKernels(),
     icon: 'jp-MaterialIcon jp-StopIcon',
     label: 'Shutdown Kernel'
+  }));
+  menu.addItem({ command });
+
+  command = `${prefix}:share`;
+  disposables.add(commands.addCommand(command, {
+    execute: ()=> {
+      let listing: any = (fbWidget as any)._listing;
+      let model = fbWidget.model;
+
+      each(model.items(), (item: any) => {
+        if(listing.isSelected(item.name)) {
+          getResourceForPath(item.path).then((resource) => {
+            createPermissions(resource.id, 'jupyter.realtime@gmail.com');
+          });
+        }
+      });
+    },
+    icon: 'jp-MaterialIcon jp-CopyIcon',
+    label: 'Share'
   }));
   menu.addItem({ command });
 
