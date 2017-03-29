@@ -131,7 +131,7 @@ class GoogleModelDB implements IModelDB {
 
   getGoogleObject(path: string): any {
     if(this._baseDB) {
-      return this._baseDB.get(this._basePath+'/'+path);
+      return this._baseDB.getGoogleObject(this._basePath+'/'+path);
     } else {
       return this._db.get(path);
     }
