@@ -6,7 +6,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  JSONValue, PromiseDelegate
+  JSONValue, PromiseDelegate, JSONExt
 } from '@phosphor/coreutils';
 
 import {
@@ -83,8 +83,8 @@ class GoogleModelDB implements IModelDB {
                   }
                   val.googleObject = newVal;
                   this._db.set(key, newVal);
-                } else {
-                  this._db.set(key, val);
+                } else if (val instanceof ObservableValue) {
+                  this.set(key, val);
                 }
               }
             }
@@ -146,20 +146,31 @@ class GoogleModelDB implements IModelDB {
   }
 
   set(path: string, value: IObservable): void {
-    let toSet: any;
-    if(value && (value as any).googleObject) {
-      toSet = (value as any).googleObject;
-    } else if (value instanceof ObservableValue) {
-      toSet = (value as any).get();
-    } else {
-      toSet = value;
-    }
+    this._localDB.set(path, value);
     if(this._baseDB) {
       this._baseDB.set(this._basePath+'/'+path, value);
     } else {
+      let toSet: any;
+      if(value && (value as any).googleObject) {
+        toSet = (value as any).googleObject;
+      } else if (value instanceof ObservableValue) {
+        toSet = (value as any).get();
+        value.changed.connect((obs, args) => {
+          if(!JSONExt.deepEqual(args.newValue, this._db.get(path))) {
+            this._db.set(path, args.newValue);
+          }
+        });
+        this._db.changed.connect((db, args) => {
+          if(args.key === path &&
+             !JSONExt.deepEqual(args.newValue, value.get())) {
+            value.set(args.newValue);
+          }
+        });
+      } else {
+        toSet = value;
+      }
       this._db.set(path, toSet);
     }
-    this._localDB.set(path, value);
   }
 
   createString(path: string): IObservableString {
