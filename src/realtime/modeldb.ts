@@ -210,7 +210,7 @@ class GoogleModelDB implements IModelDB {
   }
 
   createValue(path: string): IObservableValue {
-    let val: JSONValue = null;
+    let val: JSONValue = '';
     if(this.has(path)) {
       val = this.getGoogleObject(path);
     }
