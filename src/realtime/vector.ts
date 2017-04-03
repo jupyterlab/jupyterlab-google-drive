@@ -404,8 +404,19 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
    * A `fromIndex` or a `toIndex` which is non-integral.
    */
   move(fromIndex: number, toIndex: number): void {
+    if (this.length === 1 || fromIndex === toIndex) {
+      return;
+    }
     let value = this.at(fromIndex);
-    this._vec.move(fromIndex, toIndex);
+    // WARNING: the Google CollaborativeList object
+    // has different move semantics than what we expect
+    // here (see Google Realtime API docs). Hence we have
+    // to do some strange indexing to get the intended behavior.
+    if (fromIndex < toIndex) {
+      this._vec.move(fromIndex, toIndex+1);
+    } else {
+      this._vec.move(fromIndex, toIndex);
+    }
     this._changed.emit({
       type: 'move',
       oldIndex: fromIndex,
