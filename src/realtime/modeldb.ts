@@ -13,7 +13,7 @@ import {
   IModelDB, ModelDB, IModelDBFactory, IObservableValue,
   ObservableValue, IObservableVector, ObservableVector,
   IObservableMap, ObservableMap, IObservableString,
-  ObservableString, IObservable
+  ObservableString, IObservable, IObservableUndoableVector
 } from '@jupyterlab/coreutils';
 
 import {
@@ -27,6 +27,10 @@ import {
 import {
   GoogleRealtimeVector
 } from './realtimevector';
+
+import {
+  GoogleUndoableVector
+} from './undoablevector';
 
 import {
   GoogleRealtimeMap
@@ -193,6 +197,18 @@ class GoogleModelDB implements IModelDB {
       vec = this.model.createList<JSONValue>();
     }
     let newVec = new GoogleRealtimeVector<JSONValue>(vec);
+    this.set(path, newVec);
+    return newVec;
+  }
+
+  createUndoableVector(path: string): IObservableUndoableVector<JSONValue> {
+    let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
+    if(this.has(path)) {
+      vec = this.getGoogleObject(path);
+    } else {
+      vec = this.model.createList<JSONValue>();
+    }
+    let newVec = new GoogleUndoableVector(vec);
     this.set(path, newVec);
     return newVec;
   }

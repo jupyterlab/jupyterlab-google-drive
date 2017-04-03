@@ -16,7 +16,6 @@ import {
 
 import {
   IObservableVector, ObservableVector,
-  Synchronizable
 } from '@jupyterlab/coreutils';
 
 import {
