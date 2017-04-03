@@ -2,46 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  Widget
-} from '@phosphor/widgets';
-
-import {
-  JSONObject
-} from '@phosphor/coreutils';
-
-import {
-  Dialog, showDialog,
-  InstanceTracker
-} from '@jupyterlab/apputils';
-
-import {
-  IObservableMap, ObservableMap,
-  IObservableString, ObservableString,
-  IObservableVector, ObservableVector,
-  IRealtime, IRealtimeHandler,
-  Synchronizable, ICollaborator,
-  IModelDB,
+  IRealtime, IRealtimeHandler, IModelDB,
 } from '@jupyterlab/coreutils';
 
 import {
-  authorize, gapiAuthorized
+  gapiAuthorized
 } from '../gapi';
-
-import {
-  createPermissions, createRealtimeDocument, loadRealtimeDocument
-} from '../drive/drive';
-
-import {
-  GoogleString
-} from './string';
-
-import {
-  GoogleVector
-} from './vector';
-
-import {
-  GoogleMap
-} from './map';
 
 import {
   GoogleModelDB
@@ -50,8 +16,6 @@ import {
 import {
   CollaboratorMap, GoogleCollaborator
 } from './collaborator';
-
-declare let gapi : any;
 
 export
 class GoogleRealtime implements IRealtime {

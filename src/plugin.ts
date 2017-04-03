@@ -14,10 +14,6 @@ import {
 } from '@phosphor/disposable';
 
 import {
-  IServiceManager
-} from '@jupyterlab/services';
-
-import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
@@ -26,7 +22,7 @@ import {
 } from '@jupyterlab/apputils';
 
 import {
-  IDocumentManager, DocumentManager
+  DocumentManager
 } from '@jupyterlab/docmanager';
 
 import {
@@ -52,11 +48,6 @@ import {
 import {
   GoogleDriveServiceManager
 } from './drive/contents';
-
-/**
- * Google Drive filebrowser plugin state namespace.
- */
-const NAMESPACE = 'google-drive-filebrowser';
 
 const realtimePlugin: JupyterLabPlugin<IRealtime> = {
   id: 'jupyter.services.realtime',

@@ -2,8 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IServiceManager, ContentsManager, Contents,
-  ServiceManager, IAjaxSettings, utils
+  ContentsManager, Contents, ServiceManager, utils
 } from '@jupyterlab/services';
 
 import {

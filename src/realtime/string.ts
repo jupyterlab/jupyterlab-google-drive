@@ -10,10 +10,6 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleMap
-} from './map';
-
-import {
   GoogleRealtimeObject
 } from './googlerealtime';
 

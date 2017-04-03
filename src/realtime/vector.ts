@@ -3,12 +3,8 @@
 
 import {
   IterableOrArrayLike, ArrayIterator,
-  IIterator, each, toArray, ArrayExt
+  IIterator, each, toArray
 } from '@phosphor/algorithm';
-
-import {
-  JSONObject
-} from '@phosphor/coreutils';
 
 import {
   Signal, ISignal

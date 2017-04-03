@@ -3,6 +3,7 @@
     "declaration": true,
     "noImplicitAny": true,
     "noEmitOnError": true,
+    "noUnusedLocals": true,
     "lib": ["es5", "dom", "es2015.promise", "es2015.collection"],
     "module": "commonjs",
     "moduleResolution": "node",
@@ -10,12 +11,7 @@
     "outDir": "../lib",
     "baseUrl": ".",
     "paths": {
-      "@phosphor/widgets": ["../node_modules/@phosphor/widgets"],
-      "@phosphor/signaling": ["../node_modules/@phosphor/signaling"],
-      "@phosphor/coreutils": ["../node_modules/@phosphor/coreutils"],
-      "@phosphor/application": ["../node_modules/@phosphor/application"],
-      "@phosphor/commands": ["../node_modules/@phosphor/commands"],
-      "@phosphor/algorithm": ["../node_modules/@phosphor/algorithm"]
+      "@phosphor/*": ["../node_modules/@phosphor/*"]
     }
   }
 }

@@ -6,11 +6,6 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  JSONObject
-} from '@phosphor/coreutils';
-
-import {
-  IRealtime, Synchronizable,
   IObservableMap, ObservableMap,
 } from '@jupyterlab/coreutils';
 

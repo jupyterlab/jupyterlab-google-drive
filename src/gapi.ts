@@ -9,7 +9,7 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  Contents, utils
+  utils
 } from '@jupyterlab/services';
 
 
@@ -23,7 +23,6 @@ declare let google: any;
 
 const CLIENT_ID = '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.googleusercontent.com';
 const APP_ID = '625147942732';
-const DEVELOPER_KEY = 'AIzaSyCTshlUaUbTvNQAktOsc6ql-wJFa4DX77g'
 
 const FILES_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const METADATA_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.metadata';

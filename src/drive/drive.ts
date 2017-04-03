@@ -1,9 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-//TODO: Remove jquery dependency
-import $ = require('jquery');
-
 import {
   map, filter, toArray
 } from '@phosphor/algorithm';

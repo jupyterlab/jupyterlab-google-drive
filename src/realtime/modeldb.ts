@@ -10,10 +10,8 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  IModelDB, ModelDB, IModelDBFactory, IObservableValue,
-  ObservableValue, IObservableVector, ObservableVector,
-  IObservableMap, ObservableMap, IObservableString,
-  ObservableString, IObservable, IObservableUndoableVector
+  IModelDB, ModelDB, IObservableValue, IObservableVector, ObservableValue,
+  IObservableMap, IObservableString, IObservable, IObservableUndoableVector
 } from '@jupyterlab/coreutils';
 
 import {
