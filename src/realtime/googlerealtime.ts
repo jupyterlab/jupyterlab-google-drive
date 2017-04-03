@@ -32,23 +32,23 @@ import {
 } from '../drive/drive';
 
 import {
-  GoogleRealtimeString
-} from './realtimestring';
+  GoogleString
+} from './string';
 
 import {
-  GoogleRealtimeVector
-} from './realtimevector';
+  GoogleVector
+} from './vector';
 
 import {
-  GoogleRealtimeMap
-} from './realtimemap';
+  GoogleMap
+} from './map';
 
 import {
   GoogleModelDB
 } from './modeldb';
 
 import {
-  CollaboratorMap, GoogleRealtimeCollaborator
+  CollaboratorMap, GoogleCollaborator
 } from './collaborator';
 
 declare let gapi : any;
@@ -113,7 +113,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
    * Get the unique identifier for the collaborative
    * editing session of the local user.
    */
-  get localCollaborator(): GoogleRealtimeCollaborator {
+  get localCollaborator(): GoogleCollaborator {
     return this._collaborators.localCollaborator;
   }
 

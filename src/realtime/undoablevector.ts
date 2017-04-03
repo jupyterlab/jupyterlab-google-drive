@@ -15,14 +15,14 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleRealtimeVector
-} from './realtimevector';
+  GoogleVector
+} from './vector';
 
 /**
  * A concrete implementation of a realtime undoable vector.
  */
 export
-class GoogleUndoableVector extends GoogleRealtimeVector<JSONValue> implements IObservableUndoableVector<JSONValue> {
+class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservableUndoableVector<JSONValue> {
   /**
    * Construct a new undoable vector.
    */

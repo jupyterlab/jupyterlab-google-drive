@@ -26,7 +26,7 @@ declare let gapi : any;
 
 
 export
-class GoogleRealtimeVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
+class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
   constructor(vector: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
     this.googleObject = vector;

@@ -10,8 +10,8 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleRealtimeMap
-} from './realtimemap';
+  GoogleMap
+} from './map';
 
 import {
   GoogleRealtimeObject
@@ -20,7 +20,7 @@ import {
 declare let gapi : any;
 
 export
-class GoogleRealtimeString implements IObservableString, GoogleRealtimeObject {
+class GoogleString implements IObservableString, GoogleRealtimeObject {
 
   constructor (str: gapi.drive.realtime.CollaborativeString) {
     this.googleObject = str;

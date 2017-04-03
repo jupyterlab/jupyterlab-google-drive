@@ -17,7 +17,7 @@ import {
 declare let gapi : any;
 
 export
-class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
+class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
 
   constructor(doc: gapi.drive.realtime.Document) {
     this._ready = new Promise<void>((resolve,reject)=>{
@@ -29,7 +29,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
 
       //We need to create the map
       if(!this._map) {
-        this._map = doc.getModel().createMap<GoogleRealtimeCollaborator>();
+        this._map = doc.getModel().createMap<GoogleCollaborator>();
         doc.getModel().getRoot().set(id, this._map);
       }
 
@@ -52,7 +52,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       }
       //Now add the remaining collaborators
       for(let i=0; i<initialCollaborators.length; i++) {
-        let collaborator: GoogleRealtimeCollaborator = {
+        let collaborator: GoogleCollaborator = {
           userId: initialCollaborators[i].userId,
           sessionId: initialCollaborators[i].sessionId,
           displayName: initialCollaborators[i].displayName,
@@ -70,7 +70,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
       this._doc.addEventListener(
         gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
         (evt : any) => {
-          let collaborator: GoogleRealtimeCollaborator = {
+          let collaborator: GoogleCollaborator = {
             userId: evt.collaborator.userId,
             sessionId: evt.collaborator.sessionId,
             displayName: evt.collaborator.displayName,
@@ -129,7 +129,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleRealtimeCollaborator>> {
+  get changed(): ISignal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleCollaborator>> {
     return this._changed;
   }
 
@@ -141,7 +141,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     return this._isDisposed;
   }
 
-  get localCollaborator(): GoogleRealtimeCollaborator {
+  get localCollaborator(): GoogleCollaborator {
     return this._localCollaborator;
   }
 
@@ -155,7 +155,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    * @returns the old value for the key, or undefined
    *   if that did not exist.
    */
-  set(key: string, value: GoogleRealtimeCollaborator): GoogleRealtimeCollaborator {
+  set(key: string, value: GoogleCollaborator): GoogleCollaborator {
     let oldVal = this._map.get(key);
     this._map.set(key, value);
     this._changed.emit({
@@ -175,7 +175,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    *
    * @returns the value for that key.
    */
-  get(key: string): GoogleRealtimeCollaborator {
+  get(key: string): GoogleCollaborator {
     return this._map.get(key);
   }
 
@@ -204,7 +204,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    *
    * @returns - a list of values.
    */
-  values(): GoogleRealtimeCollaborator[] {
+  values(): GoogleCollaborator[] {
     return this._map.values();
   }
 
@@ -216,7 +216,7 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
    * @returns the value of the given key,
    *   or undefined if that does not exist. 
    */
-  delete(key: string): GoogleRealtimeCollaborator {
+  delete(key: string): GoogleCollaborator {
     let oldVal = this._map.get(key);
     this._map.delete(key);
     this._changed.emit({
@@ -249,16 +249,16 @@ class CollaboratorMap implements IObservableMap<GoogleRealtimeCollaborator> {
     this._isDisposed = true;
   }
 
-  private _localCollaborator: GoogleRealtimeCollaborator = null;
+  private _localCollaborator: GoogleCollaborator = null;
   private _doc : gapi.drive.realtime.Document = null;
-  private _map : gapi.drive.realtime.CollaborativeMap<GoogleRealtimeCollaborator> = null;
+  private _map : gapi.drive.realtime.CollaborativeMap<GoogleCollaborator> = null;
   private _isDisposed : boolean = false;
   private _ready: Promise<void> = null;
-  private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleRealtimeCollaborator>>(this);
+  private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleCollaborator>>(this);
 }
 
 export
-class GoogleRealtimeCollaborator implements ICollaborator {
+class GoogleCollaborator implements ICollaborator {
   /**
    * A user id for the collaborator.
    * This might not be unique, if the user has more than

@@ -21,20 +21,20 @@ import {
 } from './googlerealtime';
 
 import {
-  GoogleRealtimeString
-} from './realtimestring';
+  GoogleString
+} from './string';
 
 import {
-  GoogleRealtimeVector
-} from './realtimevector';
+  GoogleVector
+} from './vector';
 
 import {
   GoogleUndoableVector
 } from './undoablevector';
 
 import {
-  GoogleRealtimeMap
-} from './realtimemap';
+  GoogleMap
+} from './map';
 
 import {
   getResourceForPath, loadRealtimeDocument
@@ -64,7 +64,7 @@ class GoogleModelDB implements IModelDB {
             this._doc = doc;
             this._model = doc.getModel();
             let oldDB = this._db;
-            this._db = new GoogleRealtimeMap(this._model.getRoot());
+            this._db = new GoogleMap(this._model.getRoot());
             for(let key of oldDB.keys()) {
               let val = this._localDB.get(key);
               if(this._db.has(key)) {
@@ -96,7 +96,7 @@ class GoogleModelDB implements IModelDB {
           });
         });
       }
-      this._db = new GoogleRealtimeMap(this._model.getRoot());
+      this._db = new GoogleMap(this._model.getRoot());
       this._db.changed.connect((db, args)=>{
         this._changed.emit({
           path: args.key,
@@ -184,7 +184,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       str = this.model.createString();
     }
-    let newStr = new GoogleRealtimeString(str);
+    let newStr = new GoogleString(str);
     this.set(path, newStr);
     return newStr;
   }
@@ -196,7 +196,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       vec = this.model.createList<JSONValue>();
     }
-    let newVec = new GoogleRealtimeVector<JSONValue>(vec);
+    let newVec = new GoogleVector<JSONValue>(vec);
     this.set(path, newVec);
     return newVec;
   }
@@ -220,7 +220,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       map = this.model.createMap<JSONValue>();
     }
-    let newMap = new GoogleRealtimeMap<JSONValue>(map);
+    let newMap = new GoogleMap<JSONValue>(map);
     this.set(path, newMap);
     return newMap;
   }
@@ -241,7 +241,7 @@ class GoogleModelDB implements IModelDB {
 
   private _filePath: string;
   private _changed = new Signal<this, ModelDB.IChangedArgs>(this);
-  private _db: GoogleRealtimeMap<GoogleSynchronizable>;
+  private _db: GoogleMap<GoogleSynchronizable>;
   private _localDB = new Map<string, any>();
   private _model: gapi.drive.realtime.Model;
   private _doc: gapi.drive.realtime.Document;

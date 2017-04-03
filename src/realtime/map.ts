@@ -18,14 +18,10 @@ import {
   GoogleSynchronizable, GoogleRealtimeObject
 } from './googlerealtime';
 
-import {
-  GoogleRealtimeString
-} from './realtimestring';
-
 declare let gapi : any;
 
 export
-class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
+class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
 
   /**
    * Constructor
@@ -39,7 +35,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>> {
+  get changed(): ISignal<GoogleMap<T>, ObservableMap.IChangedArgs<T>> {
     return this._changed;
   }
 
@@ -205,7 +201,7 @@ class GoogleRealtimeMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     this._isDisposed = true;
   }
 
-  private _changed = new Signal<GoogleRealtimeMap<T>, ObservableMap.IChangedArgs<T>>(this);
+  private _changed = new Signal<GoogleMap<T>, ObservableMap.IChangedArgs<T>>(this);
   private _map : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _isDisposed : boolean = false;
 }
