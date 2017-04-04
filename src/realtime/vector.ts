@@ -3,7 +3,7 @@
 
 import {
   IterableOrArrayLike, ArrayIterator,
-  IIterator, each, toArray
+  IIterator, each, toArray, ArrayExt
 } from '@phosphor/algorithm';
 
 import {
@@ -24,7 +24,8 @@ declare let gapi : any;
 export
 class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
-  constructor(vector: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
+  constructor(vector: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>, itemCmp?: (first: T, second: T) => boolean) {
+    this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = vector;
   }
 
@@ -214,6 +215,10 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
    */
   set(index: number, value: T): void {
     let oldVal: T = this._vec.get(index);
+    // Bail if the value does not change.
+    if (this._itemCmp(oldVal, value)) {
+      return;
+    }
     this._vec.set(index, value);
 
     this._changed.emit({
@@ -327,10 +332,11 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
    * Iterators pointing at the removed value and beyond are invalidated.
    *
    * #### Notes
-   * Comparison is performed using strict `===` equality.
+   * Comparison is performed according to the itemCmp function,
+   * which defaults to strict `===` equality.
    */
   remove(value: T): number {
-    let index = this._vec.indexOf(value);
+    let index = ArrayExt.findFirstIndex(this._vec.asArray(), item => this._itemCmp(item, value));
     this.removeAt(index);
     return index;
   }
@@ -552,5 +558,19 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
   private _vec : gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> = null;
   //Canonical vector of objects.
   private _changed = new Signal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>(this);
+  private _itemCmp: (first: T, second: T) => boolean;
   private _isDisposed : boolean = false;
+}
+
+/**
+ * The namespace for module private data.
+ */
+namespace Private {
+  /**
+   * The default strict equality item cmp.
+   */
+  export
+  function itemCmp(first: any, second: any): boolean {
+    return first === second;
+  }
 }

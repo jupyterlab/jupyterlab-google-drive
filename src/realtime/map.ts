@@ -21,7 +21,8 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * Constructor
    */
-  constructor( map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
+  constructor(map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>, itemCmp?: (first: T, second: T) => boolean) {
+    this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = map;
   }
 
@@ -100,6 +101,9 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    */
   set(key: string, value: T): T {
     let oldVal = this._map.get(key);
+    if (oldVal !== undefined && this._itemCmp(oldVal, value)) {
+      return;
+    }
     this._map.set(key, value);
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -197,6 +201,20 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   }
 
   private _changed = new Signal<this, ObservableMap.IChangedArgs<T>>(this);
-  private _map : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
-  private _isDisposed : boolean = false;
+  private _map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
+  private _itemCmp: (first: T, second: T) => boolean = null;
+  private _isDisposed: boolean = false;
+}
+
+/**
+ * The namespace for module private data.
+ */
+namespace Private {
+  /**
+   * The default strict equality item comparator.
+   */
+  export
+  function itemCmp(first: any, second: any): boolean {
+    return first === second;
+  }
 }

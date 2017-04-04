@@ -20,6 +20,13 @@ import {
 export
 class GoogleJSON extends GoogleMap<JSONValue> implements IObservableJSON {
   /**
+   * Constructor for a collaborative JSON object.
+   */
+  constructor(map: gapi.drive.realtime.CollaborativeMap<JSONValue>) {
+    super(map, JSONExt.deepEqual);
+  }
+
+  /**
    * Serialize the model to JSON.
    */
   toJSON(): JSONObject {
