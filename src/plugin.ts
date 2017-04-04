@@ -18,7 +18,8 @@ import {
 } from '@jupyterlab/application';
 
 import {
-  ICommandPalette, IStateDB
+  ICommandPalette, IStateDB,
+  showDialog, Dialog
 } from '@jupyterlab/apputils';
 
 import {
@@ -259,11 +260,20 @@ function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
     execute: ()=> {
       let listing: any = (fbWidget as any)._listing;
       let model = fbWidget.model;
+      let input = document.createElement('input');
 
-      each(model.items(), (item: any) => {
-        if(listing.isSelected(item.name)) {
-          getResourceForPath(item.path).then((resource) => {
-            createPermissions(resource.id, 'jupyter.realtime@gmail.com');
+      showDialog({
+        title: 'Add collaborator Gmail address',
+        body: input,
+        buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'ADD'})]
+      }).then( result=> {
+        if (result.accept) {
+          each(model.items(), (item: any) => {
+            if(listing.isSelected(item.name)) {
+              getResourceForPath(item.path).then((resource) => {
+                createPermissions(resource.id, input.value);
+              });
+            }
           });
         }
       });
