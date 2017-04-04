@@ -442,7 +442,8 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
           fileId: resource.id,
           addParents: newFolder.id,
           removeParents: resource.parents[0],
-          name: newName
+          name: newName,
+          fields: RESOURCE_FIELDS
         });
         return driveApiRequest(request);
       }
