@@ -2,15 +2,11 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  ISignal, Signal
-} from '@phosphor/signaling';
-
-import {
   JSONValue, PromiseDelegate, JSONExt
 } from '@phosphor/coreutils';
 
 import {
-  IModelDB, ModelDB, IObservableValue, IObservableVector, ObservableValue,
+  IModelDB, IObservableValue, IObservableVector, ObservableValue,
   IObservableMap, IObservableString, IObservable, IObservableUndoableVector
 } from '@jupyterlab/coreutils';
 
@@ -46,11 +42,6 @@ class GoogleModelDB implements IModelDB {
     this._filePath = options.filePath;
     if(options.baseDB) {
       this._baseDB = options.baseDB;
-      this._baseDB.changed.connect((db, args)=>{
-        this._changed.emit({
-          path: args.path
-        });
-      })
     } else {
       if(options.model) {
         this._model = options.model;
@@ -95,11 +86,6 @@ class GoogleModelDB implements IModelDB {
         });
       }
       this._db = new GoogleMap(this._model.getRoot());
-      this._db.changed.connect((db, args)=>{
-        this._changed.emit({
-          path: args.key,
-        });
-      });
     }
   }
 
@@ -117,10 +103,6 @@ class GoogleModelDB implements IModelDB {
 
   get basePath(): string {
     return this._basePath;
-  }
-
-  get changed(): ISignal<this, ModelDB.IChangedArgs> {
-    return this._changed;
   }
 
   get connected(): Promise<void> {
@@ -238,7 +220,6 @@ class GoogleModelDB implements IModelDB {
   }
 
   private _filePath: string;
-  private _changed = new Signal<this, ModelDB.IChangedArgs>(this);
   private _db: GoogleMap<GoogleSynchronizable>;
   private _localDB = new Map<string, any>();
   private _model: gapi.drive.realtime.Model;
