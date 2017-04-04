@@ -15,7 +15,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleSynchronizable, GoogleRealtimeObject
+  GoogleRealtimeObject
 } from './googlerealtime';
 
 declare let gapi : any;
@@ -24,7 +24,7 @@ declare let gapi : any;
 export
 class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
-  constructor(vector: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>, itemCmp?: (first: T, second: T) => boolean) {
+  constructor(vector: gapi.drive.realtime.CollaborativeList<T>, itemCmp?: (first: T, second: T) => boolean) {
     this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = vector;
   }
@@ -99,11 +99,11 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
    * Get the underlying collaborative object
    * for this vector.
    */
-  get googleObject(): gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> {
+  get googleObject(): gapi.drive.realtime.CollaborativeList<T> {
     return this._vec;
   }
 
-  set googleObject(vec: gapi.drive.realtime.CollaborativeList<GoogleSynchronizable>) {
+  set googleObject(vec: gapi.drive.realtime.CollaborativeList<T>) {
     if(this._vec) {
       this.clear();
       for(let i = 0; i < vec.length; i++) {
@@ -555,7 +555,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
   }
 
   //which represents the canonical vector of objects.
-  private _vec : gapi.drive.realtime.CollaborativeList<GoogleSynchronizable> = null;
+  private _vec : gapi.drive.realtime.CollaborativeList<T> = null;
   //Canonical vector of objects.
   private _changed = new Signal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>(this);
   private _itemCmp: (first: T, second: T) => boolean;

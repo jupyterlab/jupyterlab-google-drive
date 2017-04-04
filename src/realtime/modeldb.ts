@@ -145,14 +145,14 @@ class GoogleModelDB implements IModelDB {
       } else if (value instanceof ObservableValue) {
         toSet = (value as any).get();
         value.changed.connect((obs, args) => {
-          if(!JSONExt.deepEqual(args.newValue, this._db.get(path))) {
+          if(!JSONExt.deepEqual(args.newValue, this._db.get(path) as JSONValue)) {
             this._db.set(path, args.newValue);
           }
         });
         this._db.changed.connect((db, args) => {
           if(args.key === path &&
-             !JSONExt.deepEqual(args.newValue, value.get())) {
-            value.set(args.newValue);
+             !JSONExt.deepEqual(args.newValue as JSONValue, value.get())) {
+            value.set(args.newValue as JSONValue);
           }
         });
       } else {

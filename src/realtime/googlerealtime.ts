@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  JSONValue
+} from '@phosphor/coreutils';
+
+import {
   IRealtime, IRealtimeHandler, IModelDB,
 } from '@jupyterlab/coreutils';
 
@@ -133,4 +137,4 @@ interface GoogleRealtimeObject {
  * of these types before insertion.
  */
 export
-type GoogleSynchronizable = any;
+type GoogleSynchronizable = JSONValue | gapi.drive.realtime.CollaborativeObject;

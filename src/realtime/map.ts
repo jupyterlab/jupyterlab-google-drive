@@ -10,7 +10,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleSynchronizable, GoogleRealtimeObject
+  GoogleRealtimeObject
 } from './googlerealtime';
 
 declare let gapi : any;
@@ -21,7 +21,7 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * Constructor
    */
-  constructor(map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>, itemCmp?: (first: T, second: T) => boolean) {
+  constructor(map: gapi.drive.realtime.CollaborativeMap<T>, itemCmp?: (first: T, second: T) => boolean) {
     this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = map;
   }
@@ -53,11 +53,11 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
    * Get the underlying collaborative object
    * for this map.
    */
-  get googleObject(): gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> {
+  get googleObject(): gapi.drive.realtime.CollaborativeMap<T> {
     return this._map;
   }
 
-  set googleObject(map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable>) {
+  set googleObject(map: gapi.drive.realtime.CollaborativeMap<T>) {
     if(this._map) {
       this._map.clear();
       for(let key of map.keys()) {
@@ -201,7 +201,7 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   }
 
   private _changed = new Signal<this, ObservableMap.IChangedArgs<T>>(this);
-  private _map: gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
+  private _map: gapi.drive.realtime.CollaborativeMap<T> = null;
   private _itemCmp: (first: T, second: T) => boolean = null;
   private _isDisposed: boolean = false;
 }
