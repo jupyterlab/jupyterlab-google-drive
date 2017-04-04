@@ -30,7 +30,7 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<GoogleMap<T>, ObservableMap.IChangedArgs<T>> {
+  get changed(): ISignal<this, ObservableMap.IChangedArgs<T>> {
     return this._changed;
   }
 
@@ -196,7 +196,7 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
     this._isDisposed = true;
   }
 
-  private _changed = new Signal<GoogleMap<T>, ObservableMap.IChangedArgs<T>>(this);
+  private _changed = new Signal<this, ObservableMap.IChangedArgs<T>>(this);
   private _map : gapi.drive.realtime.CollaborativeMap<GoogleSynchronizable> = null;
   private _isDisposed : boolean = false;
 }

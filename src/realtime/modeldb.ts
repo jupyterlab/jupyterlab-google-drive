@@ -7,7 +7,8 @@ import {
 
 import {
   IModelDB, IObservableValue, IObservableVector, ObservableValue,
-  IObservableMap, IObservableString, IObservable, IObservableUndoableVector
+  IObservableMap, IObservableString, IObservable, IObservableUndoableVector,
+  IObservableJSON
 } from '@jupyterlab/coreutils';
 
 import {
@@ -29,6 +30,10 @@ import {
 import {
   GoogleMap
 } from './map';
+
+import {
+  GoogleJSON
+} from './json';
 
 import {
   getResourceForPath, loadRealtimeDocument
@@ -203,6 +208,18 @@ class GoogleModelDB implements IModelDB {
     let newMap = new GoogleMap<JSONValue>(map);
     this.set(path, newMap);
     return newMap;
+  }
+
+  createJSON(path: string): IObservableJSON {
+    let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
+    if(this.has(path)) {
+      json = this.getGoogleObject(path);
+    } else {
+      json = this.model.createMap<JSONValue>();
+    }
+    let newJSON = new GoogleJSON(json);
+    this.set(path, newJSON);
+    return newJSON;
   }
 
   createValue(path: string): IObservableValue {
