@@ -3,7 +3,7 @@
 
 import {
   IterableOrArrayLike, ArrayIterator,
-  IIterator, each, toArray, ArrayExt
+  IIterator, each, toArray
 } from '@phosphor/algorithm';
 
 import {
@@ -336,7 +336,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
    * which defaults to strict `===` equality.
    */
   remove(value: T): number {
-    let index = ArrayExt.findFirstIndex(this._vec.asArray(), item => this._itemCmp(item, value));
+    let index = this._vec.indexOf(value, this._itemCmp);
     this.removeAt(index);
     return index;
   }
