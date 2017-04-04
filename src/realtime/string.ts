@@ -13,7 +13,6 @@ import {
   GoogleRealtimeObject
 } from './googlerealtime';
 
-declare let gapi : any;
 
 export
 class GoogleString implements IObservableString, GoogleRealtimeObject {

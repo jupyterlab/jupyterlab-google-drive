@@ -9,7 +9,6 @@ import {
   ICollaborator, IObservableMap, ObservableMap
 } from '@jupyterlab/coreutils';
 
-declare let gapi : any;
 
 export
 class CollaboratorMap implements IObservableMap<GoogleCollaborator> {

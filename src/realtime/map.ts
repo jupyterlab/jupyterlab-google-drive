@@ -13,8 +13,6 @@ import {
   GoogleRealtimeObject
 } from './googlerealtime';
 
-declare let gapi : any;
-
 export
 class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
 

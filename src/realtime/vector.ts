@@ -18,8 +18,6 @@ import {
   GoogleRealtimeObject
 } from './googlerealtime';
 
-declare let gapi : any;
-
 
 export
 class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
