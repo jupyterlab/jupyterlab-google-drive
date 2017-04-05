@@ -115,7 +115,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
     //Add event listeners to the collaborativeVector
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_ADDED,
-      (evt : any) => {
+      (evt: any) => {
         if(!evt.isLocal) {
           let vals: T[] = evt.values;
           this._changed.emit({
@@ -130,7 +130,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_REMOVED,
-      (evt : any) => {
+      (evt: any) => {
         if(!evt.isLocal) {
           let vals: T[] = evt.values;
           this._changed.emit({
@@ -145,7 +145,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_SET,
-      (evt : any) => {
+      (evt: any) => {
         if(!evt.isLocal) {
           let oldVals: T[] = evt.oldValues;
           let newVals: T[] = evt.newValues;
@@ -553,11 +553,11 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
   }
 
   //which represents the canonical vector of objects.
-  private _vec : gapi.drive.realtime.CollaborativeList<T> = null;
+  private _vec: gapi.drive.realtime.CollaborativeList<T> = null;
   //Canonical vector of objects.
   private _changed = new Signal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>(this);
   private _itemCmp: (first: T, second: T) => boolean;
-  private _isDisposed : boolean = false;
+  private _isDisposed: boolean = false;
 }
 
 /**

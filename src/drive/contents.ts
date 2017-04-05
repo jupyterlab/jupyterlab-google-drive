@@ -182,7 +182,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
       model = {
         type: 'directory',
         content: [],
-        format : 'json'
+        format: 'json'
       }
     } else {
       throw new Error("Unrecognized type " + contentType);

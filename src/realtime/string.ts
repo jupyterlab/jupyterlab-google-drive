@@ -64,10 +64,10 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
     //Add event listeners to the collaborativeString
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_INSERTED,
-      (evt : any) => {
+      (evt: any) => {
         if(!evt.isLocal) {
           this._changed.emit({
-            type : 'insert',
+            type: 'insert',
             start: evt.index,
             end: evt.index + evt.text.length,
             value: evt.text
@@ -77,10 +77,10 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
 
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_DELETED,
-      (evt : any) => {
+      (evt: any) => {
         if(!evt.isLocal) {
           this._changed.emit({
-            type : 'remove',
+            type: 'remove',
             start: evt.index,
             end: evt.index + evt.text.length,
             value: evt.text
@@ -169,6 +169,6 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
   }
 
   private _changed = new Signal<IObservableString, ObservableString.IChangedArgs>(this);
-  private _str : gapi.drive.realtime.CollaborativeString = null;
-  private _isDisposed : boolean = false;
+  private _str: gapi.drive.realtime.CollaborativeString = null;
+  private _isDisposed: boolean = false;
 }

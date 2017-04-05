@@ -46,7 +46,7 @@ class GoogleRealtime implements IRealtime {
 
 export
 class GoogleRealtimeHandler implements IRealtimeHandler {
-  constructor( path : string ) {
+  constructor(path: string) {
     this._modelDB = new GoogleModelDB({filePath: path});
     this._ready = new Promise<void>( (resolve, reject) => {
       this._modelDB.connected.then(() => {
@@ -113,7 +113,7 @@ class GoogleRealtimeHandler implements IRealtimeHandler {
   private _collaborators: CollaboratorMap = null;
   private _doc: gapi.drive.realtime.Document = null;
   private _model: gapi.drive.realtime.Model = null;
-  private _ready : Promise<void> = null;
+  private _ready: Promise<void> = null;
   private _modelDB: GoogleModelDB;
 }
 

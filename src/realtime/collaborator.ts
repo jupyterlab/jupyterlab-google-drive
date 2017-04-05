@@ -63,7 +63,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
       //Add event listeners to the CollaboratorMap
       this._doc.addEventListener(
         gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
-        (evt : any) => {
+        (evt: any) => {
           let collaborator: GoogleCollaborator = {
             userId: evt.collaborator.userId,
             sessionId: evt.collaborator.sessionId,
@@ -78,7 +78,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
       );
       this._doc.addEventListener(
         gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
-        (evt : any) => {
+        (evt: any) => {
           this.delete(evt.collaborator.sessionId);
         }
       );
@@ -244,9 +244,9 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
   }
 
   private _localCollaborator: GoogleCollaborator = null;
-  private _doc : gapi.drive.realtime.Document = null;
-  private _map : gapi.drive.realtime.CollaborativeMap<GoogleCollaborator> = null;
-  private _isDisposed : boolean = false;
+  private _doc: gapi.drive.realtime.Document = null;
+  private _map: gapi.drive.realtime.CollaborativeMap<GoogleCollaborator> = null;
+  private _isDisposed: boolean = false;
   private _ready: Promise<void> = null;
   private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleCollaborator>>(this);
 }

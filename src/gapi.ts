@@ -63,7 +63,7 @@ const BACKOFF_FACTOR = 2.0;
 const INITIAL_DELAY = 250; //250 ms
 
 export
-function driveApiRequest( request: any, successCode: number = 200, attemptNumber: number = 0) : Promise<any> {
+function driveApiRequest( request: any, successCode: number = 200, attemptNumber: number = 0): Promise<any> {
   if(attemptNumber === MAX_API_REQUESTS) {
     console.log(request);
     return Promise.reject(new Error('Maximum number of API retries reached.'));
@@ -112,7 +112,7 @@ let authorizeRefresh: any = null;
 export
 function authorize (): Promise<void> {
   return gapiLoaded.then( () => {
-    let handleAuthorization = function (authResult : any): void {
+    let handleAuthorization = function (authResult: any): void {
       if (authResult && !authResult.error) {
         console.log("gapi: authorized.");
         //Set a timer to refresh the authorization

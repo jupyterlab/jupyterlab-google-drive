@@ -296,17 +296,17 @@ function contentsModelForPath(path: string, includeContents: boolean = false): P
 export
 function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
   let permissionRequest = {
-    'type' : 'user',
-    'role' : 'writer',
+    'type': 'user',
+    'role': 'writer',
     'emailAddress': emailAddress
   }
   let request = gapi.client.drive.permissions.create({
     'fileId': fileId,
-    'emailMessage' : fileId,
-    'sendNotificationEmail' : true,
+    'emailMessage': fileId,
+    'sendNotificationEmail': true,
     'resource': permissionRequest
   });
-  return driveApiRequest(request).then( (result : any) => {
+  return driveApiRequest(request).then( (result: any) => {
     console.log("gapi: created permissions for "+emailAddress);
     return void 0;
   });
@@ -329,7 +329,7 @@ function createRealtimeDocument(): Promise<string> {
         name: 'jupyterlab_realtime_file'
         }
   });
-  return driveApiRequest(request).then( (result : FilesResource)=>{
+  return driveApiRequest(request).then( (result: FilesResource)=>{
     console.log("gapi: created realtime document "+result.id);
     return result.id;
   });
@@ -343,11 +343,11 @@ function createRealtimeDocument(): Promise<string> {
  * @returns a promise fulfilled with the realtime document model.
  */
 export
-function loadRealtimeDocument( fileId : string): Promise<gapi.drive.realtime.Document> {
+function loadRealtimeDocument( fileId: string): Promise<gapi.drive.realtime.Document> {
   return new Promise((resolve, reject) =>{
     driveReady.then(()=>{
-      console.log("gapi : attempting to load realtime file " + fileId);
-      gapi.drive.realtime.load( fileId, (doc : gapi.drive.realtime.Document ):any => {
+      console.log("gapi: attempting to load realtime file " + fileId);
+      gapi.drive.realtime.load( fileId, (doc: gapi.drive.realtime.Document ):any => {
         resolve(doc);
       });
     });
