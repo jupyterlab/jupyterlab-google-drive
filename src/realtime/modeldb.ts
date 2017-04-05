@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  DisposableSet
+} from '@phosphor/disposable';
+
+import {
   JSONValue, PromiseDelegate, JSONExt
 } from '@phosphor/coreutils';
 
@@ -174,7 +178,7 @@ class GoogleModelDB implements IModelDB {
       str = this.model.createString();
     }
     let newStr = new GoogleString(str);
-    this._createdObjects.push(newStr);
+    this._disposables.add(newStr);
     this.set(path, newStr);
     return newStr;
   }
@@ -187,7 +191,7 @@ class GoogleModelDB implements IModelDB {
       vec = this.model.createList<JSONValue>();
     }
     let newVec = new GoogleVector<JSONValue>(vec);
-    this._createdObjects.push(newVec);
+    this._disposables.add(newVec);
     this.set(path, newVec);
     return newVec;
   }
@@ -200,7 +204,7 @@ class GoogleModelDB implements IModelDB {
       vec = this.model.createList<JSONValue>();
     }
     let newVec = new GoogleUndoableVector(vec);
-    this._createdObjects.push(newVec);
+    this._disposables.add(newVec);
     this.set(path, newVec);
     return newVec;
   }
@@ -213,7 +217,7 @@ class GoogleModelDB implements IModelDB {
       map = this.model.createMap<JSONValue>();
     }
     let newMap = new GoogleMap<JSONValue>(map);
-    this._createdObjects.push(newMap);
+    this._disposables.add(newMap);
     this.set(path, newMap);
     return newMap;
   }
@@ -226,7 +230,7 @@ class GoogleModelDB implements IModelDB {
       json = this.model.createMap<JSONValue>();
     }
     let newJSON = new GoogleJSON(json);
-    this._createdObjects.push(newJSON);
+    this._disposables.add(newJSON);
     this.set(path, newJSON);
     return newJSON;
   }
@@ -237,7 +241,7 @@ class GoogleModelDB implements IModelDB {
       val = this.getGoogleObject(path);
     }
     let newVal = new ObservableValue(val);
-    this._createdObjects.push(newVal);
+    this._disposables.add(newVal);
     this.set(path, newVal);
     return newVal;
   }
@@ -258,17 +262,13 @@ class GoogleModelDB implements IModelDB {
     if (db) {
       db.dispose();
     }
-
-    for (let item of this._createdObjects) {
-      item.dispose();
-    }
-    this._createdObjects = null;
+    this._disposables.dispose();
   }
 
   private _filePath: string;
   private _db: GoogleMap<GoogleSynchronizable>;
   private _localDB = new Map<string, any>();
-  private _createdObjects: IObservable[] = [];
+  private _disposables = new DisposableSet();
   private _model: gapi.drive.realtime.Model = null;
   private _doc: gapi.drive.realtime.Document = null;
   private _basePath: string;
