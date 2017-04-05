@@ -114,6 +114,10 @@ class GoogleModelDB implements IModelDB {
     return this._connected.promise;
   }
 
+  get isDisposed(): boolean {
+    return this._doc === null;
+  }
+
   get(path: string): IObservable {
     return this._localDB.get(path);
   }
@@ -170,6 +174,7 @@ class GoogleModelDB implements IModelDB {
       str = this.model.createString();
     }
     let newStr = new GoogleString(str);
+    this._createdObjects.push(newStr);
     this.set(path, newStr);
     return newStr;
   }
@@ -182,6 +187,7 @@ class GoogleModelDB implements IModelDB {
       vec = this.model.createList<JSONValue>();
     }
     let newVec = new GoogleVector<JSONValue>(vec);
+    this._createdObjects.push(newVec);
     this.set(path, newVec);
     return newVec;
   }
@@ -194,6 +200,7 @@ class GoogleModelDB implements IModelDB {
       vec = this.model.createList<JSONValue>();
     }
     let newVec = new GoogleUndoableVector(vec);
+    this._createdObjects.push(newVec);
     this.set(path, newVec);
     return newVec;
   }
@@ -206,6 +213,7 @@ class GoogleModelDB implements IModelDB {
       map = this.model.createMap<JSONValue>();
     }
     let newMap = new GoogleMap<JSONValue>(map);
+    this._createdObjects.push(newMap);
     this.set(path, newMap);
     return newMap;
   }
@@ -218,6 +226,7 @@ class GoogleModelDB implements IModelDB {
       json = this.model.createMap<JSONValue>();
     }
     let newJSON = new GoogleJSON(json);
+    this._createdObjects.push(newJSON);
     this.set(path, newJSON);
     return newJSON;
   }
@@ -228,6 +237,7 @@ class GoogleModelDB implements IModelDB {
       val = this.getGoogleObject(path);
     }
     let newVal = new ObservableValue(val);
+    this._createdObjects.push(newVal);
     this.set(path, newVal);
     return newVal;
   }
@@ -236,11 +246,31 @@ class GoogleModelDB implements IModelDB {
     return new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
   }
 
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    let db = this._db;
+    this._db = null;
+    this._doc = null;
+    this._model = null;
+
+    if (db) {
+      db.dispose();
+    }
+
+    for (let item of this._createdObjects) {
+      item.dispose();
+    }
+    this._createdObjects = null;
+  }
+
   private _filePath: string;
   private _db: GoogleMap<GoogleSynchronizable>;
   private _localDB = new Map<string, any>();
-  private _model: gapi.drive.realtime.Model;
-  private _doc: gapi.drive.realtime.Document;
+  private _createdObjects: IObservable[] = [];
+  private _model: gapi.drive.realtime.Model = null;
+  private _doc: gapi.drive.realtime.Document = null;
   private _basePath: string;
   private _baseDB: GoogleModelDB = null;
   private _connected = new PromiseDelegate<void>()
