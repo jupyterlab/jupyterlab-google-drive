@@ -27,6 +27,9 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
    * Set the value of the string.
    */
   set text( value: string ) {
+    if(this._str.length === value.length && this._str.getText() === value) {
+      return;
+    }
     this._str.setText(value);
     this._changed.emit({
       type: 'set',
@@ -52,7 +55,9 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
   }
 
   set googleObject(str: gapi.drive.realtime.CollaborativeString) {
+    let prevText = '';
     if(this._str) {
+      prevText = this._str.getText();
       this._str.removeAllEventListeners();
     }
     this._str = str;
@@ -83,8 +88,15 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
         }
     });
 
-    //Trigger text set event
-    this.text = this._str.getText();
+    //Trigger text set event if necessary
+    if (prevText !== this._str.getText()) {
+      this._changed.emit({
+        type: 'set',
+        start: 0,
+        end: this._str.length,
+        value: this._str.getText()
+      });
+    }
   }
 
   /**
