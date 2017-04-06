@@ -59,8 +59,15 @@ class GoogleModelDB implements IModelDB {
         this._model = this._doc.getModel();
         getResourceForPath(options.filePath).then((resource: any) => {
           loadRealtimeDocument(resource.id).then((doc: gapi.drive.realtime.Document) => {
+            // Update the references to the doc and model
             this._doc = doc;
             this._model = doc.getModel();
+
+            // If the model is not empty, it is coming prepopulated.
+            if (this._model.getRoot().size !== 0) {
+              this._isPrepopulated = true;
+            }
+
             let oldDB = this._db;
             this._db = new GoogleMap(this._model.getRoot());
             for(let key of oldDB.keys()) {
@@ -114,8 +121,20 @@ class GoogleModelDB implements IModelDB {
     return this._basePath;
   }
 
+  get isPrepopulated(): boolean {
+    if (this._baseDB) {
+      return this._baseDB.isPrepopulated;
+    } else {
+      return this._isPrepopulated;
+    }
+  }
+
   get connected(): Promise<void> {
-    return this._connected.promise;
+    if (this._baseDB ) {
+      return this._baseDB.connected;
+    } else {
+      return this._connected.promise;
+    }
   }
 
   get isDisposed(): boolean {
@@ -274,6 +293,7 @@ class GoogleModelDB implements IModelDB {
   private _basePath: string;
   private _baseDB: GoogleModelDB = null;
   private _connected = new PromiseDelegate<void>()
+  private _isPrepopulated = false;
 }
 
 export
