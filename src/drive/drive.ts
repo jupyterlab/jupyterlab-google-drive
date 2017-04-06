@@ -122,8 +122,12 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
 
     //Content of the file
     body += 'Content-Type: ' + mime + '\r\n';
-    //TODO: this puts extra quotes around strings.
-    body +='\r\n' + JSON.stringify(model.content) + closeDelim;
+    if (model.format === 'base64') {
+      body += 'Content-Transfer-Encoding: base64\r\n';
+      body +='\r\n' + model.content + closeDelim;
+    } else {
+      body +='\r\n' + JSON.stringify(model.content) + closeDelim;
+    }
 
     let apiPath = '/upload/drive/v3/files';
     let method = 'POST';
