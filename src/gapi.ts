@@ -202,12 +202,13 @@ export
 function makeError(result: any): utils.IAjaxError {
   let xhr = {
     status: result.error.code,
-    responseText: result.error.errors[0].reason
+    responseText: result.error.message
   };
   return {
     event: undefined,
     xhr: xhr as XMLHttpRequest,
     ajaxSettings: null,
-    throwError: xhr.responseText
-  };
+    throwError: xhr.responseText,
+    message: xhr.responseText
+  } as utils.IAjaxError;
 }
