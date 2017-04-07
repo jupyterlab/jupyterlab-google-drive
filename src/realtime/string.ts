@@ -47,21 +47,28 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
   }
 
   /**
-   * Get the underlying collaborative object
+   * Get the underlying `gapi.drive.realtime.CollaborativeString`
    * for this string.
    */
   get googleObject(): gapi.drive.realtime.CollaborativeString {
     return this._str;
   }
 
+  /**
+   * Set the underlying `gapi.drive.realtime.CollaborativeString`
+   * for this string.
+   */
   set googleObject(str: gapi.drive.realtime.CollaborativeString) {
     let prevText = '';
     if(this._str) {
       prevText = this._str.getText();
       this._str.removeAllEventListeners();
     }
+
+    // Set the new string.
     this._str = str;
-    //Add event listeners to the collaborativeString
+
+    //Add event listeners to the CollaborativeString
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_INSERTED,
       (evt: any) => {

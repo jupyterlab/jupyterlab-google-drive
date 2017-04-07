@@ -94,25 +94,32 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
   }
 
   /**
-   * Get the underlying collaborative object
+   * Get the underlying `gapi.drive.CollaborativeList`
    * for this vector.
    */
   get googleObject(): gapi.drive.realtime.CollaborativeList<T> {
     return this._vec;
   }
 
+  /**
+   * Set the underlying `gapi.drive.CollaborativeList` for this
+   * vector.
+   */
   set googleObject(vec: gapi.drive.realtime.CollaborativeList<T>) {
+    // First, recreate the new vector using the old vector
+    // to send the appropriate signals.
     if(this._vec) {
       this.clear();
       for(let i = 0; i < vec.length; i++) {
         this.pushBack(vec.get(i));
-        this._vec.removeAllEventListeners();
       }
+      this._vec.removeAllEventListeners();
     }
 
+    // Set the new vector.
     this._vec = vec;
 
-    //Add event listeners to the collaborativeVector
+    // Add event listeners to the new CollaborativeList
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt: any) => {
@@ -160,6 +167,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
         }
       });
   }
+
   /**
    * Create an iterator over the values in the vector.
    *

@@ -56,58 +56,73 @@ class GoogleModelDB implements IModelDB {
     this._basePath = options.basePath || '';
     this._filePath = options.filePath;
     if(options.baseDB) {
+      // Handle the case of a view on an already existing database.
       this._baseDB = options.baseDB;
     } else {
-      if(options.model) {
-        this._model = options.model;
-      } else {
-        this._doc = gapi.drive.realtime.newInMemoryDocument();
-        this._model = this._doc.getModel();
-        getResourceForPath(options.filePath).then((resource: any) => {
-          loadRealtimeDocument(resource.id).then((doc: gapi.drive.realtime.Document) => {
-            // Update the references to the doc and model
-            this._doc = doc;
-            this._model = doc.getModel();
+      // More complicated if we have to load the database. The `IModelDB`
+      // needs to be able to create objects immediately, so we create a
+      // temporary in-memory document, and then transfer data as necessary
+      // when the Google-Drive-backed document becomes available.
+      this._doc = gapi.drive.realtime.newInMemoryDocument();
+      this._model = this._doc.getModel();
 
+      //Wrap the model root in a `GoogleMap`.
+      this._db = new GoogleMap(this._model.getRoot());
+
+      // Load the document from Google Drive.
+      getResourceForPath(options.filePath).then((resource: any) => {
+        loadRealtimeDocument(resource.id).then((doc: gapi.drive.realtime.Document) => {
+          // Update the references to the doc and model
+          this._doc = doc;
+          this._model = doc.getModel();
+
+          let oldDB = this._db;
+          this._db = new GoogleMap(this._model.getRoot());
+
+          if (this._model.getRoot().size !== 0) {
             // If the model is not empty, it is coming prepopulated.
-            if (this._model.getRoot().size !== 0) {
-              this._isPrepopulated = true;
-            }
+            this._isPrepopulated = true;
 
-            let oldDB = this._db;
-            this._db = new GoogleMap(this._model.getRoot());
-            for(let key of oldDB.keys()) {
-              let val = this._localDB.get(key);
-              if(this._db.has(key)) {
-                let gval = this._db.get(key);
-                if(val.googleObject) {
-                  val.googleObject = gval;
-                }
-              } else {
-                if(val.googleObject) {
-                  let newVal: gapi.drive.realtime.CollaborativeObject;
-                  if(val.googleObject.type === 'EditableString') {
-                    newVal = this._model.createString(val.text);
-                  } else if (val.googleObject.type === 'List') {
-                    newVal = this._model.createList(val.googleObject.asArray());
-                  } else if (val.googleObject.type === 'Map') {
-                    newVal = this._model.createMap();
-                    for(let item of val.keys()) {
-                      (newVal as any).set(item, val.get(item));
-                    }
-                  }
-                  val.googleObject = newVal;
-                  this._db.set(key, newVal);
-                } else if (val instanceof ObservableValue) {
-                  this.set(key, val);
+            for (let key of oldDB.keys()) {
+              let oldVal = this._localDB.get(key);
+              if (this._db.has(key)) {
+                let dbVal = this._db.get(key);
+                if (oldVal.googleObject) {
+                  oldVal.googleObject = dbVal;
                 }
               }
             }
-            this._connected.resolve(void 0);
-          });
+          } else {
+            //Handle the case where we populate the model.
+            for(let key of oldDB.keys()) {
+              let val = this._localDB.get(key);
+              if(val.googleObject) {
+                let newVal: gapi.drive.realtime.CollaborativeObject;
+                if(val.googleObject.type === 'EditableString') {
+                  // Create a string.
+                  newVal = this._model.createString(val.text);
+                } else if (val.googleObject.type === 'List') {
+                  // Create a list.
+                  newVal = this._model.createList(val.googleObject.asArray());
+                } else if (val.googleObject.type === 'Map') {
+                  // Create a map.
+                  newVal = this._model.createMap();
+                  for(let item of val.keys()) {
+                    (newVal as gapi.drive.realtime.CollaborativeMap<JSONValue>)
+                    .set(item, val.get(item));
+                  }
+                }
+                val.googleObject = newVal;
+                this._db.set(key, newVal);
+              } else if (val instanceof ObservableValue) {
+                this.set(key, val);
+              }
+            }
+          }
+          //Resolve the connected Promise.
+          this._connected.resolve(void 0);
         });
-      }
-      this._db = new GoogleMap(this._model.getRoot());
+      });
     }
   }
 
@@ -433,8 +448,6 @@ namespace GoogleModelDB {
      * to store the model.
      */
     filePath: string;
-
-    model?: gapi.drive.realtime.Model;
 
     /**
      * The base path to prepend to all the path arguments.

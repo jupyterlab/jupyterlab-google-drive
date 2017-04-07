@@ -48,14 +48,19 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
   }
 
   /**
-   * Get the underlying collaborative object
+   * Get the underlying `gapi.drive.realtime.CollaborativeMap`
    * for this map.
    */
   get googleObject(): gapi.drive.realtime.CollaborativeMap<T> {
     return this._map;
   }
 
+  /**
+   * Set the underlying `gapi.drive.realtime.CollaborativeMap`
+   * for this object.
+   */
   set googleObject(map: gapi.drive.realtime.CollaborativeMap<T>) {
+    // Recreate the new map locally to fire the right signals.
     if(this._map) {
       this._map.clear();
       for(let key of map.keys()) {
@@ -64,8 +69,10 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
       this._map.removeAllEventListeners();
     }
 
-    //Hook up event listeners
+    // Set the new map.
     this._map = map;
+
+    // Hook up event listeners to the new map.
     this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
         if(!evt.isLocal) {
@@ -87,6 +94,7 @@ class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
       }
     );
   }
+
   /**
    * Set a key-value pair in the map
    *
