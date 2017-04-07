@@ -44,8 +44,14 @@ import {
 } from '../drive/drive';
 
 
+/**
+ * Google Drive-based Model database that implements `IModelDB.
+ */
 export
 class GoogleModelDB implements IModelDB {
+  /**
+   * Constructor for the database.
+   */
   constructor(options: GoogleModelDB.ICreateOptions) {
     this._basePath = options.basePath || '';
     this._filePath = options.filePath;
@@ -105,6 +111,9 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * Get the underlying `gapi.drive.realtime.Model`.
+   */
   get model(): gapi.drive.realtime.Model {
     if(this._baseDB) {
       return this._baseDB.model;
@@ -113,14 +122,26 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * Get the underlying `gapi.drive.realtime.Document`.
+   */
   get doc(): gapi.drive.realtime.Document {
     return this._doc;
   }
 
+  /**
+   * The base path for the `GoogleModelDB`. This is prepended
+   * to all the paths that are passed in to the member
+   * functions of the object.
+   */
   get basePath(): string {
     return this._basePath;
   }
 
+  /**
+   * Whether the model has been populated with
+   * any model values.
+   */
   get isPrepopulated(): boolean {
     if (this._baseDB) {
       return this._baseDB.isPrepopulated;
@@ -129,6 +150,10 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * A promise resolved when the `GoogleModelDB` has
+   * connected to Google Drive.
+   */
   get connected(): Promise<void> {
     if (this._baseDB ) {
       return this._baseDB.connected;
@@ -137,15 +162,31 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * Whether the database is disposed.
+   */
   get isDisposed(): boolean {
     return this._doc === null;
   }
 
+  /**
+   * Get a value for a path.
+   *
+   * @param path: the path for the object.
+   *
+   * @returns an `IObservable`.
+   */
   get(path: string): IObservable {
     return this._localDB.get(path);
   }
 
-  getGoogleObject(path: string): any {
+  /**
+   * Get the object in the underlying `gapi.drive.realtime.CollaborativeMap`.
+   * Not intended to be called by user code.
+   *
+   * @param path: the path for the object.
+   */
+  getGoogleObject(path: string): GoogleSynchronizable {
     if(this._baseDB) {
       return this._baseDB.getGoogleObject(this._basePath+'/'+path);
     } else {
@@ -153,6 +194,13 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * Whether the `GoogleModelDB` has an object at this path.
+   *
+   * @param path: the path for the object.
+   *
+   * @returns a boolean for whether an object is at `path`.
+   */
   has(path: string): boolean {
     if(this._baseDB) {
       return this._baseDB.has(this._basePath+'/'+path);
@@ -161,6 +209,15 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * Set a value at a path. Not intended to
+   * be called by user code, instead use the
+   * `create*` factory methods.
+   *
+   * @param path: the path to set the value at.
+   *
+   * @param value: the value to set at the path.
+   */
   set(path: string, value: IObservable): void {
     this._localDB.set(path, value);
     if(this._baseDB) {
@@ -189,10 +246,17 @@ class GoogleModelDB implements IModelDB {
     }
   }
 
+  /**
+   * Create a string and insert it in the database.
+   *
+   * @param path: the path for the string.
+   *
+   * @returns the string that was created.
+   */
   createString(path: string): IObservableString {
     let str: gapi.drive.realtime.CollaborativeString;
     if(this.has(path)) {
-      str = this.getGoogleObject(path);
+      str = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeString;
     } else {
       str = this.model.createString();
     }
@@ -202,10 +266,21 @@ class GoogleModelDB implements IModelDB {
     return newStr;
   }
 
+  /**
+   * Create a vector and insert it in the database.
+   *
+   * @param path: the path for the vector.
+   *
+   * @returns the vector that was created.
+   *
+   * #### Notes
+   * The vector can only store objects that are simple
+   * JSON Objects and primitives.
+   */
   createVector(path: string): IObservableVector<JSONValue> {
     let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
     if(this.has(path)) {
-      vec = this.getGoogleObject(path);
+      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<JSONValue>;
     } else {
       vec = this.model.createList<JSONValue>();
     }
@@ -215,10 +290,21 @@ class GoogleModelDB implements IModelDB {
     return newVec;
   }
 
+  /**
+   * Create an undoable vector and insert it in the database.
+   *
+   * @param path: the path for the vector.
+   *
+   * @returns the vector that was created.
+   *
+   * #### Notes
+   * The vector can only store objects that are simple
+   * JSON Objects and primitives.
+   */
   createUndoableVector(path: string): IObservableUndoableVector<JSONValue> {
     let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
     if(this.has(path)) {
-      vec = this.getGoogleObject(path);
+      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<JSONValue>;
     } else {
       vec = this.model.createList<JSONValue>();
     }
@@ -228,10 +314,21 @@ class GoogleModelDB implements IModelDB {
     return newVec;
   }
 
+  /**
+   * Create a map and insert it in the database.
+   *
+   * @param path: the path for the map.
+   *
+   * @returns the map that was created.
+   *
+   * #### Notes
+   * The map can only store objects that are simple
+   * JSON Objects and primitives.
+   */
   createMap(path: string): IObservableMap<JSONValue> {
     let map: gapi.drive.realtime.CollaborativeMap<JSONValue>;
     if(this.has(path)) {
-      map = this.getGoogleObject(path);
+      map = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<JSONValue>;
     } else {
       map = this.model.createMap<JSONValue>();
     }
@@ -241,10 +338,17 @@ class GoogleModelDB implements IModelDB {
     return newMap;
   }
 
+  /**
+   * Create an `IObservableJSON` and insert it in the database.
+   *
+   * @param path: the path for the object.
+   *
+   * @returns the object that wsa created.
+   */
   createJSON(path: string): IObservableJSON {
     let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
     if(this.has(path)) {
-      json = this.getGoogleObject(path);
+      json = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<JSONValue>;
     } else {
       json = this.model.createMap<JSONValue>();
     }
@@ -254,10 +358,17 @@ class GoogleModelDB implements IModelDB {
     return newJSON;
   }
 
+  /**
+   * Create an opaque value and insert it in the database.
+   *
+   * @param path: the path for the value.
+   *
+   * @returns the value that was created.
+   */
   createValue(path: string): IObservableValue {
     let val: JSONValue = '';
     if(this.has(path)) {
-      val = this.getGoogleObject(path);
+      val = this.getGoogleObject(path) as JSONValue;
     }
     let newVal = new ObservableValue(val);
     this._disposables.add(newVal);
@@ -265,10 +376,21 @@ class GoogleModelDB implements IModelDB {
     return newVal;
   }
 
+  /**
+   * Create a view onto a subtree of the model database.
+   *
+   * @param basePath: the path for the root of the subtree.
+   *
+   * @returns a `GoogleModelDB` with a view onto the original
+   *   `GoogleModelDB`, with `basePath` prepended to all paths.
+   */
   view(basePath: string): GoogleModelDB {
     return new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
   }
 
+  /**
+   * Dispose of the resources held by the database.
+   */
   dispose(): void {
     if (this.isDisposed) {
       return;
@@ -296,13 +418,33 @@ class GoogleModelDB implements IModelDB {
   private _isPrepopulated = false;
 }
 
+/**
+ * A namespace for the `GoogleModelDB` class statics.
+ */
 export
 namespace GoogleModelDB {
+  /**
+   * Options for creating a `ModelDB` object.
+   */
   export
   interface ICreateOptions {
+    /**
+     * The path for the location on Google Drive
+     * to store the model.
+     */
     filePath: string;
+
     model?: gapi.drive.realtime.Model;
+
+    /**
+     * The base path to prepend to all the path arguments.
+     */
     basePath?: string;
+
+    /**
+     * A `GoogleModelDB` to use as the store for this
+     * `GoogleModelDB`. If none is given, it uses its own store.
+     */
     baseDB?: GoogleModelDB;
   }
 }
