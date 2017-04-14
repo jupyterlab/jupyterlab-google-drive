@@ -422,7 +422,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FilesResourc
  * @param oldPath - The initial location of the file (where the path
  *   includes the filename).
  *
- * @param oldPath - The new location of the file (where the path
+ * @param newPath - The new location of the file (where the path
  *   includes the filename).
  *
  * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
@@ -474,6 +474,68 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
       Private.resourceCache.delete(oldPath);
       Private.resourceCache.set(newPath, response);
 
+      return contentsModelForPath(newPath);
+    });
+  }
+}
+
+/**
+ * Copy a file in Google Drive. It is assumed that the new filename has
+ * been determined previous to invoking this function, and does not conflict
+ * with any files in the new directory.
+ *
+ * @param oldPath - The initial location of the file (where the path
+ *   includes the filename).
+ *
+ * @param newPath - The location of the copy (where the path
+ *   includes the filename). This cannot be the same as `oldPath`.
+ *
+ * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
+ *   Otherwise, throws an error.
+ */
+export
+function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+  if( oldPath === newPath ) {
+    throw Error('Google Drive: cannot copy a file with'+
+                ' the same name to the same directory');
+  } else {
+    let pathComponents = splitPath(newPath);
+    let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
+
+    //Get a promise that resolves with the resource in the current position.
+    let resourcePromise = getResourceForPath(oldPath)
+    //Get a promise that resolves with the resource of the new folder.
+    let newFolderPromise = getResourceForPath(newFolderPath);
+
+    //Check the new path to make sure there isn't already a file
+    //with the same name there.
+    let newName = pathComponents.slice(-1)[0];
+    let directorySearchPromise =
+      searchDirectory(newFolderPath, 'name = \''+newName+'\'');
+
+    //Once we have all the required information,
+    //perform the copy.
+    return Promise.all([resourcePromise, newFolderPromise,
+                       directorySearchPromise]).then((values)=>{
+      let resource = values[0];
+      let newFolder = values[1];
+      let directorySearch = values[2];
+
+      if(directorySearch.length !== 0) {
+        throw new Error("Google Drive: File with the same name "+
+                        "already exists in the destination directory");
+      } else {
+        let request: DriveApiRequest = gapi.client.drive.files.copy({
+          fileId: resource.id,
+          parents: [newFolder.id],
+          name: newName,
+          fields: RESOURCE_FIELDS
+        });
+        return driveApiRequest(request);
+      }
+    }).then((response: FilesResource)=>{
+      //Update the cache
+      Private.resourceCache.set(newPath, response);
       return contentsModelForPath(newPath);
     });
   }

@@ -291,7 +291,13 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *  file is copied.
    */
   copy(fromFile: string, toDir: string): Promise<Contents.IModel> {
-    return Promise.reject(void 0);
+    let fileBasename = PathExt.basename(fromFile).split('.')[0];
+    fileBasename += '-Copy';
+    const ext = PathExt.extname(fromFile);
+
+    return this._getNewFilename(toDir, ext, fileBasename).then((name) => {
+      return drive.copyFile(fromFile, PathExt.join(toDir, name));
+    });
   }
 
   /**
