@@ -141,17 +141,17 @@ class GoogleDriveContentsManager implements Contents.IManager {
    *    file is created.
    */
   newUntitled(options: Contents.ICreateOptions = {}): Promise<Contents.IModel> {
-    //Set default values
+    // Set default values.
     let ext = '';
     let baseName = 'Untitled'
     let path = '';
     let contentType: Contents.ContentType = 'notebook';
 
     if(options) {
-      //Add leading `.` to extension if necessary.
+      // Add leading `.` to extension if necessary.
       ext = options.ext ?
             PathExt.normalizeExtension(options.ext) : ext;
-      //If we are not creating in the root directory
+      // If we are not creating in the root directory.
       path = options.path || '';
       contentType = options.type || 'notebook';
     }
@@ -262,9 +262,9 @@ class GoogleDriveContentsManager implements Contents.IManager {
         //Overwrite the existing file
         return drive.uploadFile(path, options, true);
       } else {
-        //File exists, but we are not saving anything
-        //to it? TODO: figure out the appropriate
-        //way to handle this case.
+        // File exists, but we are not saving anything
+        // to it? TODO: figure out the appropriate
+        // way to handle this case.
         return void 0;
       }
     }, ()=>{
@@ -334,7 +334,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @returns A promise which resolves when the checkpoint is restored.
    */
   restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
-    //TODO: should this emit a signal?
+    // TODO: should this emit a signal?
     return drive.revertToRevision(path, checkpointID);
   }
 
@@ -366,8 +366,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
    * @return A promise fullfilled with the new filename.
    */
   private _getNewFilename(path: string, ext: string, baseName: string): Promise<string> {
-    //Get the file listing for the directory
-    //let query = '\''+baseName+'\' in name and \''+ext+'\' in name';
+    // Get the file listing for the directory.
     let query = 'name contains \''+baseName+
                 '\' and name contains \''+ext+'\'';
     return drive.searchDirectory(path, query).then((resourceList: any[])=>{
@@ -376,10 +375,10 @@ class GoogleDriveContentsManager implements Contents.IManager {
         existingNames[resourceList[i].name] = true;
       }
 
-      //Loop over the list and select the first name that
-      //does not exist. Note that the loop is N+1 iterations,
-      //so is guaranteed to come up with a name that is not
-      //in `existingNames`.
+      // Loop over the list and select the first name that
+      // does not exist. Note that the loop is N+1 iterations,
+      // so is guaranteed to come up with a name that is not
+      // in `existingNames`.
       for (let i = 0; i <= resourceList.length; i++) {
         let filename = baseName + (i > 0 ? String(i) : '') + ext;
         if (!existingNames[filename]) {

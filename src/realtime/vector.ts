@@ -15,13 +15,19 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleRealtimeObject
+  GoogleRealtimeObject, GoogleSynchronizable
 } from './googlerealtime';
 
 
+/**
+ * Realtime vector type wrapping `gapi.drive.realtme.CollaborativeList`.
+ */
 export
-class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
+class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<T>, GoogleRealtimeObject {
 
+  /**
+   * Create a new GoogleVector.
+   */
   constructor(vector: gapi.drive.realtime.CollaborativeList<T>, itemCmp?: (first: T, second: T) => boolean) {
     this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = vector;
@@ -119,7 +125,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
     // Set the new vector.
     this._vec = vec;
 
-    // Add event listeners to the new CollaborativeList
+    // Add event listeners to the new CollaborativeList.
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt: any) => {
@@ -560,9 +566,7 @@ class GoogleVector<T> implements IObservableVector<T>, GoogleRealtimeObject {
     this._isDisposed = true;
   }
 
-  //which represents the canonical vector of objects.
   private _vec: gapi.drive.realtime.CollaborativeList<T> = null;
-  //Canonical vector of objects.
   private _changed = new Signal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>(this);
   private _itemCmp: (first: T, second: T) => boolean;
   private _isDisposed: boolean = false;

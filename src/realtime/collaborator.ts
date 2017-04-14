@@ -15,26 +15,26 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
 
   constructor(doc: gapi.drive.realtime.Document) {
     this._ready = new Promise<void>((resolve,reject)=>{
-      //Get the map with the collaborators, or
-      //create it if it does not exist.
-      let id = 'collaborators:map';
+      // Get the map with the collaborators, or
+      // create it if it does not exist.
+      let id = 'internal:collaborators';
       this._doc = doc;
       this._map = doc.getModel().getRoot().get(id);
 
-      //We need to create the map
+      // We need to create the map
       if(!this._map) {
         this._map = doc.getModel().createMap<GoogleCollaborator>();
         doc.getModel().getRoot().set(id, this._map);
       }
 
-      //Populate the map with its initial values.
-      //Even if the map already exists, it is easy to miss
-      //some collaborator events (if, for instance, the
-      //realtime doc is not shut down properly).
-      //This is an opportunity to refresh it.
+      // Populate the map with its initial values.
+      // Even if the map already exists, it is easy to miss
+      // some collaborator events (if, for instance, the
+      // realtime doc is not shut down properly).
+      // This is an opportunity to refresh it.
       let initialCollaborators: any[] = doc.getCollaborators();
 
-      //remove stale collaborators
+      // Remove stale collaborators.
       let initialSessions = new Set<string>();
       for(let i=0; i<initialCollaborators.length; i++) {
         initialSessions.add(initialCollaborators[i].sessionId);
@@ -44,7 +44,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
           this._map.delete(k);
         }
       }
-      //Now add the remaining collaborators
+      // Now add the remaining collaborators.
       for(let i=0; i<initialCollaborators.length; i++) {
         let collaborator: GoogleCollaborator = {
           userId: initialCollaborators[i].userId,
@@ -60,7 +60,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
         } 
       }
 
-      //Add event listeners to the CollaboratorMap
+      // Add event listeners to the CollaboratorMap.
       this._doc.addEventListener(
         gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
         (evt: any) => {

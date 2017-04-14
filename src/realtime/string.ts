@@ -14,9 +14,15 @@ import {
 } from './googlerealtime';
 
 
+/**
+ * Realtime string which wraps `gapi.drive.realtime.CollaborativeString`.
+ */
 export
 class GoogleString implements IObservableString, GoogleRealtimeObject {
 
+  /**
+   * Constructor for the string.
+   */
   constructor (str: gapi.drive.realtime.CollaborativeString) {
     this.googleObject = str;
   }
@@ -68,7 +74,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
     // Set the new string.
     this._str = str;
 
-    //Add event listeners to the CollaborativeString
+    // Add event listeners to the CollaborativeString.
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_INSERTED,
       (evt: any) => {
@@ -95,7 +101,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
         }
     });
 
-    //Trigger text set event if necessary
+    // Trigger text set event if necessary.
     if (prevText !== this._str.getText()) {
       this._changed.emit({
         type: 'set',

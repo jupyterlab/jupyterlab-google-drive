@@ -10,11 +10,14 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleRealtimeObject
+  GoogleRealtimeObject, GoogleSynchronizable
 } from './googlerealtime';
 
+/**
+ * Realtime map which wraps `gapi.drive.realtime.CollaborativeMap`
+ */
 export
-class GoogleMap<T> implements IObservableMap<T>, GoogleRealtimeObject {
+class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, GoogleRealtimeObject {
 
   /**
    * Constructor

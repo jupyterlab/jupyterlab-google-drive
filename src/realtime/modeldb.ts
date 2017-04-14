@@ -66,7 +66,7 @@ class GoogleModelDB implements IModelDB {
       this._doc = gapi.drive.realtime.newInMemoryDocument();
       this._model = this._doc.getModel();
 
-      //Wrap the model root in a `GoogleMap`.
+      // Wrap the model root in a `GoogleMap`.
       this._db = new GoogleMap(this._model.getRoot());
 
       // Load the document from Google Drive.
@@ -93,7 +93,7 @@ class GoogleModelDB implements IModelDB {
               }
             }
           } else {
-            //Handle the case where we populate the model.
+            // Handle the case where we populate the model.
             for(let key of oldDB.keys()) {
               let val = this._localDB.get(key);
               if(val.googleObject) {
@@ -119,7 +119,7 @@ class GoogleModelDB implements IModelDB {
               }
             }
           }
-          //Resolve the connected Promise.
+          // Resolve the connected Promise.
           this._connected.resolve(void 0);
         });
       });
