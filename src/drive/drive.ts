@@ -10,6 +10,10 @@ import {
 } from '@jupyterlab/services';
 
 import {
+  PathExt
+} from '@jupyterlab/coreutils';
+
+import {
   driveApiRequest, driveReady, pickFile
 } from '../gapi';
 
@@ -197,11 +201,8 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
       let fileList: FilesResource[] = [];
       return searchDirectory(path).then( (resources: FilesResource[])=>{
         //Update the cache.
-        Private.clearCacheDirectory(path);
-        for(let resource of resources) {
-          let filePath: string = (path ? path+'/' : '') + resource.name;
-          Private.resourceCache.set(filePath, resource);
-        }
+        Private.clearCacheForDirectory(path);
+        Private.populateCacheForDirectory(path, resources);
 
         let currentContents = Promise.resolve({});
 
@@ -889,7 +890,7 @@ namespace Private {
    * the cached resources that are in a given directory.
    */
   export
-  function clearCacheDirectory(path: string): void {
+  function clearCacheForDirectory(path: string): void {
     // TODO: my TS compiler complains here?
     let keys = (resourceCache as any).keys();
     for(let key of keys) {
@@ -897,6 +898,35 @@ namespace Private {
         utils.urlPathJoin(...splitPath(key).slice(0,-1));
       if(path === enclosingFolderPath) {
         resourceCache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Given a list of resources in a directory, put them in
+   * the resource cache. This strips any duplicates, since
+   * the path-based contents manager can't handle those correctly.
+   */
+  export
+  function populateCacheForDirectory(path: string, resourceList: any[]) {
+    // Identify duplicates in the list: we can't handle those
+    // correctly, so don't insert them.
+    let duplicatePaths: string[] = [];
+    let candidatePaths: string[] = [];
+    for (let resource of resourceList) {
+      let filePath = PathExt.join(path, resource.name);
+      if (candidatePaths.indexOf(filePath) !== -1) {
+        duplicatePaths.push(filePath);
+      } else {
+        candidatePaths.push(filePath);
+      }
+    }
+
+    // Insert non-duplicates into the cache.
+    for (let resource of resourceList) {
+      let filePath = PathExt.join(path, resource.name);
+      if (duplicatePaths.indexOf(filePath) === -1 ) {
+        Private.resourceCache.set(filePath, resource);
       }
     }
   }
