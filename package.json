@@ -1,22 +1,29 @@
 {
-  "private": true,
-  "name": "jupyterlab_google_drive",
+  "name": "@jupyterlab/google-drive",
   "version": "0.1.0",
   "description": "Realtime collaboration with JupyterLab through Google Drive",
   "author": "Ian Rose",
-  "main": "lib/plugin.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/*.d.ts",
+    "lib/*.js"
+  ],
+  "directories": {
+    "lib": "lib/"
+  },
   "keywords": [
     "jupyter",
     "jupyterlab",
-    "google"
+    "google drive"
   ],
+  "jupyterlab": {
+    "extension": true
+  },
   "scripts": {
-    "build:src": "tsc --project src && node scripts/copyfiles.js",
-    "build:extension": "node scripts/build_extension.js",
-    "build": "npm run build:src && npm run build:extension",
-    "clean": "rimraf lib && rimraf jupyterlab_google_drive/static",
-    "prepublish": "npm run build",
-    "watch": "watch \"npm run build\" src --wait 10 --ignoreDotFiles"
+    "build": "tsc",
+    "clean": "rimraf lib",
+    "watch": "tsc -w"
   },
   "dependencies": {
     "@jupyterlab/services": "^0.40.1",
@@ -33,16 +40,13 @@
     "@phosphor/coreutils": "^1.0.0",
     "@phosphor/signaling": "^1.0.0",
     "@phosphor/widgets": "^1.0.0",
-    "es6-promise": "^3.2.1",
+    "es6-promise": "^4.1.0",
     "jquery": "^2.2.0",
     "core-js": "^2.4.1"
   },
   "devDependencies": {
-    "fs-extra": "^0.30.0",
-    "rimraf": "^2.5.4",
-    "watch": "^0.17.1",
-    "@jupyterlab/extension-builder": "^0.11.0",
-    "typescript": "~2.1.6",
+    "rimraf": "^2.5.2",
+    "typescript": "^2.2.1",
     "@types/google-drive-realtime-api": "^0.0.33",
     "@types/jquery": "^2.0.32"
   }

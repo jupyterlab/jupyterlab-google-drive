@@ -4,14 +4,11 @@
     "noImplicitAny": true,
     "noEmitOnError": true,
     "noUnusedLocals": true,
-    "lib": ["es5", "dom", "es2015.promise", "es2015.collection"],
+    "lib": ["ES5", "DOM", "ES2015.Promise", "ES2015.Collection"],
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES5",
-    "outDir": "../lib",
-    "baseUrl": ".",
-    "paths": {
-      "@phosphor/*": ["../node_modules/@phosphor/*"]
-    }
-  }
+    "outDir": "./lib"
+  },
+  "include": ["src/*"]
 }

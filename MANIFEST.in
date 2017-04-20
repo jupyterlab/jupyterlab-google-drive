@@ -1,3 +1,0 @@
-graft jupyterlab_google_drive/static
-graft src
-include package.json
