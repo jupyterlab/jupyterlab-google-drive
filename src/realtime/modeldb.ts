@@ -10,10 +10,13 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  IModelDB, IObservableValue, IObservableVector, ObservableValue,
-  IObservableMap, IObservableString, IObservable, IObservableUndoableVector,
-  IObservableJSON
+  IModelDB, IObservableValue, ObservableValue, IObservableString, 
+  IObservable, IObservableUndoableVector, IObservableJSON
 } from '@jupyterlab/coreutils';
+
+import {
+  CollaboratorMap
+} from './collaborator';
 
 import {
   GoogleSynchronizable
@@ -22,10 +25,6 @@ import {
 import {
   GoogleString
 } from './string';
-
-import {
-  GoogleVector
-} from './vector';
 
 import {
   GoogleUndoableVector
@@ -45,7 +44,7 @@ import {
 
 
 /**
- * Google Drive-based Model database that implements `IModelDB.
+ * Google Drive-based Model database that implements `IModelDB`.
  */
 export
 class GoogleModelDB implements IModelDB {
@@ -119,11 +118,29 @@ class GoogleModelDB implements IModelDB {
               }
             }
           }
-          // Resolve the connected Promise.
-          this._connected.resolve(void 0);
+
+          // Set up the collaborators map.
+          this._collaborators = new CollaboratorMap(this._doc);
+          this._collaborators.ready.then(()=>{
+            // Resolve the connected Promise.
+            this._connected.resolve(void 0);
+          });
         });
       });
     }
+  }
+
+  /**
+   * Whether the GoogleModelDB is collaborative.
+   * Returns `true`.
+   */
+  readonly isCollaborative: boolean = true;
+
+  /**
+   * Get the CollaboratorMap.
+   */
+  get collaborators(): CollaboratorMap {
+    return this._collaborators;
   }
 
   /**
@@ -292,31 +309,7 @@ class GoogleModelDB implements IModelDB {
    * The vector can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createVector(path: string): IObservableVector<JSONValue> {
-    let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
-    if(this.has(path)) {
-      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<JSONValue>;
-    } else {
-      vec = this.model.createList<JSONValue>();
-    }
-    let newVec = new GoogleVector<JSONValue>(vec);
-    this._disposables.add(newVec);
-    this.set(path, newVec);
-    return newVec;
-  }
-
-  /**
-   * Create an undoable vector and insert it in the database.
-   *
-   * @param path: the path for the vector.
-   *
-   * @returns the vector that was created.
-   *
-   * #### Notes
-   * The vector can only store objects that are simple
-   * JSON Objects and primitives.
-   */
-  createUndoableVector(path: string): IObservableUndoableVector<JSONValue> {
+  createVector(path: string): IObservableUndoableVector<JSONValue> {
     let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
     if(this.has(path)) {
       vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<JSONValue>;
@@ -340,27 +333,7 @@ class GoogleModelDB implements IModelDB {
    * The map can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createMap(path: string): IObservableMap<JSONValue> {
-    let map: gapi.drive.realtime.CollaborativeMap<JSONValue>;
-    if(this.has(path)) {
-      map = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<JSONValue>;
-    } else {
-      map = this.model.createMap<JSONValue>();
-    }
-    let newMap = new GoogleMap<JSONValue>(map);
-    this._disposables.add(newMap);
-    this.set(path, newMap);
-    return newMap;
-  }
-
-  /**
-   * Create an `IObservableJSON` and insert it in the database.
-   *
-   * @param path: the path for the object.
-   *
-   * @returns the object that wsa created.
-   */
-  createJSON(path: string): IObservableJSON {
+  createMap(path: string): IObservableJSON {
     let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
     if(this.has(path)) {
       json = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<JSONValue>;
@@ -389,6 +362,39 @@ class GoogleModelDB implements IModelDB {
     this._disposables.add(newVal);
     this.set(path, newVal);
     return newVal;
+  }
+
+  /**
+   * Get a value at a path. That value must already have
+   * been created using `createValue`.
+   *
+   * @param path: the path for the value.
+   */
+  getValue(path: string): JSONValue {
+    let val = this.get(path);
+    if (val.type !== 'Value') {
+        throw Error('Can only call getValue for an ObservableValue');
+    }
+    return (val as ObservableValue).get();
+  }
+
+
+  /**
+
+  /**
+   * Set a value at a path. That value must already have
+   * been created using `createValue`.
+   *
+   * @param path: the path for the value.
+   *
+   * @param value: the new value.
+   */
+  setValue(path: string, value: JSONValue): void {
+    let val = this.get(path);
+    if (val.type !== 'Value') {
+        throw Error('Can only call setValue on an ObservableValue');
+    }
+    (val as ObservableValue).set(value);
   }
 
   /**
@@ -431,6 +437,7 @@ class GoogleModelDB implements IModelDB {
   private _baseDB: GoogleModelDB = null;
   private _connected = new PromiseDelegate<void>()
   private _isPrepopulated = false;
+  private _collaborators: CollaboratorMap = null;
 }
 
 /**
