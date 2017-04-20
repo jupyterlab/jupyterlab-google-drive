@@ -220,7 +220,7 @@ class GoogleModelDB implements IModelDB {
    */
   getGoogleObject(path: string): GoogleSynchronizable {
     if(this._baseDB) {
-      return this._baseDB.getGoogleObject(this._basePath+'/'+path);
+      return this._baseDB.getGoogleObject(this._basePath+'.'+path);
     } else {
       return this._db.get(path);
     }
@@ -235,7 +235,7 @@ class GoogleModelDB implements IModelDB {
    */
   has(path: string): boolean {
     if(this._baseDB) {
-      return this._baseDB.has(this._basePath+'/'+path);
+      return this._baseDB.has(this._basePath+'.'+path);
     } else {
       return this._db.has(path);
     }
@@ -253,7 +253,7 @@ class GoogleModelDB implements IModelDB {
   set(path: string, value: IObservable): void {
     this._localDB.set(path, value);
     if(this._baseDB) {
-      this._baseDB.set(this._basePath+'/'+path, value);
+      this._baseDB.set(this._basePath+'.'+path, value);
     } else {
       let toSet: any;
       if(value && (value as any).googleObject) {
