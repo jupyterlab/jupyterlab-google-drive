@@ -1,4 +1,4 @@
 *.bundle.*
 lib/
 node_modules/
-*.egg-info/
+npm-debug.log
