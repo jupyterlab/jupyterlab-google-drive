@@ -14,97 +14,94 @@ export
 class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
 
   constructor(doc: gapi.drive.realtime.Document) {
-    this._ready = new Promise<void>((resolve,reject)=>{
-      // Get the map with the collaborators, or
-      // create it if it does not exist.
-      let id = 'internal:collaborators';
-      this._doc = doc;
-      this._map = doc.getModel().getRoot().get(id);
+    // Get the map with the collaborators, or
+    // create it if it does not exist.
+    let id = 'internal:collaborators';
+    this._doc = doc;
+    this._map = doc.getModel().getRoot().get(id);
 
-      // We need to create the map
-      if(!this._map) {
-        this._map = doc.getModel().createMap<GoogleCollaborator>();
-        doc.getModel().getRoot().set(id, this._map);
+    // We need to create the map
+    if(!this._map) {
+      this._map = doc.getModel().createMap<GoogleCollaborator>();
+      doc.getModel().getRoot().set(id, this._map);
+    }
+
+    // Populate the map with its initial values.
+    // Even if the map already exists, it is easy to miss
+    // some collaborator events (if, for instance, the
+    // realtime doc is not shut down properly).
+    // This is an opportunity to refresh it.
+    let initialCollaborators: any[] = doc.getCollaborators();
+
+    // Remove stale collaborators.
+    let initialSessions = new Set<string>();
+    for(let i=0; i<initialCollaborators.length; i++) {
+      initialSessions.add(initialCollaborators[i].sessionId);
+    }
+    for(let k of this._map.keys()) {
+      if(!initialSessions.has(k)) {
+        this._map.delete(k);
       }
-
-      // Populate the map with its initial values.
-      // Even if the map already exists, it is easy to miss
-      // some collaborator events (if, for instance, the
-      // realtime doc is not shut down properly).
-      // This is an opportunity to refresh it.
-      let initialCollaborators: any[] = doc.getCollaborators();
-
-      // Remove stale collaborators.
-      let initialSessions = new Set<string>();
-      for(let i=0; i<initialCollaborators.length; i++) {
-        initialSessions.add(initialCollaborators[i].sessionId);
+    }
+    // Now add the remaining collaborators.
+    for(let i=0; i<initialCollaborators.length; i++) {
+      let collaborator: GoogleCollaborator = {
+        userId: initialCollaborators[i].userId,
+        sessionId: initialCollaborators[i].sessionId,
+        displayName: initialCollaborators[i].displayName,
+        color: initialCollaborators[i].color
       }
-      for(let k of this._map.keys()) {
-        if(!initialSessions.has(k)) {
-          this._map.delete(k);
+      if(!this._map.has(collaborator.sessionId)) {
+        this._map.set(collaborator.sessionId, collaborator);
+        if(initialCollaborators[i].isMe) {
+          this._localCollaborator = collaborator;
         }
       }
-      // Now add the remaining collaborators.
-      for(let i=0; i<initialCollaborators.length; i++) {
+    }
+
+    // Add event listeners to the CollaboratorMap.
+    this._doc.addEventListener(
+      gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
+      (evt: any) => {
         let collaborator: GoogleCollaborator = {
-          userId: initialCollaborators[i].userId,
-          sessionId: initialCollaborators[i].sessionId,
-          displayName: initialCollaborators[i].displayName,
-          color: initialCollaborators[i].color
+          userId: evt.collaborator.userId,
+          sessionId: evt.collaborator.sessionId,
+          displayName: evt.collaborator.displayName,
+          color: evt.collaborator.color
         }
-        if(!this._map.has(collaborator.sessionId)) {
-          this._map.set(collaborator.sessionId, collaborator);
-          if(initialCollaborators[i].isMe) {
-            this._localCollaborator = collaborator;
-          }
-        } 
+        this.set(collaborator.sessionId, collaborator);
+        if(evt.collaborator.isMe) {
+          this._localCollaborator = collaborator;
+        }
       }
+    );
+    this._doc.addEventListener(
+      gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
+      (evt: any) => {
+        this.delete(evt.collaborator.sessionId);
+      }
+    );
 
-      // Add event listeners to the CollaboratorMap.
-      this._doc.addEventListener(
-        gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
-        (evt: any) => {
-          let collaborator: GoogleCollaborator = {
-            userId: evt.collaborator.userId,
-            sessionId: evt.collaborator.sessionId,
-            displayName: evt.collaborator.displayName,
-            color: evt.collaborator.color
+    this._map.addEventListener(
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+        if(!evt.isLocal) {
+          let changeType: ObservableMap.ChangeType;
+          if(evt.oldValue && evt.newValue) {
+            changeType = 'change';
+          } else if (evt.oldValue && !evt.newValue) {
+            changeType = 'remove';
+          } else {
+            changeType = 'add';
           }
-          this.set(collaborator.sessionId, collaborator);
-          if(evt.collaborator.isMe) {
-            this._localCollaborator = collaborator;
-          }
+          this._changed.emit({
+            type: changeType,
+            key: evt.property,
+            oldValue: evt.oldValue,
+            newValue: evt.newValue
+          });
         }
-      );
-      this._doc.addEventListener(
-        gapi.drive.realtime.EventType.COLLABORATOR_LEFT,
-        (evt: any) => {
-          this.delete(evt.collaborator.sessionId);
-        }
-      );
-
-      this._map.addEventListener(
-        gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
-          if(!evt.isLocal) {
-            let changeType: ObservableMap.ChangeType;
-            if(evt.oldValue && evt.newValue) {
-              changeType = 'change';
-            } else if (evt.oldValue && !evt.newValue) {
-              changeType = 'remove';
-            } else {
-              changeType = 'add';
-            }
-            this._changed.emit({
-              type: changeType,
-              key: evt.property,
-              oldValue: evt.oldValue,
-              newValue: evt.newValue
-            });
-          }
-        }
-      );
-      resolve(void 0);
-    });
+      }
+    );
   }
 
   type: 'Map';
@@ -114,10 +111,6 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
    */
   get size(): number {
     return this._map.size;
-  }
-
-  get ready(): Promise<void> {
-    return this._ready;
   }
 
   /**
@@ -247,7 +240,6 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
   private _doc: gapi.drive.realtime.Document = null;
   private _map: gapi.drive.realtime.CollaborativeMap<GoogleCollaborator> = null;
   private _isDisposed: boolean = false;
-  private _ready: Promise<void> = null;
   private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleCollaborator>>(this);
 }
 

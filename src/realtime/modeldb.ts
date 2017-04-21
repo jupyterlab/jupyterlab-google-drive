@@ -121,10 +121,7 @@ class GoogleModelDB implements IModelDB {
 
           // Set up the collaborators map.
           this._collaborators = new CollaboratorMap(this._doc);
-          this._collaborators.ready.then(()=>{
-            // Resolve the connected Promise.
-            this._connected.resolve(void 0);
-          });
+          this._connected.resolve(void 0);
         });
       });
     }
