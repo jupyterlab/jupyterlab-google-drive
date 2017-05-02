@@ -76,8 +76,10 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, facto
       app.shell.activateById(widget.id);
     }
   };
-  let modelDBFactory = (path: string) => {
-    return new GoogleModelDB({filePath: path});
+  let modelDBFactory = {
+    createNew: (path: string) => {
+      return new GoogleModelDB({filePath: path});
+    }
   }
   let documentManager = new DocumentManager({
     registry,
