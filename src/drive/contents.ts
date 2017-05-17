@@ -2,12 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  ContentsManager, Contents, ServiceManager, utils
-} from '@jupyterlab/services';
-
-import {
   Signal, ISignal
 } from '@phosphor/signaling';
+
+import {
+  ContentsManager, Contents, ServiceManager
+} from '@jupyterlab/services';
 
 import {
   PathExt
@@ -190,7 +190,7 @@ class GoogleDriveContentsManager implements Contents.IManager {
 
     return this._getNewFilename(path, ext, baseName).then((name: string)=>{
       model['name'] = name;
-      path = utils.urlPathJoin(path, name);
+      path = PathExt.join(path, name);
       return drive.uploadFile(path, model as Contents.IModel, false);
     }).then((contents: Contents.IModel)=>{
       this._fileChanged.emit({

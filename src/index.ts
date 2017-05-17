@@ -89,8 +89,7 @@ function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, facto
   });
   let fbWidget = factory.createFileBrowser(NAMESPACE, {
     commands,
-    documentManager,
-    serviceManager
+    documentManager
   });
 
   // Add the file browser widget to the application restorer

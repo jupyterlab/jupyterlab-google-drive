@@ -6,7 +6,7 @@ import {
 } from '@phosphor/algorithm';
 
 import {
-  Contents, utils 
+  Contents
 } from '@jupyterlab/services';
 
 import {
@@ -88,7 +88,7 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
   } else {
     resourceReadyPromise = new Promise<FilesResource>((resolve,reject)=>{
       let enclosingFolderPath =
-        utils.urlPathJoin(...splitPath(path).slice(0,-1));
+        PathExt.join(...splitPath(path).slice(0,-1));
       let resource: FilesResource = fileResourceFromContentsModel(model);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FilesResource)=>{
@@ -436,7 +436,7 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
     return contentsModelForPath(oldPath);
   } else {
     let pathComponents = splitPath(newPath);
-    let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
+    let newFolderPath = PathExt.join(...pathComponents.slice(0,-1));
 
     // Get a promise that resolves with the resource in the current position.
     let resourcePromise = getResourceForPath(oldPath)
@@ -502,7 +502,7 @@ function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
                 ' the same name to the same directory');
   } else {
     let pathComponents = splitPath(newPath);
-    let newFolderPath = utils.urlPathJoin(...pathComponents.slice(0,-1));
+    let newFolderPath = PathExt.join(...pathComponents.slice(0,-1));
 
     // Get a promise that resolves with the resource in the current position.
     let resourcePromise = getResourceForPath(oldPath)
@@ -895,7 +895,7 @@ namespace Private {
     let keys = (resourceCache as any).keys();
     for(let key of keys) {
       let enclosingFolderPath =
-        utils.urlPathJoin(...splitPath(key).slice(0,-1));
+        PathExt.join(...splitPath(key).slice(0,-1));
       if(path === enclosingFolderPath) {
         resourceCache.delete(key);
       }
