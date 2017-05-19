@@ -9,7 +9,7 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  utils
+  ServerConnection
 } from '@jupyterlab/services';
 
 
@@ -262,7 +262,7 @@ function pickFile(resource: any): Promise<void> {
  * masquerading as an `IAJaxError`.
  */
 export
-function makeError(result: any): utils.IAjaxError {
+function makeError(result: any): ServerConnection.IError {
   let xhr = {
     status: result.error.code,
     responseText: result.error.message
@@ -273,5 +273,5 @@ function makeError(result: any): utils.IAjaxError {
     ajaxSettings: null,
     throwError: xhr.responseText,
     message: xhr.responseText
-  } as utils.IAjaxError;
+  } as any as ServerConnection.IError;
 }

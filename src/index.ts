@@ -22,7 +22,7 @@ import {
 } from '@jupyterlab/apputils';
 
 import {
-  DocumentManager
+  IDocumentManager
 } from '@jupyterlab/docmanager';
 
 import {
@@ -38,12 +38,8 @@ import {
 } from './drive/drive';
 
 import {
-  GoogleDriveServiceManager
+  GoogleDrive
 } from './drive/contents';
-
-import {
-  GoogleModelDB
-} from './realtime/modeldb';
 
 /**
  * Google Drive filebrowser plugin state namespace.
@@ -52,7 +48,7 @@ const NAMESPACE = 'google-drive-filebrowser';
 
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
-  requires: [IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer],
+  requires: [IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer],
   activate: activateFileBrowser,
   autoStart: true
 };
@@ -60,36 +56,15 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer): void {
+function activateFileBrowser(app: JupyterLab, manager: IDocumentManager, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer): void {
   let { commands } = app;
-  let serviceManager = new GoogleDriveServiceManager(registry);
 
-  let id = 1;
-  let opener: DocumentManager.IWidgetOpener = {
-    open: widget => {
-      if (!widget.id) {
-        widget.id = `google-drive-manager-${++id}`;
-      }
-      if (!widget.isAttached) {
-        app.shell.addToMainArea(widget);
-      }
-      app.shell.activateById(widget.id);
-    }
-  };
-  let modelDBFactory = {
-    createNew: (path: string) => {
-      return new GoogleModelDB({filePath: path});
-    }
-  }
-  let documentManager = new DocumentManager({
-    registry,
-    manager: serviceManager,
-    opener,
-    modelDBFactory
-  });
+  let drive = new GoogleDrive(registry);
+  manager.services.contents.addDrive(drive);
+
   let fbWidget = factory.createFileBrowser(NAMESPACE, {
     commands,
-    documentManager
+    driveName: drive.name
   });
 
   // Add the file browser widget to the application restorer

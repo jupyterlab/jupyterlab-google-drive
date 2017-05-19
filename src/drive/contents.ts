@@ -6,7 +6,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  ContentsManager, Contents, ServiceManager
+  Contents, ServerConnection
 } from '@jupyterlab/services';
 
 import {
@@ -26,46 +26,26 @@ import * as drive from './drive';
 const NOTEBOOK_MIMETYPE = 'application/ipynb';
 
 /**
- * An implementation of an IServiceManager
-
- * which swaps out the local ContentsManager
- * with one that talks to Google Drive.
- */
-export
-class GoogleDriveServiceManager extends ServiceManager {
-  /**
-   * Construct the services provider.
-   */
-  constructor(registry: IDocumentRegistry) {
-    super();
-    this._driveContents = new GoogleDriveContentsManager({}, registry);
-  }
-
-  /**
-   * Get the drive contents manager.
-   */
-  get contents(): ContentsManager {
-    return <ContentsManager><any>this._driveContents;
-  }
-
-  private _driveContents: GoogleDriveContentsManager = null;
-}
-
-/**
  * A contents manager that passes file operations to the server.
  *
  * This includes checkpointing with the normal file operations.
  */
 export
-class GoogleDriveContentsManager implements Contents.IManager {
+class GoogleDrive implements Contents.IDrive {
   /**
    * Construct a new contents manager object.
    *
    * @param options - The options used to initialize the object.
    */
-  constructor(options: ContentsManager.IOptions = {}, registry: IDocumentRegistry) {
+  constructor(registry: IDocumentRegistry) {
     this._docRegistry = registry;
   }
+
+  get name(): 'GDrive' {
+    return 'GDrive';
+  }
+
+  readonly serverSettings: ServerConnection.ISettings = null;
 
   /**
    * A signal emitted when a file operation takes place.
