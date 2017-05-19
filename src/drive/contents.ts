@@ -10,7 +10,7 @@ import {
 } from '@jupyterlab/services';
 
 import {
-  PathExt
+  PathExt, ModelDB
 } from '@jupyterlab/coreutils';
 
 import {
@@ -20,6 +20,10 @@ import {
 import {
   authorize
 } from '../gapi';
+
+import {
+  GoogleModelDB
+} from '../realtime/modeldb';
 
 import * as drive from './drive';
 
@@ -43,6 +47,14 @@ class GoogleDrive implements Contents.IDrive {
 
   get name(): 'GDrive' {
     return 'GDrive';
+  }
+
+  get modelDBFactory(): ModelDB.IFactory {
+    return {
+      createNew: (path: string) => {
+        return new GoogleModelDB( {filePath: path} );
+      }
+    }
   }
 
   readonly serverSettings: ServerConnection.ISettings = null;
