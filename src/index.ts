@@ -102,7 +102,7 @@ function activateFileBrowser(app: JupyterLab, manager: IDocumentManager, registr
     menu.open(event.clientX, event.clientY);
   });
 
-  fbWidget.title.label = 'GDrive';
+  fbWidget.title.label = 'Google Drive';
   fbWidget.id = 'google-drive-file-browser';
   app.shell.addToLeftArea(fbWidget, { rank: 50 });
 

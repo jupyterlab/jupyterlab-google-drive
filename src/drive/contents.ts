@@ -105,6 +105,8 @@ class GoogleDrive implements Contents.IDrive {
     if(!this._authorized) {
       this._authorize();
     }
+    // TODO: the contents manager probably should not be passing in '.'.
+    path = path === '.' ? '' : path;
     return this._authorized.then(()=>{
       return drive.contentsModelForPath(path, getContent)
     });
