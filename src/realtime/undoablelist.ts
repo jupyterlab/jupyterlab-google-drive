@@ -10,25 +10,24 @@ import {
 } from '@phosphor/algorithm';
 
 import {
-  IObservableUndoableVector, IObservableVector,
-  ObservableVector
+  IObservableUndoableList, IObservableList,
 } from '@jupyterlab/coreutils';
 
 import {
-  GoogleVector
-} from './vector';
+  GoogleList
+} from './list';
 
 /**
- * A concrete implementation of a realtime undoable vector.
+ * A concrete implementation of a realtime undoable list.
  */
 export
-class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservableUndoableVector<JSONValue> {
+class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUndoableList<JSONValue> {
   /**
-   * Construct a new undoable vector.
+   * Construct a new undoable list.
    */
-  constructor(vector: gapi.drive.realtime.CollaborativeList<JSONValue>) {
-    super(vector);
-    this.changed.connect(this._onVectorChanged, this);
+  constructor(list: gapi.drive.realtime.CollaborativeList<JSONValue>) {
+    super(list);
+    this.changed.connect(this._onListChanged, this);
   }
 
   /**
@@ -117,9 +116,9 @@ class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservabl
   }
 
   /**
-   * Handle a change in the vector.
+   * Handle a change in the list.
    */
-  private _onVectorChanged(list: IObservableVector<JSONValue>, change: ObservableVector.IChangedArgs<JSONValue>): void {
+  private _onListChanged(list: IObservableList<JSONValue>, change: IObservableList.IChangedArgs<JSONValue>): void {
     if (this.isDisposed || !this._isUndoable) {
       return;
     }
@@ -146,12 +145,12 @@ class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservabl
   /**
    * Undo a change event.
    */
-  private _undoChange(change: ObservableVector.IChangedArgs<JSONValue>): void {
+  private _undoChange(change: IObservableList.IChangedArgs<JSONValue>): void {
     let index = 0;
     switch (change.type) {
     case 'add':
       each(change.newValues, () => {
-        this.removeAt(change.newIndex);
+        this.remove(change.newIndex);
       });
       break;
     case 'set':
@@ -177,7 +176,7 @@ class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservabl
   /**
    * Redo a change event.
    */
-  private _redoChange(change: ObservableVector.IChangedArgs<JSONValue>): void {
+  private _redoChange(change: IObservableList.IChangedArgs<JSONValue>): void {
     let index = 0;
     switch (change.type) {
     case 'add':
@@ -194,7 +193,7 @@ class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservabl
       break;
     case 'remove':
       each(change.oldValues, () => {
-        this.removeAt(change.oldIndex);
+        this.remove(change.oldIndex);
       });
       break;
     case 'move':
@@ -208,7 +207,7 @@ class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservabl
   /**
    * Copy a change as JSON.
    */
-  private _copyChange(change: ObservableVector.IChangedArgs<JSONValue>): ObservableVector.IChangedArgs<JSONValue> {
+  private _copyChange(change: IObservableList.IChangedArgs<JSONValue>): IObservableList.IChangedArgs<JSONValue> {
     let oldValues: JSONValue[] = [];
     each(change.oldValues, value => {
       oldValues.push(value);
@@ -230,5 +229,5 @@ class GoogleUndoableVector extends GoogleVector<JSONValue> implements IObservabl
   private _isUndoable = true;
   private _madeCompoundChange = false;
   private _index = -1;
-  private _stack: ObservableVector.IChangedArgs<JSONValue>[][] = [];
+  private _stack: IObservableList.IChangedArgs<JSONValue>[][] = [];
 }

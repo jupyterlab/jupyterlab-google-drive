@@ -6,7 +6,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  IObservableMap, ObservableMap,
+  IObservableMap
 } from '@jupyterlab/coreutils';
 
 import {
@@ -32,7 +32,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<this, ObservableMap.IChangedArgs<T>> {
+  get changed(): ISignal<this, IObservableMap.IChangedArgs<T>> {
     return this._changed;
   }
 
@@ -79,7 +79,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
     this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
         if(!evt.isLocal) {
-          let changeType: ObservableMap.ChangeType;
+          let changeType: IObservableMap.ChangeType;
           if(evt.oldValue && evt.newValue) {
             changeType = 'change';
           } else if (evt.oldValue && !evt.newValue) {
@@ -209,7 +209,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
     this._isDisposed = true;
   }
 
-  private _changed = new Signal<this, ObservableMap.IChangedArgs<T>>(this);
+  private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
   private _map: gapi.drive.realtime.CollaborativeMap<T> = null;
   private _itemCmp: (first: T, second: T) => boolean = null;
   private _isDisposed: boolean = false;

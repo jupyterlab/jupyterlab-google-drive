@@ -11,7 +11,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  IObservableVector, ObservableVector,
+  IObservableList
 } from '@jupyterlab/coreutils';
 
 import {
@@ -20,25 +20,25 @@ import {
 
 
 /**
- * Realtime vector type wrapping `gapi.drive.realtme.CollaborativeList`.
+ * Realtime list type wrapping `gapi.drive.realtme.CollaborativeList`.
  */
 export
-class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<T>, GoogleRealtimeObject {
+class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, GoogleRealtimeObject {
 
   /**
-   * Create a new GoogleVector.
+   * Create a new GoogleList.
    */
-  constructor(vector: gapi.drive.realtime.CollaborativeList<T>, itemCmp?: (first: T, second: T) => boolean) {
+  constructor(list: gapi.drive.realtime.CollaborativeList<T>, itemCmp?: (first: T, second: T) => boolean) {
     this._itemCmp = itemCmp || Private.itemCmp;
-    this.googleObject = vector;
+    this.googleObject = list;
   }
 
-  type: 'Vector';
+  type: 'List';
 
   /**
-   * A signal emitted when the vector has changed.
+   * A signal emitted when the list has changed.
    */
-  get changed(): ISignal<IObservableVector<T>, ObservableVector.IChangedArgs<T>> {
+  get changed(): ISignal<this, IObservableList.IChangedArgs<T>> {
     return this._changed;
   }
 
@@ -53,9 +53,9 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Test whether the vector is empty.
+   * Test whether the list is empty.
    *
-   * @returns `true` if the vector is empty, `false` otherwise.
+   * @returns `true` if the list is empty, `false` otherwise.
    *
    * #### Complexity
    * Constant.
@@ -68,10 +68,10 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Get the value at the front of the vector.
+   * Get the value at the front of the list.
    *
-   * @returns The value at the front of the vector, or `undefined` if
-   *   the vector is empty.
+   * @returns The value at the front of the list, or `undefined` if
+   *   the list is empty.
    *
    * #### Complexity
    * Constant.
@@ -80,14 +80,14 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * No changes.
    */
   get front(): T {
-    return this.at(0);
+    return this.get(0);
   }
 
   /**
-   * Get the value at the back of the vector.
+   * Get the value at the back of the list.
    *
-   * @returns The value at the back of the vector, or `undefined` if
-   *   the vector is empty.
+   * @returns The value at the back of the list, or `undefined` if
+   *   the list is empty.
    *
    * #### Complexity
    * Constant.
@@ -96,12 +96,12 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * No changes.
    */
   get back(): T {
-    return this.at(this.length-1);
+    return this.get(this.length-1);
   }
 
   /**
    * Get the underlying `gapi.drive.CollaborativeList`
-   * for this vector.
+   * for this list.
    */
   get googleObject(): gapi.drive.realtime.CollaborativeList<T> {
     return this._vec;
@@ -109,20 +109,20 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
 
   /**
    * Set the underlying `gapi.drive.CollaborativeList` for this
-   * vector.
+   * list.
    */
   set googleObject(vec: gapi.drive.realtime.CollaborativeList<T>) {
-    // First, recreate the new vector using the old vector
+    // First, recreate the new list using the old list
     // to send the appropriate signals.
     if(this._vec) {
       this.clear();
       for(let i = 0; i < vec.length; i++) {
-        this.pushBack(vec.get(i));
+        this.push(vec.get(i));
       }
       this._vec.removeAllEventListeners();
     }
 
-    // Set the new vector.
+    // Set the new list.
     this._vec = vec;
 
     // Add event listeners to the new CollaborativeList.
@@ -175,9 +175,9 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Create an iterator over the values in the vector.
+   * Create an iterator over the values in the list.
    *
-   * @returns A new iterator starting at the front of the vector.
+   * @returns A new iterator starting at the front of the list.
    *
    * #### Complexity
    * Constant.
@@ -205,7 +205,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * #### Undefined Behavior
    * An `index` which is non-integral or out of range.
    */
-  at(index: number): T {
+  get(index: number): T {
     return this._vec.get(index);
   }
 
@@ -243,11 +243,11 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Add a value to the back of the vector.
+   * Add a value to the back of the list.
    *
-   * @param value - The value to add to the back of the vector.
+   * @param value - The value to add to the back of the list.
    *
-   * @returns The new length of the vector.
+   * @returns The new length of the list.
    *
    * #### Complexity
    * Constant.
@@ -255,7 +255,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * #### Iterator Validity
    * No changes.
    */
-  pushBack(value: T): number {
+  push(value: T): number {
     let len = this._vec.push(value);
 
     this._changed.emit({
@@ -269,10 +269,10 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Remove and return the value at the back of the vector.
+   * Remove and return the value at the back of the list.
    *
-   * @returns The value at the back of the vector, or `undefined` if
-   *   the vector is empty.
+   * @returns The value at the back of the list, or `undefined` if
+   *   the list is empty.
    *
    * #### Complexity
    * Constant.
@@ -282,7 +282,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    */
   popBack(): T {
     let last = this.length-1;
-    let value = this.at(last);
+    let value = this.get(last);
     this._vec.remove(last);
 
     this._changed.emit({
@@ -296,13 +296,13 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Insert a value into the vector at a specific index.
+   * Insert a value into the list at a specific index.
    *
    * @param index - The index at which to insert the value.
    *
    * @param value - The value to set at the specified index.
    *
-   * @returns The new length of the vector.
+   * @returns The new length of the list.
    *
    * #### Complexity
    * Linear.
@@ -311,7 +311,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * No changes.
    *
    * #### Notes
-   * The `index` will be clamped to the bounds of the vector.
+   * The `index` will be clamped to the bounds of the list.
    *
    * #### Undefined Behavior
    * An `index` which is non-integral.
@@ -330,12 +330,12 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Remove the first occurrence of a value from the vector.
+   * Remove the first occurrence of a value from the list.
    *
    * @param value - The value of interest.
    *
    * @returns The index of the removed value, or `-1` if the value
-   *   is not contained in the vector.
+   *   is not contained in the list.
    *
    * #### Complexity
    * Linear.
@@ -347,9 +347,9 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * Comparison is performed according to the itemCmp function,
    * which defaults to strict `===` equality.
    */
-  remove(value: T): number {
+  removeValue(value: T): number {
     let index = this._vec.indexOf(value, this._itemCmp);
-    this.removeAt(index);
+    this.remove(index);
     return index;
   }
 
@@ -370,8 +370,8 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * #### Undefined Behavior
    * An `index` which is non-integral.
    */
-  removeAt(index: number): T {
-    let value = this.at(index);
+  remove(index: number): T {
+    let value = this.get(index);
     this._vec.remove(index);
     this._changed.emit({
       type: 'remove',
@@ -384,7 +384,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Remove all values from the vector.
+   * Remove all values from the list.
    *
    * #### Complexity
    * Linear.
@@ -425,7 +425,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
     if (this.length === 1 || fromIndex === toIndex) {
       return;
     }
-    let value = this.at(fromIndex);
+    let value = this.get(fromIndex);
     // WARNING: the Google CollaborativeList object
     // has different move semantics than what we expect
     // here (see Google Realtime API docs). Hence we have
@@ -445,11 +445,11 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Push a set of values to the back of the vector.
+   * Push a set of values to the back of the list.
    *
    * @param values - An iterable or array-like set of values to add.
    *
-   * @returns The new length of the vector.
+   * @returns The new length of the list.
    *
    * #### Complexity
    * Linear.
@@ -474,13 +474,13 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Insert a set of items into the vector at the specified index.
+   * Insert a set of items into the list at the specified index.
    *
    * @param index - The index at which to insert the values.
    *
    * @param values - The values to insert at the specified index.
    *
-   * @returns The new length of the vector.
+   * @returns The new length of the list.
    *
    * #### Complexity.
    * Linear.
@@ -489,7 +489,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
    * No changes.
    *
    * #### Notes
-   * The `index` will be clamped to the bounds of the vector.
+   * The `index` will be clamped to the bounds of the list.
    *
    * #### Undefined Behavior.
    * An `index` which is non-integral.
@@ -513,13 +513,13 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Remove a range of items from the vector.
+   * Remove a range of items from the list.
    *
    * @param startIndex - The start index of the range to remove (inclusive).
    *
    * @param endIndex - The end index of the range to remove (exclusive).
    *
-   * @returns The new length of the vector.
+   * @returns The new length of the list.
    *
    * #### Complexity
    * Linear.
@@ -555,7 +555,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   /**
-   * Dispose of the resources held by the vector.
+   * Dispose of the resources held by the list.
    */
   dispose(): void {
     if(this._isDisposed) {
@@ -567,7 +567,7 @@ class GoogleVector<T extends GoogleSynchronizable> implements IObservableVector<
   }
 
   private _vec: gapi.drive.realtime.CollaborativeList<T> = null;
-  private _changed = new Signal<IObservableVector<T>, ObservableVector.IChangedArgs<T>>(this);
+  private _changed = new Signal<this, IObservableList.IChangedArgs<T>>(this);
   private _itemCmp: (first: T, second: T) => boolean;
   private _isDisposed: boolean = false;
 }

@@ -6,7 +6,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  IObservableString, ObservableString
+  IObservableString
 } from '@jupyterlab/coreutils';
 
 import {
@@ -115,7 +115,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
   /**
    * A signal emitted when the string has changed.
    */
-  get changed(): ISignal<IObservableString, ObservableString.IChangedArgs> {
+  get changed(): ISignal<IObservableString, IObservableString.IChangedArgs> {
     return this._changed;
   }
 
@@ -181,7 +181,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
     this._isDisposed = true;
   }
 
-  private _changed = new Signal<IObservableString, ObservableString.IChangedArgs>(this);
+  private _changed = new Signal<IObservableString, IObservableString.IChangedArgs>(this);
   private _str: gapi.drive.realtime.CollaborativeString = null;
   private _isDisposed: boolean = false;
 }

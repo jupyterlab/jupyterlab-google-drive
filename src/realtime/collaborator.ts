@@ -6,7 +6,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  ICollaborator, IObservableMap, ObservableMap
+  ICollaborator, IObservableMap
 } from '@jupyterlab/coreutils';
 
 
@@ -85,7 +85,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
         if(!evt.isLocal) {
-          let changeType: ObservableMap.ChangeType;
+          let changeType: IObservableMap.ChangeType;
           if(evt.oldValue && evt.newValue) {
             changeType = 'change';
           } else if (evt.oldValue && !evt.newValue) {
@@ -116,7 +116,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<CollaboratorMap, ObservableMap.IChangedArgs<ICollaborator>> {
+  get changed(): ISignal<CollaboratorMap, IObservableMap.IChangedArgs<ICollaborator>> {
     return this._changed;
   }
 
@@ -240,5 +240,5 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   private _doc: gapi.drive.realtime.Document = null;
   private _map: gapi.drive.realtime.CollaborativeMap<ICollaborator> = null;
   private _isDisposed: boolean = false;
-  private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<ICollaborator>>(this);
+  private _changed = new Signal<CollaboratorMap, IObservableMap.IChangedArgs<ICollaborator>>(this);
 }

@@ -11,7 +11,7 @@ import {
 
 import {
   IModelDB, IObservableValue, ObservableValue, IObservableString, 
-  IObservable, IObservableUndoableVector, IObservableJSON
+  IObservable, IObservableUndoableList, IObservableJSON
 } from '@jupyterlab/coreutils';
 
 import {
@@ -27,8 +27,8 @@ import {
 } from './string';
 
 import {
-  GoogleUndoableVector
-} from './undoablevector';
+  GoogleUndoableList
+} from './undoablelist';
 
 import {
   GoogleMap
@@ -297,24 +297,24 @@ class GoogleModelDB implements IModelDB {
   }
 
   /**
-   * Create a vector and insert it in the database.
+   * Create a list and insert it in the database.
    *
-   * @param path: the path for the vector.
+   * @param path: the path for the list.
    *
-   * @returns the vector that was created.
+   * @returns the list that was created.
    *
    * #### Notes
-   * The vector can only store objects that are simple
+   * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createVector(path: string): IObservableUndoableVector<JSONValue> {
+  createList(path: string): IObservableUndoableList<JSONValue> {
     let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
     if(this.has(path)) {
       vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<JSONValue>;
     } else {
       vec = this.model.createList<JSONValue>();
     }
-    let newVec = new GoogleUndoableVector(vec);
+    let newVec = new GoogleUndoableList(vec);
     this._disposables.add(newVec);
     this.set(path, newVec);
     return newVec;
