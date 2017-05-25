@@ -11,7 +11,7 @@ import {
 
 
 export
-class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
+class CollaboratorMap implements IObservableMap<ICollaborator> {
 
   constructor(doc: gapi.drive.realtime.Document) {
     // Get the map with the collaborators, or
@@ -22,7 +22,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
 
     // We need to create the map
     if(!this._map) {
-      this._map = doc.getModel().createMap<GoogleCollaborator>();
+      this._map = doc.getModel().createMap<ICollaborator>();
       doc.getModel().getRoot().set(id, this._map);
     }
 
@@ -45,7 +45,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
     }
     // Now add the remaining collaborators.
     for(let i=0; i<initialCollaborators.length; i++) {
-      let collaborator: GoogleCollaborator = {
+      let collaborator: ICollaborator = {
         userId: initialCollaborators[i].userId,
         sessionId: initialCollaborators[i].sessionId,
         displayName: initialCollaborators[i].displayName,
@@ -63,7 +63,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
     this._doc.addEventListener(
       gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
       (evt: any) => {
-        let collaborator: GoogleCollaborator = {
+        let collaborator: ICollaborator = {
           userId: evt.collaborator.userId,
           sessionId: evt.collaborator.sessionId,
           displayName: evt.collaborator.displayName,
@@ -116,7 +116,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleCollaborator>> {
+  get changed(): ISignal<CollaboratorMap, ObservableMap.IChangedArgs<ICollaborator>> {
     return this._changed;
   }
 
@@ -128,7 +128,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
     return this._isDisposed;
   }
 
-  get localCollaborator(): GoogleCollaborator {
+  get localCollaborator(): ICollaborator {
     return this._localCollaborator;
   }
 
@@ -142,7 +142,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
    * @returns the old value for the key, or undefined
    *   if that did not exist.
    */
-  set(key: string, value: GoogleCollaborator): GoogleCollaborator {
+  set(key: string, value: ICollaborator): ICollaborator {
     let oldVal = this._map.get(key);
     this._map.set(key, value);
     this._changed.emit({
@@ -162,7 +162,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
    *
    * @returns the value for that key.
    */
-  get(key: string): GoogleCollaborator {
+  get(key: string): ICollaborator {
     return this._map.get(key);
   }
 
@@ -191,7 +191,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
    *
    * @returns - a list of values.
    */
-  values(): GoogleCollaborator[] {
+  values(): ICollaborator[] {
     return this._map.values();
   }
 
@@ -203,7 +203,7 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
    * @returns the value of the given key,
    *   or undefined if that does not exist. 
    */
-  delete(key: string): GoogleCollaborator {
+  delete(key: string): ICollaborator {
     let oldVal = this._map.get(key);
     this._map.delete(key);
     this._changed.emit({
@@ -236,36 +236,9 @@ class CollaboratorMap implements IObservableMap<GoogleCollaborator> {
     this._isDisposed = true;
   }
 
-  private _localCollaborator: GoogleCollaborator = null;
+  private _localCollaborator: ICollaborator = null;
   private _doc: gapi.drive.realtime.Document = null;
-  private _map: gapi.drive.realtime.CollaborativeMap<GoogleCollaborator> = null;
+  private _map: gapi.drive.realtime.CollaborativeMap<ICollaborator> = null;
   private _isDisposed: boolean = false;
-  private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<GoogleCollaborator>>(this);
-}
-
-export
-class GoogleCollaborator implements ICollaborator {
-  /**
-   * A user id for the collaborator.
-   * This might not be unique, if the user has more than
-   * one editing session at a time.
-   */
-  readonly userId: string;
-
-  /**
-   * A session id, which should be unique to a
-   * particular view on a collaborative model.
-   */
-  readonly sessionId: string;
-
-  /**
-   * A human-readable display name for a collaborator.
-   */
-  readonly displayName: string;
-
-  /**
-   * A color to be used to identify the collaborator in
-   * UI elements.
-   */
-  readonly color: string;
+  private _changed = new Signal<CollaboratorMap, ObservableMap.IChangedArgs<ICollaborator>>(this);
 }
