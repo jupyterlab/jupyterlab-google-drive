@@ -130,6 +130,13 @@ class GoogleDriveLogin extends Widget {
   constructor() {
     super();
     this.addClass(LOGIN_SCREEN);
+
+    // Add the logo.
+    let logo = document.createElement('div');
+    logo.className = 'jp-GoogleDriveLogo';
+    this.node.appendChild(logo);
+
+    // Add the login button.
     this._button = document.createElement('button');
     this._button.title = 'Log into your Google account';
     this._button.textContent = 'LOG IN';

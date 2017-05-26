@@ -16,6 +16,14 @@
 .jp-GoogleLoginScreen {
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.jp-GoogleDriveLogo {
+  background-size: 150px;
+  width: 150px;
+  height: 150px;
+  background-image: url(drive.png);
 }
