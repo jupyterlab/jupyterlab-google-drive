@@ -31,6 +31,10 @@ import {
   GoogleDrive
 } from './drive/contents';
 
+import {
+  authorize
+} from './gapi';
+
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
   requires: [IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer],
@@ -44,11 +48,19 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 function activateFileBrowser(app: JupyterLab, manager: IDocumentManager, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer): void {
   let { commands } = app;
 
+  // Add the Google Drive backend to the contents manager.
   let drive = new GoogleDrive(registry);
   manager.services.contents.addDrive(drive);
 
+  // Create the file browser.
   let browser = new GoogleDriveFileBrowser(
     registry, commands, manager, factory, drive.name);
+
+  // Attempt to authorize on plugin initialization, without using
+  // a popup dialog. If the user is logged into the browser with
+  // a Google account, this will likely succeed. Otherwise, they
+  // will need to login explicitly.
+  authorize(false);
 
   // Add the file browser widget to the application restorer
   restorer.add(browser, NAMESPACE);

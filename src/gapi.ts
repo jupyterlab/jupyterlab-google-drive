@@ -154,12 +154,15 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
 let authorizeRefresh: any = null;
 
 /**
- * Ask the user for permission to access their drive account.
+ * Ask the user for permission to use their Google Drive account.
+ * First it tries to authorize without a popup, and if it fails, it
+ * creates a popup. If the argument `allowPopup` is false, then it will
+ * not try to authorize with a popup.
  *
  * @returns: a promise that resolves when permission has been granted.
  */
 export
-function authorize (): Promise<void> {
+function authorize( allowPopup: boolean = true): Promise<void> {
   return gapiLoaded.then( () => {
     let handleAuthorization = function (authResult: any): void {
       if (authResult && !authResult.error) {
@@ -174,7 +177,12 @@ function authorize (): Promise<void> {
         gapiAuthorized.resolve(void 0);
         return void 0;
       } else {
-        popupAuthorization();
+        if (allowPopup) {
+          popupAuthorization();
+        } else {
+          // Return without resolving anything.
+          return void 0;
+        }
       }
     }
 
