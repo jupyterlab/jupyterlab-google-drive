@@ -77,7 +77,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
 
     // Hook up event listeners to the new map.
     this._map.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any) => {
         if(!evt.isLocal) {
           let changeType: IObservableMap.ChangeType;
           if(evt.oldValue && evt.newValue) {

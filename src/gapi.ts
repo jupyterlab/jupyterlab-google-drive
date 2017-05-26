@@ -52,10 +52,10 @@ let gapiLoaded = new Promise<void>( (resolve, reject) => {
   $.getScript('https://apis.google.com/js/api.js')
   .done( (script, textStatus)=> {
     //load overall API
-    (window as any).gapi.load('auth:client,drive-realtime,drive-share,picker', ()=> {
+    (window as any).gapi.load('auth:client,drive-realtime,drive-share,picker', () => {
       //load client library (for some reason different
       //from the toplevel API)
-      gapi.client.load('drive', 'v3').then(()=>{
+      gapi.client.load('drive', 'v3').then(() => {
         console.log("gapi: loaded onto page");
         resolve();
       });
@@ -105,8 +105,8 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
     console.log(request);
     return Promise.reject(new Error('Maximum number of API retries reached.'));
   }
-  return new Promise<any>((resolve, reject)=>{
-    driveReady.then(()=>{
+  return new Promise<any>((resolve, reject) => {
+    driveReady.then(() => {
       request.then( (response: any)=> {
         if(response.status !== successCode) {
           // Handle an HTTP error.
@@ -125,16 +125,16 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
             resolve(response.result);
           }
         }
-      }, (response: any)=>{
+      }, (response: any) => {
         // Some other error happened. If we are being rate limited,
         // attempt exponential backoff. If that fails, bail.
         if(response.status === FORBIDDEN_ERROR &&
            response.result.error.errors[0].reason === RATE_LIMIT_REASON) {
           console.log("gapi: Throttling...");
-          window.setTimeout( ()=>{
+          window.setTimeout( () => {
             // Try again after a delay.
             driveApiRequest(request, successCode, attemptNumber+1)
-            .then((result: any)=>{
+            .then((result: any) => {
               resolve(result);
             });
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
@@ -166,7 +166,7 @@ function authorize (): Promise<void> {
         console.log("gapi: authorized.");
         // Set a timer to refresh the authorization
         if(authorizeRefresh) clearTimeout(authorizeRefresh);
-        authorizeRefresh = setTimeout( ()=>{
+        authorizeRefresh = setTimeout( () => {
           console.log('gapi: refreshing authorization.')
           authorize();
         }, 750 * Number(authResult.expires_in));
@@ -220,8 +220,8 @@ function authorize (): Promise<void> {
  */
 export
 function pickFile(resource: any): Promise<void> {
-  return new Promise<any>((resolve,reject)=>{
-    let pickerCallback = (response: any)=> {
+  return new Promise<any>((resolve,reject) => {
+    let pickerCallback = (response: any) => {
       // Resolve if the user has picked the selected file.
       if(response[google.picker.Response.ACTION] ===
          google.picker.Action.PICKED &&
@@ -238,7 +238,7 @@ function pickFile(resource: any): Promise<void> {
         reject(new Error('Insufficient permisson to open file'));
       }
     }
-    driveReady.then(()=>{
+    driveReady.then(() => {
       let pickerView = new google.picker.DocsView(google.picker.ViewId.DOCS)
           .setMode(google.picker.DocsViewMode.LIST)
           .setParent(resource.parents[0])

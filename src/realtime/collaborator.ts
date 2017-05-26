@@ -83,7 +83,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     );
 
     this._map.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any)=>{
+      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any) => {
         if(!evt.isLocal) {
           let changeType: IObservableMap.ChangeType;
           if(evt.oldValue && evt.newValue) {

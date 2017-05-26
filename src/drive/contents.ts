@@ -107,7 +107,7 @@ class GoogleDrive implements Contents.IDrive {
     }
     // TODO: the contents manager probably should not be passing in '.'.
     path = path === '.' ? '' : path;
-    return this._authorized.then(()=>{
+    return this._authorized.then(() => {
       return drive.contentsModelForPath(path, getContent)
     });
   }
@@ -182,11 +182,11 @@ class GoogleDrive implements Contents.IDrive {
       throw new Error("Unrecognized type " + contentType);
     }
 
-    return this._getNewFilename(path, ext, baseName).then((name: string)=>{
+    return this._getNewFilename(path, ext, baseName).then((name: string) => {
       model['name'] = name;
       path = PathExt.join(path, name);
       return drive.uploadFile(path, model as Contents.IModel, false);
-    }).then((contents: Contents.IModel)=>{
+    }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'new',
         oldValue: null,
@@ -204,7 +204,7 @@ class GoogleDrive implements Contents.IDrive {
    * @returns A promise which resolves when the file is deleted.
    */
   delete(path: string): Promise<void> {
-    return drive.deleteFile(path).then(()=>{
+    return drive.deleteFile(path).then(() => {
       this._fileChanged.emit({
         type: 'delete',
         oldValue: { path },
@@ -228,7 +228,7 @@ class GoogleDrive implements Contents.IDrive {
     if(path === newPath) {
       return this.get(path);
     } else {
-      return drive.moveFile(path, newPath).then((contents: Contents.IModel)=>{
+      return drive.moveFile(path, newPath).then((contents: Contents.IModel) => {
         this._fileChanged.emit({
           type: 'rename',
           oldValue: { path },
@@ -250,7 +250,7 @@ class GoogleDrive implements Contents.IDrive {
    *   file is saved.
    */
   save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
-    return this.get(path).then((contents)=>{
+    return this.get(path).then((contents) => {
       //The file exists
       if(options) {
         //Overwrite the existing file
@@ -261,10 +261,10 @@ class GoogleDrive implements Contents.IDrive {
         // way to handle this case.
         return void 0;
       }
-    }, ()=>{
+    }, () => {
       //The file does not exist already, create a new one.
       return drive.uploadFile(path, options, false)
-    }).then((contents)=>{
+    }).then((contents) => {
       this._fileChanged.emit({
         type: 'save',
         oldValue: null,
@@ -363,7 +363,7 @@ class GoogleDrive implements Contents.IDrive {
     // Get the file listing for the directory.
     let query = 'name contains \''+baseName+
                 '\' and name contains \''+ext+'\'';
-    return drive.searchDirectory(path, query).then((resourceList: any[])=>{
+    return drive.searchDirectory(path, query).then((resourceList: any[]) => {
       let existingNames: any= {};
       for( let i = 0; i < resourceList.length; i++) {
         existingNames[resourceList[i].name] = true;
