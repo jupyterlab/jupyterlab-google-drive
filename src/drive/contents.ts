@@ -18,10 +18,6 @@ import {
 } from '@jupyterlab/docregistry';
 
 import {
-  authorize
-} from '../gapi';
-
-import {
   GoogleModelDB
 } from '../realtime/modeldb';
 
@@ -102,14 +98,9 @@ class GoogleDrive implements Contents.IDrive {
    */
   get(path: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
     let getContent = options ? !!options.content : true;
-    if(!this._authorized) {
-      this._authorize();
-    }
     // TODO: the contents manager probably should not be passing in '.'.
     path = path === '.' ? '' : path;
-    return this._authorized.then(() => {
-      return drive.contentsModelForPath(path, getContent)
-    });
+    return drive.contentsModelForPath(path, getContent)
   }
 
   /**
@@ -345,10 +336,6 @@ class GoogleDrive implements Contents.IDrive {
     return drive.unpinRevision(path, checkpointID);
   }
 
-  private _authorize(): void {
-    this._authorized = authorize();
-  }
-
   /**
    * Obtains the filename that should be used for a new file in a given
    * folder.  This is the next file in the series Untitled0, Untitled1, ... in
@@ -384,7 +371,6 @@ class GoogleDrive implements Contents.IDrive {
 
   private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
-  private _authorized: Promise<void> = null;
   private _docRegistry: IDocumentRegistry = null;
   private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }

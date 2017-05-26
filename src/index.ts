@@ -1,6 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import '../style/index.css';
+
 import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
@@ -22,13 +24,12 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  createFileBrowser, NAMESPACE
+  GoogleDriveFileBrowser, NAMESPACE
 } from './drive/browser';
 
 import {
   GoogleDrive
 } from './drive/contents';
-
 
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
@@ -46,11 +47,12 @@ function activateFileBrowser(app: JupyterLab, manager: IDocumentManager, registr
   let drive = new GoogleDrive(registry);
   manager.services.contents.addDrive(drive);
 
-  let fbWidget = createFileBrowser(registry, commands, manager, factory, drive.name);
+  let browser = new GoogleDriveFileBrowser(
+    registry, commands, manager, factory, drive.name);
 
   // Add the file browser widget to the application restorer
-  restorer.add(fbWidget, NAMESPACE);
-  app.shell.addToLeftArea(fbWidget, { rank: 50 });
+  restorer.add(browser, NAMESPACE);
+  app.shell.addToLeftArea(browser, { rank: 50 });
 
   return;
 }

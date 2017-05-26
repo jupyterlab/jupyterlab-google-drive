@@ -6,7 +6,7 @@ import {
 } from '@phosphor/algorithm';
 
 import {
-  Menu
+  Widget, Menu, PanelLayout
 } from '@phosphor/widgets';
 
 import {
@@ -37,6 +37,10 @@ import {
   getResourceForPath, createPermissions
 } from './drive';
 
+import {
+  driveReady, authorize
+} from '../gapi';
+
 
 /**
  * Google Drive filebrowser plugin state namespace.
@@ -45,9 +49,111 @@ export
 const NAMESPACE = 'google-drive-filebrowser';
 
 /**
- * Activate the file browser.
+ * CSS class for the filebrowser container.
+ */
+const GOOGLE_DRIVE_FILEBROWSER_CLASS = 'jp-GoogleDriveFileBrowser';
+
+/**
+ * CSS class for login panel.
+ */
+const LOGIN_SCREEN = 'jp-GoogleLoginScreen';
+
+/**
+ * Widget for hosting the Google Drive filebrowser.
  */
 export
+class GoogleDriveFileBrowser extends Widget {
+  /**
+   * Construct the browser widget.
+   */
+  constructor(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string) {
+    super();
+    this.addClass(GOOGLE_DRIVE_FILEBROWSER_CLASS);
+    this.layout = new PanelLayout();
+
+    // Initialize with the Login screen.
+    this._loginScreen = new GoogleDriveLogin();
+    (this.layout as PanelLayout).addWidget(this._loginScreen);
+
+    // Keep references to the createFileBrowser arguments for
+    // when we need to construct it.
+    this._registry = registry;
+    this._commands = commands;
+    this._manager = manager;
+    this._factory = factory;
+    this._driveName = driveName;
+
+    // After authorization and we are ready to use the
+    // drive, swap out the widgets.
+    driveReady.then(() => {
+      this._browser = createFileBrowser(this._registry, this._commands,
+                                        this._manager, this._factory,
+                                        this._driveName);
+      this._loginScreen.parent = null;
+      (this.layout as PanelLayout).addWidget(this._browser);
+    });
+
+    this.title.label = 'Google Drive';
+    this.id = 'google-drive-file-browser';
+  }
+
+  /**
+   * Dispose of the resource held by the widget.
+   */
+  dispose(): void {
+    let login = this._loginScreen;
+    this._loginScreen = null;
+    login.dispose();
+    this._browser.dispose();
+    this._browser = null;
+    this._registry = null;
+    this._commands = null;
+    this._manager = null;
+    this._factory = null;
+    super.dispose();
+  }
+
+  private _browser: FileBrowser = null;
+  private _loginScreen: GoogleDriveLogin = null;
+  private _registry: IDocumentRegistry = null;
+  private _commands: CommandRegistry = null;
+  private _manager: IDocumentManager = null;
+  private _factory: IFileBrowserFactory = null;
+  private _driveName: string = null;
+}
+
+export
+class GoogleDriveLogin extends Widget {
+  /**
+   * Construct the login panel.
+   */
+  constructor() {
+    super();
+    this.addClass(LOGIN_SCREEN);
+    this._button = document.createElement('button');
+    this._button.title = 'Log into your Google account';
+    this._button.textContent = 'LOG IN';
+    this._button.className = 'jp-Dialog-button jp-mod-styled jp-mod-accept';
+    this._button.onclick = this._onLoginClicked.bind(this);
+    this.node.appendChild(this._button);
+  }
+
+  dispose(): void {
+    this._button = null;
+  }
+
+  private _onLoginClicked(): void {
+    authorize();
+  }
+
+  private _button: HTMLElement = null;
+}
+
+
+
+/**
+ * Activate the file browser.
+ */
 function createFileBrowser(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string): FileBrowser {
 
   let fbWidget = factory.createFileBrowser(NAMESPACE, {
@@ -86,9 +192,6 @@ function createFileBrowser(registry: IDocumentRegistry, commands: CommandRegistr
     let menu = createContextMenu(fbWidget, openWith);
     menu.open(event.clientX, event.clientY);
   });
-
-  fbWidget.title.label = 'Google Drive';
-  fbWidget.id = 'google-drive-file-browser';
 
   return fbWidget;
 }
@@ -202,7 +305,8 @@ function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
         if (result.accept) {
           each(model.items(), (item: any) => {
             if(listing.isSelected(item.name)) {
-              getResourceForPath(item.path).then((resource) => {
+              let localPath = item.path.split(':').pop();
+              getResourceForPath(localPath).then((resource) => {
                 createPermissions(resource.id, input.value);
               });
             }
