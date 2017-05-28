@@ -78,9 +78,6 @@ class GoogleModelDB implements IModelDB {
           let oldDB = this._db;
           this._db = new GoogleMap(this._model.getRoot());
 
-          // Set up the collaborators map.
-          this._collaborators = new CollaboratorMap(this._doc);
-
           if (this._model.getRoot().size !== 0) {
             // If the model is not empty, it is coming prepopulated.
             this._isPrepopulated = true;
@@ -121,6 +118,9 @@ class GoogleModelDB implements IModelDB {
               }
             }
           }
+
+          // Set up the collaborators map.
+          this._collaborators = new CollaboratorMap(this._doc);
 
           this._connected.resolve(void 0);
         });
