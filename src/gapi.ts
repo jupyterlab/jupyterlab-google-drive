@@ -12,11 +12,6 @@ import {
   ServerConnection
 } from '@jupyterlab/services';
 
-
-import {
-  Dialog, showDialog
-} from '@jupyterlab/apputils';
-
 // TODO: Complete gapi typings and commit upstream.
 declare let gapi: any;
 declare let google: any;
@@ -159,60 +154,37 @@ let authorizeRefresh: any = null;
  * creates a popup. If the argument `allowPopup` is false, then it will
  * not try to authorize with a popup.
  *
- * @returns: a promise that resolves when permission has been granted.
+ * @returns: a promise that resolves with a boolean for whether permission
+ *   has been granted.
  */
 export
-function authorize( allowPopup: boolean = true): Promise<void> {
-  return gapiLoaded.then( () => {
-    let handleAuthorization = function (authResult: any): void {
-      if (authResult && !authResult.error) {
-        console.log("gapi: authorized.");
-        // Set a timer to refresh the authorization
-        if(authorizeRefresh) clearTimeout(authorizeRefresh);
-        authorizeRefresh = setTimeout( () => {
-          console.log('gapi: refreshing authorization.')
-          authorize();
-        }, 750 * Number(authResult.expires_in));
-        // Resolve the exported promise.
-        gapiAuthorized.resolve(void 0);
-        return void 0;
-      } else {
-        if (allowPopup) {
-          popupAuthorization();
+function authorize(usePopup: boolean = false): Promise<boolean> {
+  return new Promise<boolean>((resolve, reject) => {
+    gapiLoaded.then( () => {
+      let handleAuthorization = function (authResult: any): void {
+        if (authResult && !authResult.error) {
+          console.log("gapi: authorized.");
+          // Set a timer to refresh the authorization.
+          if(authorizeRefresh) clearTimeout(authorizeRefresh);
+          authorizeRefresh = setTimeout( () => {
+            console.log('gapi: refreshing authorization.')
+            authorize(false);
+          }, 750 * Number(authResult.expires_in));
+          // Resolve the exported promise.
+          gapiAuthorized.resolve(void 0);
+          resolve(true);
         } else {
-          // Return without resolving anything.
-          return void 0;
+          // Return with permissions not granted.
+          resolve(false);
         }
       }
-    }
 
-    // Create a popup dialog asking the user
-    // whether to proceed to authorization.
-    // This prevents popup blockers from blocking
-    // the Google OAuth screen.
-    let popupAuthorization = function() {
-      showDialog({
-        title: 'Proceed to Google Authorization?',
-        buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'OK'})]
-      }).then( result => {
-        if (result.accept) {
-          gapi.auth.authorize({
-            client_id: CLIENT_ID,
-            scope: SCOPE,
-            immediate: false
-          }, handleAuthorization);
-        } else {
-          gapiAuthorized.reject(void 0);
-          throw new Error("gapi: unable to authorize");
-        }
-      });
-    }
-
-    // Attempt to authorize without a popup.
-    gapi.auth.authorize({
-      client_id: CLIENT_ID,
-      scope: SCOPE,
-      immediate: true}, handleAuthorization);
+      // Attempt to authorize without a popup.
+      gapi.auth.authorize({
+        client_id: CLIENT_ID,
+        scope: SCOPE,
+        immediate: usePopup}, handleAuthorization);
+    });
   });
 }
 

@@ -142,7 +142,18 @@ class GoogleDriveLogin extends Widget {
     this._button.textContent = 'LOG IN';
     this._button.className = 'jp-Dialog-button jp-mod-styled jp-mod-accept';
     this._button.onclick = this._onLoginClicked.bind(this);
+    this._button.style.visibility = 'hidden';
     this.node.appendChild(this._button);
+
+    // Attempt to authorize on construction without using
+    // a popup dialog. If the user is logged into the browser with
+    // a Google account, this will likely succeed. Otherwise, they
+    // will need to login explicitly.
+    authorize(true).then(success => {
+      if (!success) {
+        this._button.style.visibility = 'visible';
+      }
+    });
   }
 
   dispose(): void {
@@ -150,7 +161,7 @@ class GoogleDriveLogin extends Widget {
   }
 
   private _onLoginClicked(): void {
-    authorize();
+    authorize(false);
   }
 
   private _button: HTMLElement = null;
