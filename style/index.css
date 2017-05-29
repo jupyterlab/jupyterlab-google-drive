@@ -11,6 +11,7 @@
 
 .jp-GoogleDriveFileBrowser .jp-FileBrowser {
   flex-grow: 1;
+  height: 100%;
 }
 
 .jp-GoogleLoginScreen {
