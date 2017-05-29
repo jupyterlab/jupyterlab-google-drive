@@ -183,7 +183,7 @@ function authorize(usePopup: boolean = false): Promise<boolean> {
       gapi.auth.authorize({
         client_id: CLIENT_ID,
         scope: SCOPE,
-        immediate: usePopup}, handleAuthorization);
+        immediate: !usePopup}, handleAuthorization);
     });
   });
 }

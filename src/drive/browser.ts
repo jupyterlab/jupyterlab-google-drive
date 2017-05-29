@@ -149,7 +149,7 @@ class GoogleDriveLogin extends Widget {
     // a popup dialog. If the user is logged into the browser with
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
-    authorize(true).then(success => {
+    authorize(false).then(success => {
       if (!success) {
         this._button.style.visibility = 'visible';
       }
@@ -161,7 +161,7 @@ class GoogleDriveLogin extends Widget {
   }
 
   private _onLoginClicked(): void {
-    authorize(false);
+    authorize(true);
   }
 
   private _button: HTMLElement = null;
