@@ -332,7 +332,7 @@ function createContextMenu(fbWidget: FileBrowser, openWith: Menu):  Menu {
         }
       });
     },
-    icon: 'jp-MaterialIcon jp-CopyIcon',
+    icon: 'jp-MaterialIcon jp-ShareIcon',
     label: 'Share'
   }));
   menu.addItem({ command });
