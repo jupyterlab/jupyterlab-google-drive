@@ -70,7 +70,7 @@ class GoogleModelDB implements IModelDB {
 
       // Load the document from Google Drive.
       getResourceForPath(options.filePath).then((resource: any) => {
-        loadRealtimeDocument(resource.id).then((doc: gapi.drive.realtime.Document) => {
+        loadRealtimeDocument(resource).then((doc: gapi.drive.realtime.Document) => {
           // Update the references to the doc and model
           this._doc = doc;
           this._model = doc.getModel();

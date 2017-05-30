@@ -349,12 +349,17 @@ function createRealtimeDocument(): Promise<string> {
  * @returns a promise fulfilled with the realtime document model.
  */
 export
-function loadRealtimeDocument( fileId: string): Promise<gapi.drive.realtime.Document> {
+function loadRealtimeDocument(resource: FilesResource, picked: boolean = false): Promise<gapi.drive.realtime.Document> {
   return new Promise((resolve, reject) => {
     driveReady.then(() => {
-      console.log("gapi: attempting to load realtime file " + fileId);
-      gapi.drive.realtime.load( fileId, (doc: gapi.drive.realtime.Document ): any => {
+      console.log("gapi: attempting to load realtime file " + resource.id);
+      gapi.drive.realtime.load(resource.id, (doc: gapi.drive.realtime.Document ): any => {
         resolve(doc);
+      }, (model: any) => {
+        /* no-op initializer */
+      }, (err: any) => {
+        // If there is a not found error, we may need to invoke
+        // the picker to gain file access.
       });
     });
   });
