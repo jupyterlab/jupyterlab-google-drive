@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  driveApiRequest, driveReady, pickFile
+  driveApiRequest, driveReady, gapiLoaded, pickFile
 } from '../gapi';
 
 //TODO: Complete gapi typings and commit upstream
@@ -741,27 +741,29 @@ function fileResourceFromContentsModel(contents: Contents.IModel): FilesResource
  *   file/folder, or rejected with an Error object.
  */
 function getResourceForRelativePath(pathComponent: string, folderId: string): Promise<FilesResource> {
-  // Construct a search query for the file at hand.
-  let query = 'name = \'' + pathComponent + '\' and trashed = false '
-              + 'and \'' + folderId + '\' in parents';
-  // Construct a request for the files matching the query.
-  let request: string = gapi.client.drive.files.list({
-    q: query,
-    fields: 'files('+RESOURCE_FIELDS+')'
-  });
-  // Make the request.
-  return driveApiRequest(request).then((result: any) => {
-    let files: FilesResource[] = result.files;
-    if (!files || files.length === 0) {
-      return Promise.reject(
-        "Google Drive: cannot find the specified file/folder: "
-        +pathComponent);
-    } else if (files.length > 1) {
-      return Promise.reject(
-        "Google Drive: multiple files/folders match: "
-        +pathComponent);
-    }
-    return files[0];
+  return gapiLoaded.then(() => {
+    // Construct a search query for the file at hand.
+    let query = 'name = \'' + pathComponent + '\' and trashed = false '
+                + 'and \'' + folderId + '\' in parents';
+    // Construct a request for the files matching the query.
+    let request: string = gapi.client.drive.files.list({
+      q: query,
+      fields: 'files('+RESOURCE_FIELDS+')'
+    });
+    // Make the request.
+    return driveApiRequest(request).then((result: any) => {
+      let files: FilesResource[] = result.files;
+      if (!files || files.length === 0) {
+        return Promise.reject(
+          "Google Drive: cannot find the specified file/folder: "
+          +pathComponent);
+      } else if (files.length > 1) {
+        return Promise.reject(
+          "Google Drive: multiple files/folders match: "
+          +pathComponent);
+      }
+      return files[0];
+    });
   });
 }
 
@@ -775,12 +777,14 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
  *   corresponding to `id`.
  */
 function resourceFromFileId(id: string): Promise<FilesResource> {
-  let request: DriveApiRequest = gapi.client.drive.files.get({
-   fileId: id,
-   fields: RESOURCE_FIELDS
-  });
-  return driveApiRequest(request).then((result: FilesResource) => {
-    return result;
+  return gapiLoaded.then(() => {
+    let request: DriveApiRequest = gapi.client.drive.files.get({
+     fileId: id,
+     fields: RESOURCE_FIELDS
+    });
+    return driveApiRequest(request).then((result: FilesResource) => {
+      return result;
+    });
   });
 }
 
@@ -853,26 +857,28 @@ function getResourceForPath(path: string): Promise<FilesResource> {
  * @returns a promise fulfilled with the contents of the file.
  */
 function downloadResource(resource: FilesResource, picked: boolean = false): Promise<any> {
-  let request: DriveApiRequest = gapi.client.drive.files.get({
-   fileId: resource.id,
-   alt: 'media'
-  });
-  return driveApiRequest(request).then((result: any) => {
-    return result;
-  }).catch((error: any) => {
-    // If the request failed, there may be insufficient
-    // permissions to download this file. Try to choose
-    // it with a picker to explicitly grant permission.
-    if(error.xhr.responseText === 'appNotAuthorizedToFile'
-       && picked === false) {
-      return pickFile(resource).then(() => {
-        return downloadResource(resource, true);
-      }).catch(() => {
+  return gapiLoaded.then(() => {
+    let request: DriveApiRequest = gapi.client.drive.files.get({
+     fileId: resource.id,
+     alt: 'media'
+    });
+    return driveApiRequest(request).then((result: any) => {
+      return result;
+    }).catch((error: any) => {
+      // If the request failed, there may be insufficient
+      // permissions to download this file. Try to choose
+      // it with a picker to explicitly grant permission.
+      if(error.xhr.responseText === 'appNotAuthorizedToFile'
+         && picked === false) {
+        return pickFile(resource).then(() => {
+          return downloadResource(resource, true);
+        }).catch(() => {
+          throw error;
+        });
+      } else {
         throw error;
-      });
-    } else {
-      throw error;
-    }
+      }
+    });
   });
 }
 
