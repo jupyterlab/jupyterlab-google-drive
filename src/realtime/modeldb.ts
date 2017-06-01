@@ -138,6 +138,9 @@ class GoogleModelDB implements IModelDB {
    * Get the CollaboratorMap.
    */
   get collaborators(): CollaboratorMap {
+    if (this._baseDB) {
+      return this._baseDB.collaborators;
+    }
     return this._collaborators;
   }
 
