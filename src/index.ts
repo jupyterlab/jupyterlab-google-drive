@@ -8,7 +8,7 @@ import {
 } from '@jupyterlab/application';
 
 import {
-  ILayoutRestorer
+  ILayoutRestorer, showDialog, Dialog, ICommandPalette
 } from '@jupyterlab/apputils';
 
 import {
@@ -28,12 +28,16 @@ import {
 } from './drive/browser';
 
 import {
+  getResourceForPath, createPermissions
+} from './drive/drive';
+
+import {
   GoogleDrive
 } from './drive/contents';
 
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
-  requires: [IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer],
+  requires: [ICommandPalette, IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer],
   activate: activateFileBrowser,
   autoStart: true
 };
@@ -41,7 +45,7 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, manager: IDocumentManager, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer): void {
+function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer): void {
   let { commands } = app;
 
   // Add the Google Drive backend to the contents manager.
@@ -55,6 +59,33 @@ function activateFileBrowser(app: JupyterLab, manager: IDocumentManager, registr
   // Add the file browser widget to the application restorer
   restorer.add(browser, NAMESPACE);
   app.shell.addToLeftArea(browser, { rank: 50 });
+
+  let command = `google-drive:share`;
+  commands.addCommand(command, {
+    execute: ()=> {
+      const widget = app.shell.currentWidget;
+      const context = manager.contextForWidget(widget);
+      if (context) {
+        let path = context.path;
+        let input = document.createElement('input');
+        showDialog({
+          title: 'Add collaborator Gmail address',
+          body: input,
+          buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'ADD'})]
+        }).then( result=> {
+          if (result.accept) {
+            let localPath = path.split(':').pop();
+            getResourceForPath(localPath).then((resource: any) => {
+              createPermissions(resource.id, input.value);
+            });
+          }
+        });
+      }
+    },
+    icon: 'jp-MaterialIcon jp-ShareIcon',
+    label: 'Share'
+  });
+  palette.addItem({ command, category: 'File Operations' });
 
   return;
 }
