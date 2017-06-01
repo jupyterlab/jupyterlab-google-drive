@@ -87,8 +87,7 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
     resourceReadyPromise = getResourceForPath(path)
   } else {
     resourceReadyPromise = new Promise<FilesResource>((resolve, reject) => {
-      let enclosingFolderPath =
-        PathExt.join(...splitPath(path).slice(0,-1));
+      let enclosingFolderPath = PathExt.dirname(path);
       let resource: FilesResource = fileResourceFromContentsModel(model);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FilesResource) => {
@@ -440,8 +439,7 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
   if( oldPath === newPath ) {
     return contentsModelForPath(oldPath);
   } else {
-    let pathComponents = splitPath(newPath);
-    let newFolderPath = PathExt.join(...pathComponents.slice(0,-1));
+    let newFolderPath = PathExt.dirname(newPath);
 
     // Get a promise that resolves with the resource in the current position.
     let resourcePromise = getResourceForPath(oldPath)
@@ -450,7 +448,7 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
 
     // Check the new path to make sure there isn't already a file
     // with the same name there.
-    let newName = pathComponents.slice(-1)[0];
+    let newName = PathExt.basename(newPath);
     let directorySearchPromise =
       searchDirectory(newFolderPath, 'name = \''+newName+'\'');
 
@@ -506,8 +504,7 @@ function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
     throw Error('Google Drive: cannot copy a file with'+
                 ' the same name to the same directory');
   } else {
-    let pathComponents = splitPath(newPath);
-    let newFolderPath = PathExt.join(...pathComponents.slice(0,-1));
+    let newFolderPath = PathExt.dirname(newPath);
 
     // Get a promise that resolves with the resource in the current position.
     let resourcePromise = getResourceForPath(oldPath)
@@ -516,7 +513,7 @@ function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
 
     // Check the new path to make sure there isn't already a file
     // with the same name there.
-    let newName = pathComponents.slice(-1)[0];
+    let newName = PathExt.basename(newPath);
     let directorySearchPromise =
       searchDirectory(newFolderPath, 'name = \''+newName+'\'');
 
@@ -899,8 +896,7 @@ namespace Private {
     // TODO: my TS compiler complains here?
     let keys = (resourceCache as any).keys();
     for(let key of keys) {
-      let enclosingFolderPath =
-        PathExt.join(...splitPath(key).slice(0,-1));
+      let enclosingFolderPath = PathExt.dirname(path);
       if(path === enclosingFolderPath) {
         resourceCache.delete(key);
       }
