@@ -88,6 +88,8 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
   } else {
     resourceReadyPromise = new Promise<FilesResource>((resolve, reject) => {
       let enclosingFolderPath = PathExt.dirname(path);
+      enclosingFolderPath =
+        enclosingFolderPath === '.' ? '' : enclosingFolderPath;
       let resource: FilesResource = fileResourceFromContentsModel(model);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FilesResource) => {
@@ -440,6 +442,7 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
     return contentsModelForPath(oldPath);
   } else {
     let newFolderPath = PathExt.dirname(newPath);
+    newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
 
     // Get a promise that resolves with the resource in the current position.
     let resourcePromise = getResourceForPath(oldPath)
@@ -505,6 +508,7 @@ function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
                 ' the same name to the same directory');
   } else {
     let newFolderPath = PathExt.dirname(newPath);
+    newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
 
     // Get a promise that resolves with the resource in the current position.
     let resourcePromise = getResourceForPath(oldPath)
@@ -903,6 +907,8 @@ namespace Private {
     let keys = (resourceCache as any).keys();
     for(let key of keys) {
       let enclosingFolderPath = PathExt.dirname(path);
+      enclosingFolderPath =
+        enclosingFolderPath === '.' ? '' : enclosingFolderPath;
       if(path === enclosingFolderPath) {
         resourceCache.delete(key);
       }
