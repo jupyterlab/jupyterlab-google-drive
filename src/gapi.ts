@@ -27,9 +27,8 @@ const APP_ID = '625147942732';
 /**
  * Scope for the permissions needed for this extension.
  */
-const FILES_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-const METADATA_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.metadata';
-const SCOPE = [FILES_OAUTH_SCOPE, METADATA_OAUTH_SCOPE];
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
+const SCOPE = [DRIVE_SCOPE];
 
 /**
  * Aliases for common API errors.
