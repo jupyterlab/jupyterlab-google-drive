@@ -21,7 +21,7 @@ code execution, and the outputs from running cells will reflect that.
 To install this extension into JupyterLab (requires node 6 or later), do the following:
 
 ```bash
-jupyter labextension install jupyterlab-google-drive
+jupyter labextension install @jupyterlab/google-drive
 ```
 
 ## Development
