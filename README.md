@@ -1,4 +1,4 @@
-# jupyterlab-google-drive 
+# jupyterlab-google-drive
 
 Realtime collaboration and cloud storage for JupyterLab through Google Drive.
 
@@ -47,3 +47,40 @@ To rebuild the package and the JupyterLab app after making changes:
 npm run build
 jupyter lab build
 ```
+
+## Getting Started from Scratch
+
+- Install JupyterLab
+
+   ```
+   npm install
+   pip install -e .
+   npm run build:main
+   ```
+
+- Install google-drive extension
+
+   ```
+   jupyter labextension install @jupyterlab/google-drive
+   ```
+
+- Start JupyterLab
+
+   ```
+   jupyter lab
+   ```
+
+- Click on Google Drive tab (on left side) in JupyterLab interface and login to
+  your Google Drive account.
+
+- In a new browser window, log into your Google Drive `https://drive.google.com`
+
+- Have someone share a notebook or markdown file with you.
+
+- Look in the **Shared with Me** folder on Google Drive.
+  Take the shared file and put it into your **My Drive**.
+
+- Back in the JupyterLab user interface window, you should
+  see the shared file (which you just saved in your
+  **My Drive**) in your list of files under JupyterLab's **Google Drive**
+  tab.
