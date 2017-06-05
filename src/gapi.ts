@@ -28,7 +28,7 @@ const DEFAULT_CLIENT_ID = '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.go
  * Scope for the permissions needed for this extension.
  */
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
-const SCOPE = [DRIVE_SCOPE];
+const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 
 /**
  * Aliases for common API errors.
@@ -37,28 +37,9 @@ const FORBIDDEN_ERROR = 403;
 const RATE_LIMIT_REASON = 'rateLimitExceeded';
 
 /**
- * A Promise that loads the gapi scripts onto the page,
- * and resolves when it is done.
+ * A handle to the singleton GoogleAuth instance.
  */
-export
-let gapiLoaded = new Promise<void>( (resolve, reject) => {
-  //get the gapi script from Google
-  $.getScript('https://apis.google.com/js/api.js')
-  .done( (script, textStatus)=> {
-    //load overall API
-    (window as any).gapi.load('auth:client,drive-realtime,drive-share,picker', () => {
-      //load client library (for some reason different
-      //from the toplevel API)
-      gapi.client.load('drive', 'v3').then(() => {
-        console.log("gapi: loaded onto page");
-        resolve();
-      });
-    });
-  }).fail( () => {
-    console.log("gapi: unable to load onto page");
-    reject();
-  });
-});
+let googleAuth: any = null;
 
 /**
  * A promise that is resolved when the user authorizes
@@ -72,6 +53,41 @@ let gapiAuthorized = new PromiseDelegate<void>();
  */
 export
 let driveReady = gapiAuthorized.promise;
+
+/**
+ * A Promise that loads the gapi scripts onto the page,
+ * and resolves when it is done.
+ */
+export
+let gapiLoaded = new Promise<void>( (resolve, reject) => {
+  // Get the gapi script from Google.
+  $.getScript('https://apis.google.com/js/api.js')
+  .done((script, textStatus) => {
+    // Load overall API.
+    (window as any).gapi.load('client:auth2,drive-realtime,drive-share,picker', () => {
+      // Load client library (for some reason different
+      // from the toplevel API).
+      console.log("gapi: loaded onto page");
+      gapi.client.init({
+        discoveryDocs: DISCOVERY_DOCS,
+        clientId: DEFAULT_CLIENT_ID,
+        scope: DRIVE_SCOPE
+      }).then( () => {
+        // Check if the user is logged in and we are
+        // authomatically authorized.
+        googleAuth = gapi.auth2.getAuthInstance();
+        if (googleAuth.isSignedIn.get()) {
+          console.log("gapi: authorized.");
+          gapiAuthorized.resolve(void 0);
+        }
+        resolve();
+      });
+    });
+  }).fail( () => {
+    console.log("gapi: unable to load onto page");
+    reject();
+  });
+});
 
 /**
  * Constants used when attempting exponential backoff.
@@ -159,30 +175,23 @@ let authorizeRefresh: any = null;
 export
 function authorize(clientId: string, usePopup: boolean = false): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
-    gapiLoaded.then( () => {
-      let handleAuthorization = function (authResult: any): void {
-        if (authResult && !authResult.error) {
-          console.log("gapi: authorized.");
+    gapiLoaded.then(() => {
+      if (!googleAuth.isSignedIn.get()) {
+        googleAuth.signIn().then( (result: any) => {
+          console.log(result);
+          let authResponse = result.getAuthResponse();
           // Set a timer to refresh the authorization.
           if(authorizeRefresh) clearTimeout(authorizeRefresh);
           authorizeRefresh = setTimeout( () => {
             console.log('gapi: refreshing authorization.')
-            authorize(clientId, false);
-          }, 750 * Number(authResult.expires_in));
+            result.reloadAuthResponse();
+          }, 750 * Number(authResponse.expires_in));
+
           // Resolve the exported promise.
           gapiAuthorized.resolve(void 0);
           resolve(true);
-        } else {
-          // Return with permissions not granted.
-          resolve(false);
-        }
+        });
       }
-
-      // Attempt to authorize without a popup.
-      gapi.auth.authorize({
-        client_id: clientId,
-        scope: SCOPE,
-        immediate: !usePopup}, handleAuthorization);
     });
   });
 }
