@@ -23,7 +23,7 @@
 }
 
 .jp-GoogleDriveLogo {
-  background-size: 150px;
+  background-size: 100%;
   width: 150px;
   height: 150px;
   background-image: url(drive.png);

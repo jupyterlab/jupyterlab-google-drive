@@ -874,7 +874,8 @@ function downloadResource(resource: FilesResource, picked: boolean = false): Pro
       // it with a picker to explicitly grant permission.
       if(error.xhr.responseText === 'appNotAuthorizedToFile'
          && picked === false) {
-        return pickFile(resource).then(() => {
+        //TODO: get the client Id here properly.
+        return pickFile(resource, '').then(() => {
           return downloadResource(resource, true);
         }).catch(() => {
           throw error;

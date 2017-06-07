@@ -10,6 +10,10 @@ import {
 } from '@phosphor/commands';
 
 import {
+  ISettingRegistry
+} from '@jupyterlab/coreutils';
+
+import {
   IDocumentManager
 } from '@jupyterlab/docmanager';
 
@@ -22,7 +26,7 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  driveReady, authorize
+  driveReady, authorize, DEFAULT_CLIENT_ID
 } from '../gapi';
 
 
@@ -50,13 +54,13 @@ class GoogleDriveFileBrowser extends Widget {
   /**
    * Construct the browser widget.
    */
-  constructor(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string) {
+  constructor(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string, settingsPromise: Promise<ISettingRegistry.ISettings>) {
     super();
     this.addClass(GOOGLE_DRIVE_FILEBROWSER_CLASS);
     this.layout = new PanelLayout();
 
     // Initialize with the Login screen.
-    this._loginScreen = new GoogleDriveLogin();
+    this._loginScreen = new GoogleDriveLogin(settingsPromise);
     (this.layout as PanelLayout).addWidget(this._loginScreen);
 
     // Keep references to the createFileBrowser arguments for
@@ -111,7 +115,7 @@ class GoogleDriveLogin extends Widget {
   /**
    * Construct the login panel.
    */
-  constructor() {
+  constructor(settingsPromise: Promise<ISettingRegistry.ISettings>) {
     super();
     this.addClass(LOGIN_SCREEN);
 
@@ -133,10 +137,14 @@ class GoogleDriveLogin extends Widget {
     // a popup dialog. If the user is logged into the browser with
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
-    authorize(false).then(success => {
-      if (!success) {
-        this._button.style.visibility = 'visible';
-      }
+    settingsPromise.then( settings => {
+      let cached = settings.get('clientId') as string || null;
+      this._clientId = cached === null ? DEFAULT_CLIENT_ID : cached;
+      authorize(this._clientId, false).then(success => {
+        if (!success) {
+          this._button.style.visibility = 'visible';
+        }
+      });
     });
   }
 
@@ -145,10 +153,11 @@ class GoogleDriveLogin extends Widget {
   }
 
   private _onLoginClicked(): void {
-    authorize(true);
+    authorize(this._clientId, true);
   }
 
   private _button: HTMLElement = null;
+  private _clientId: string = DEFAULT_CLIENT_ID;
 }
 
 

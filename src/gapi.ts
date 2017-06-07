@@ -17,12 +17,12 @@ declare let gapi: any;
 declare let google: any;
 
 /**
- * Client and App IDs to let the Google Servers know who
+ * Default Client ID to let the Google Servers know who
  * we are. These can be changed to ones linked to a particular
  * user if they so desire.
  */
-const CLIENT_ID = '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.googleusercontent.com';
-const APP_ID = '625147942732';
+export
+const DEFAULT_CLIENT_ID = '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.googleusercontent.com';
 
 /**
  * Scope for the permissions needed for this extension.
@@ -157,7 +157,7 @@ let authorizeRefresh: any = null;
  *   has been granted.
  */
 export
-function authorize(usePopup: boolean = false): Promise<boolean> {
+function authorize(clientId: string, usePopup: boolean = false): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     gapiLoaded.then( () => {
       let handleAuthorization = function (authResult: any): void {
@@ -167,7 +167,7 @@ function authorize(usePopup: boolean = false): Promise<boolean> {
           if(authorizeRefresh) clearTimeout(authorizeRefresh);
           authorizeRefresh = setTimeout( () => {
             console.log('gapi: refreshing authorization.')
-            authorize(false);
+            authorize(clientId, false);
           }, 750 * Number(authResult.expires_in));
           // Resolve the exported promise.
           gapiAuthorized.resolve(void 0);
@@ -180,7 +180,7 @@ function authorize(usePopup: boolean = false): Promise<boolean> {
 
       // Attempt to authorize without a popup.
       gapi.auth.authorize({
-        client_id: CLIENT_ID,
+        client_id: clientId,
         scope: SCOPE,
         immediate: !usePopup}, handleAuthorization);
     });
@@ -198,7 +198,8 @@ function authorize(usePopup: boolean = false): Promise<boolean> {
  * @returns a promise the resolves when the file has been picked.
  */
 export
-function pickFile(resource: any): Promise<void> {
+function pickFile(resource: any, clientId: string): Promise<void> {
+  let appId = clientId.split('-')[0];
   return new Promise<any>((resolve,reject) => {
     let pickerCallback = (response: any) => {
       // Resolve if the user has picked the selected file.
@@ -226,7 +227,7 @@ function pickFile(resource: any): Promise<void> {
       let picker = new google.picker.PickerBuilder()
         .addView(pickerView)
         .enableFeature(google.picker.Feature.NAV_HIDDEN)
-        .setAppId(APP_ID)
+        .setAppId(appId)
         .setOAuthToken(gapi.auth.getToken()['access_token'])
         .setTitle('Select to authorize opening this file with JupyterLab...')
         .setCallback(pickerCallback)
