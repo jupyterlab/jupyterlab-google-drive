@@ -347,6 +347,13 @@ class GoogleDrive implements Contents.IDrive {
    * @return A promise fullfilled with the new filename.
    */
   private _getNewFilename(path: string, ext: string, baseName: string): Promise<string> {
+    // Check that the target directory is a valid
+    // directory (i.e., not the pseudo-root or
+    // the "Shared with me" directory).
+    if (drive.isDummy(path)) {
+      return Promise.reject(
+        `Google Drive: "${path}" is not a valid target directory`);
+    }
     // Get the file listing for the directory.
     let query = 'name contains \''+baseName+
                 '\' and name contains \''+ext+'\'';

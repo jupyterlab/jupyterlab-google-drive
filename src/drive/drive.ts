@@ -58,9 +58,14 @@ type RevisionResource = any;
 const SHARED_DIRECTORY = 'Shared with me';
 
 /**
- * The name of the dummy "My Drive" folder.
+ * The name of the root "My Drive" folder.
  */
 const DRIVE_DIRECTORY = 'My Drive';
+
+/**
+ * The path of the dummy pseudo-root folder.
+ */
+const COLLECTIONS_DIRECTORY = '';
 
 /**
  * A dummy files resource for the "Shared with me" folder.
@@ -109,6 +114,10 @@ function urlForFile(path: string): Promise<string> {
  */
 export
 function uploadFile(path: string, model: Contents.IModel, existing: boolean = false): Promise<Contents.IModel> {
+  if (isDummy(PathExt.dirname(path)) && !existing) {
+    return Promise.reject(
+      `Google Drive: "${path}" is not a valid target directory`);
+  }
   let resourceReadyPromise = Promise.resolve(void 0);
   if(existing) {
     resourceReadyPromise = getResourceForPath(path)
@@ -572,6 +581,10 @@ function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
  */
 export
 function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+  if (isDummy(PathExt.dirname(newPath))) {
+    return Promise.reject(
+      `GoogleDrive: "${newPath}" is not a valid target`);
+  }
   if( oldPath === newPath ) {
     return contentsModelForPath(oldPath);
   } else {
@@ -637,8 +650,12 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
  */
 export
 function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+  if (isDummy(PathExt.dirname(newPath))) {
+    return Promise.reject(
+      `GoogleDrive: "${newPath}" is not a valid target location`);
+  }
   if( oldPath === newPath ) {
-    throw Error('Google Drive: cannot copy a file with'+
+    return Promise.reject('Google Drive: cannot copy a file with'+
                 ' the same name to the same directory');
   } else {
     let newFolderPath = PathExt.dirname(newPath);
@@ -934,6 +951,14 @@ function splitPath(path: string): string[] {
 }
 
 /**
+ * Whether a path is a dummy directory.
+ */
+export
+function isDummy(path: string): boolean {
+  return (path === COLLECTIONS_DIRECTORY || path === SHARED_DIRECTORY);
+}
+
+/**
  * Gets the Google Drive Files resource corresponding to a path.  The path
  * is always treated as an absolute path, no matter whether it contains
  * leading or trailing slashes.  In fact, all leading, trailing and
@@ -969,7 +994,7 @@ function getResourceForPath(path: string): Promise<FilesResource> {
     } else if (components[0] === DRIVE_DIRECTORY) {
       return resourceFromFileId('root');
     } else {
-      throw Error('Unexpected file/folder in root directory');
+      return Promise.reject('Unexpected file/folder in root directory');
     }
   } else if (components.length === 2 && components[0] === SHARED_DIRECTORY) {
     return searchSharedFiles('name = \''+components[1]+'\'').then( files => {
