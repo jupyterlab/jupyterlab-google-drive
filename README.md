@@ -53,12 +53,10 @@ jupyter lab build
 - Install JupyterLab
 
    ```
-   npm install
-   pip install -e .
-   npm run build:main
+   pip install jupyterlab
    ```
 
-- Install google-drive extension
+- Install the jupyterlab-google-drive extension
 
    ```
    jupyter labextension install @jupyterlab/google-drive
@@ -73,14 +71,7 @@ jupyter lab build
 - Click on Google Drive tab (on left side) in JupyterLab interface and login to
   your Google Drive account.
 
-- In a new browser window, log into your Google Drive `https://drive.google.com`
-
 - Have someone share a notebook or markdown file with you.
 
-- Look in the **Shared with Me** folder on Google Drive.
-  Take the shared file and put it into your **My Drive**.
-
-- Back in the JupyterLab user interface window, you should
-  see the shared file (which you just saved in your
-  **My Drive**) in your list of files under JupyterLab's **Google Drive**
-  tab.
+- You should now see the file in the **Shared with Me** folder in the file browser.
+  Open it, and begin editing!
