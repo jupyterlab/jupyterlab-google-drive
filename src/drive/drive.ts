@@ -52,6 +52,33 @@ type DriveApiRequest = any;
 export
 type RevisionResource = any;
 
+/**
+ * The name of the dummy "Shared with me" folder.
+ */
+const SHARED_DIRECTORY = 'Shared with me';
+
+/**
+ * The name of the dummy "My Drive" folder.
+ */
+const DRIVE_DIRECTORY = 'My Drive';
+
+/**
+ * A dummy files resource for the "Shared with me" folder.
+ */
+const SHARED_DIRECTORY_RESOURCE: FilesResource = {
+  kind: 'dummy',
+  name: SHARED_DIRECTORY,
+}
+
+/**
+ * A dummy files resource for the pseudo-root folder.
+ */
+const COLLECTIONS_DIRECTORY_RESOURCE: FilesResource = {
+  kind: 'dummy',
+  name: '',
+}
+
+
 /* ****** Functions for uploading/downloading files ******** */
 
 /**
@@ -182,6 +209,10 @@ function uploadFile(path: string, model: Contents.IModel, existing: boolean = fa
  */
 export
 function contentsModelFromFileResource(resource: FilesResource, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+  // Handle the exception of the dummy directories
+  if (resource.kind === 'dummy') {
+    return contentsModelFromDummyFileResource(resource, path, includeContents);
+  }
   // Handle the case of getting the contents of a directory.
   if(resource.mimeType === FOLDER_MIMETYPE) {
     // Enter contents metadata.
@@ -266,6 +297,81 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
     } else {
       return Promise.resolve(contents as Contents.IModel);
     }
+  }
+}
+
+/**
+ * There are two fake directories that we expose in the file browser
+ * in order to have access to the "Shared with me" directory. This is
+ * not a proper directory in the Google Drive system, just a collection
+ * of files that have a `sharedWithMe` flag, so we have to treat it
+ * separately. This constructs Contents.IModels from our dummy directories.
+ *
+ * @param resource: the dummy files resource.
+ *
+ * @param path: the path for the dummy resource.
+ *
+ * @param includeContents: whether to include the directory listing
+ *   for the dummy directory.
+ *
+ * @returns a promise fulfilled with the a Contents.IModel for the resource.
+ */
+function contentsModelFromDummyFileResource(resource: FilesResource, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+  // Construct the empty Contents.IModel.
+  let contents: any = {
+    name: resource.name,
+    path: path,
+    type: 'directory',
+    writable: false,
+    content: null,
+    mimetype: null,
+    format: 'json'
+  }
+  if (resource.name === SHARED_DIRECTORY && includeContents) {
+    // If `resource` is the SHARED_DIRECTORY_RESOURCE, and we
+    // need the file listing for it, then get them.
+    let fileList: Contents.IModel[] = [];
+    return searchSharedFiles().then((resources: FilesResource[]) => {
+      //Update the cache.
+      Private.clearCacheForDirectory(path);
+      Private.populateCacheForDirectory(path, resources);
+
+      let currentContents = Promise.resolve({});
+
+      for(let i = 0; i<resources.length; i++) {
+        let currentResource = resources[i];
+        let resourcePath = path ?
+                           path+'/'+currentResource.name :
+                           currentResource.name;
+        currentContents = contentsModelFromFileResource(
+          currentResource, resourcePath, false);
+        currentContents.then((contents: Contents.IModel) => {
+          fileList.push(contents);
+        });
+      }
+      return currentContents;
+    }).then(() => {
+      contents.content = fileList;
+      return contents as Contents.IModel;
+    });
+  } else if (resource.name === '' && includeContents) {
+    // If `resource` is the pseudo-root directory, construct
+    // a contents model for it.
+    let sharedContentsPromise = contentsModelFromFileResource(
+      SHARED_DIRECTORY_RESOURCE, SHARED_DIRECTORY, false);
+    let rootContentsPromise = resourceFromFileId('root').then(
+      (rootResource) => {
+        return contentsModelFromFileResource(rootResource,
+                                             DRIVE_DIRECTORY,
+                                             false);
+      });
+    return Promise.all([rootContentsPromise, sharedContentsPromise]).then(c => {
+      contents.content = c;
+      return contents as Contents.IModel;
+    });
+  } else {
+    // Otherwise return the (mostly) empty contents model.
+    return Promise.resolve(contents);
   }
 }
 
@@ -412,6 +518,34 @@ function searchDirectory(path: string, query: string = ''): Promise<FilesResourc
     // Construct the query.
     let fullQuery: string = '\''+resource.id+'\' in parents '+
                             'and trashed = false';
+    if(query) fullQuery += ' and '+query;
+
+    let request = gapi.client.drive.files.list({
+      q: fullQuery,
+      fields: 'files('+RESOURCE_FIELDS+')'
+    });
+    return driveApiRequest(request);
+  }).then((result: any) => {
+    return result.files;
+  });
+}
+
+/**
+ * Search the list of files that have been shared with the user.
+ *
+ * @param query - a query string, following the format of
+ *   query strings for the Google Drive v3 API, which
+ *   narrows down search results. An empty query string
+ *   corresponds to just listing the shared files.
+ *
+ * @returns a promise fulfilled with the files that have been
+ * shared with the user.
+ */
+export
+function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
+  return gapiLoaded.then(() => {
+    // Construct the query.
+    let fullQuery = 'sharedWithMe = true';
     if(query) fullQuery += ' and '+query;
 
     let request = gapi.client.drive.files.list({
@@ -797,7 +931,7 @@ function resourceFromFileId(id: string): Promise<FilesResource> {
  */
 function splitPath(path: string): string[] {
   return path.split('/').filter((s,i,a) => (Boolean(s)));
-};
+}
 
 /**
  * Gets the Google Drive Files resource corresponding to a path.  The path
@@ -822,8 +956,34 @@ function getResourceForPath(path: string): Promise<FilesResource> {
   let components = splitPath(path);
 
   if (components.length === 0) {
-    // Handle the case for the root folder.
-    return resourceFromFileId('root');
+    // Handle the case for the pseudo-root folder
+    // (i.e., the view onto the "My Drive" and "Shared
+    // with me" directories).
+    return Promise.resolve(COLLECTIONS_DIRECTORY_RESOURCE);
+  } else if (components.length === 1) {
+    // Handle the case of either of the folders in the
+    // pseudo-root.
+    if (components[0] === SHARED_DIRECTORY) {
+      // Return the "Shared with me" dummy resource".
+      return Promise.resolve(SHARED_DIRECTORY_RESOURCE);
+    } else if (components[0] === DRIVE_DIRECTORY) {
+      return resourceFromFileId('root');
+    } else {
+      throw Error('Unexpected file/folder in root directory');
+    }
+  } else if (components.length === 2 && components[0] === SHARED_DIRECTORY) {
+    return searchSharedFiles('name = \''+components[1]+'\'').then( files => {
+      if (!files || files.length === 0) {
+        return Promise.reject(
+          "Google Drive: cannot find the specified file/folder: "
+          +components[1]);
+      } else if (files.length > 1) {
+        return Promise.reject(
+          "Google Drive: multiple files/folders match: "
+          +components[1]);
+      }
+      return files[0];
+    });
   } else {
     // Loop through the path components and get the resource for each
     // one, verifying that the path corresponds to a valid drive object.
@@ -841,13 +1001,16 @@ function getResourceForPath(path: string): Promise<FilesResource> {
     let currentResource: Promise<FilesResource> = Promise.resolve({id: 'root'});
 
     // Loop over the components, updating the current resource.
-    for (let i = 0; i < components.length; i++) {
+    // Start the loop at one to skip the pseudo-root.
+    for (let i = 1; i < components.length; i++) {
       let component = components[i];
       currentResource = getResource(component, currentResource);
     }
 
     // Update the cache.
-    Private.resourceCache.set(path, currentResource);
+    currentResource.then(r => {
+      Private.resourceCache.set(path, r);
+    });
     // Resolve with the final value of currentResource.
     return currentResource;
   }
