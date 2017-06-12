@@ -64,7 +64,7 @@ let gapiLoaded = new Promise<void>( (resolve, reject) => {
   $.getScript('https://apis.google.com/js/api.js')
   .done((script, textStatus) => {
     // Load overall API.
-    (window as any).gapi.load('client:auth2,drive-realtime,drive-share,picker', () => {
+    (window as any).gapi.load('client:auth2,drive-realtime,drive-share', () => {
       // Load client library (for some reason different
       // from the toplevel API).
       console.log("gapi: loaded onto page");
@@ -72,13 +72,15 @@ let gapiLoaded = new Promise<void>( (resolve, reject) => {
         discoveryDocs: DISCOVERY_DOCS,
         clientId: DEFAULT_CLIENT_ID,
         scope: DRIVE_SCOPE
-      }).then( () => {
+      }).then(() => {
         // Check if the user is logged in and we are
         // authomatically authorized.
         googleAuth = gapi.auth2.getAuthInstance();
         if (googleAuth.isSignedIn.get()) {
-          console.log("gapi: authorized.");
-          gapiAuthorized.resolve(void 0);
+          refreshAuthToken().then(() => {
+            console.log("gapi: authorized.");
+            gapiAuthorized.resolve(void 0);
+          });
         }
         resolve();
       });
@@ -173,25 +175,50 @@ let authorizeRefresh: any = null;
  *   has been granted.
  */
 export
-function authorize(clientId: string, usePopup: boolean = false): Promise<boolean> {
+function signIn(clientId: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     gapiLoaded.then(() => {
       if (!googleAuth.isSignedIn.get()) {
-        googleAuth.signIn().then( (result: any) => {
-          console.log(result);
-          let authResponse = result.getAuthResponse();
-          // Set a timer to refresh the authorization.
-          if(authorizeRefresh) clearTimeout(authorizeRefresh);
-          authorizeRefresh = setTimeout( () => {
-            console.log('gapi: refreshing authorization.')
-            result.reloadAuthResponse();
-          }, 750 * Number(authResponse.expires_in));
-
+        googleAuth.signIn().then((result: any) => {
+          refreshAuthToken();
           // Resolve the exported promise.
           gapiAuthorized.resolve(void 0);
           resolve(true);
         });
+      } else {
+        // Otherwise we are already signed in.
+        // Resolve the exported promise.
+        gapiAuthorized.resolve(void 0);
+        resolve(true);
       }
+    });
+  });
+}
+
+/**
+ * Refresh the authorization token for Google APIs.
+ *
+ * #### Notes
+ * Importantly, this calls `gapi.auth.setToken`.
+ * Without this step, the realtime API will not pick
+ * up the OAuth token, and it will not work. This step is
+ * completely undocumented, but without it we cannot
+ * use the newer, better documented, undeprecated `gapi.auth2`
+ * authorization API.
+ */
+function refreshAuthToken(): Promise<any> {
+  return new Promise<any>((resolve, reject) => {
+    let user = googleAuth.currentUser.get();
+    user.reloadAuthResponse().then((authResponse: any) => {
+      gapi.auth.setToken(authResponse, (result: any) => {
+        // Set a timer to refresh the authorization.
+        if(authorizeRefresh) clearTimeout(authorizeRefresh);
+        authorizeRefresh = setTimeout(() => {
+          console.log('gapi: refreshing authorization.')
+          refreshAuthToken();
+        }, 750 * Number(authResponse.expires_in));
+        resolve(result);
+      });
     });
   });
 }

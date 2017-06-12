@@ -26,7 +26,7 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  driveReady, authorize, DEFAULT_CLIENT_ID
+  driveReady, signIn, DEFAULT_CLIENT_ID
 } from '../gapi';
 
 
@@ -140,7 +140,7 @@ class GoogleDriveLogin extends Widget {
     settingsPromise.then( settings => {
       let cached = settings.get('clientId') as string || null;
       this._clientId = cached === null ? DEFAULT_CLIENT_ID : cached;
-      authorize(this._clientId, false).then(success => {
+      signIn(this._clientId).then(success => {
         if (!success) {
           this._button.style.visibility = 'visible';
         }
@@ -153,7 +153,7 @@ class GoogleDriveLogin extends Widget {
   }
 
   private _onLoginClicked(): void {
-    authorize(this._clientId, true);
+    signIn(this._clientId);
   }
 
   private _button: HTMLElement = null;
