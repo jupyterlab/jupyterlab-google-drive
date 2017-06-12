@@ -10,7 +10,7 @@ import {
 } from '@phosphor/commands';
 
 import {
-  ToolbarButton
+  showDialog, Dialog, ToolbarButton
 } from '@jupyterlab/apputils';
 
 import {
@@ -63,7 +63,7 @@ class GoogleDriveFileBrowser extends Widget {
   /**
    * Construct the browser widget.
    */
-  constructor(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string, settingsPromise: Promise<ISettingRegistry.ISettings>) {
+  constructor(driveName: string, registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, settingsPromise: Promise<ISettingRegistry.ISettings>, hasOpenDocuments: () => boolean) {
     super();
     this.addClass(GOOGLE_DRIVE_FILEBROWSER_CLASS);
     this.layout = new PanelLayout();
@@ -71,6 +71,8 @@ class GoogleDriveFileBrowser extends Widget {
     // Initialize with the Login screen.
     this._loginScreen = new GoogleDriveLogin(settingsPromise);
     (this.layout as PanelLayout).addWidget(this._loginScreen);
+
+    this._hasOpenDocuments = hasOpenDocuments;
 
     // Keep references to the createFileBrowser arguments for
     // when we need to construct it.
@@ -103,6 +105,7 @@ class GoogleDriveFileBrowser extends Widget {
     this._commands = null;
     this._manager = null;
     this._factory = null;
+    this._hasOpenDocuments = null;
     super.dispose();
   }
 
@@ -126,6 +129,15 @@ class GoogleDriveFileBrowser extends Widget {
   }
 
   private _onLogoutClicked(): void {
+    if (this._hasOpenDocuments()) {
+      showDialog({
+        title: 'Sign out',
+        body: 'Please close all documents in\nGoogle Drive before signing out',
+        buttons: [Dialog.okButton({label: 'OK'})]
+        });
+      return;
+    }
+
     this._browser.parent = null;
     (this.layout as PanelLayout).addWidget(this._loginScreen);
     this._browser.dispose();
@@ -146,6 +158,7 @@ class GoogleDriveFileBrowser extends Widget {
   private _manager: IDocumentManager = null;
   private _factory: IFileBrowserFactory = null;
   private _driveName: string = null;
+  private _hasOpenDocuments: () => boolean = null;
 }
 
 export

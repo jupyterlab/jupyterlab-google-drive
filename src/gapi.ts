@@ -214,7 +214,7 @@ function signIn(): Promise<boolean> {
     gapiInitialized.promise.then(() => {
       let googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
-        googleAuth.signIn().then((result: any) => {
+        googleAuth.signIn({ prompt: 'select_account' }).then(() => {
           refreshAuthToken().then(() => {
             // Resolve the exported promise.
             gapiAuthorized.resolve(void 0);

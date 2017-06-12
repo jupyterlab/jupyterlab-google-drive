@@ -4,6 +4,10 @@
 import '../style/index.css';
 
 import {
+  Widget
+} from '@phosphor/widgets';
+
+import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
@@ -72,9 +76,24 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   });
   settingRegistry.annotate(id, 'clientId', { label: 'Client ID' });
 
+  // Construct a function that determines whether any documents
+  // associated with this filebrowser are currently open.
+  let hasOpenDocuments = () => {
+    let iterator = app.shell.widgets('main');
+    let widget: Widget;
+    while (widget = iterator.next()) {
+      let context = manager.contextForWidget(widget);
+      if (context && context.path.split(':')[0] === drive.name) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Create the file browser.
   let browser = new GoogleDriveFileBrowser(
-    registry, commands, manager, factory, drive.name, settingRegistry.load(id));
+    drive.name, registry, commands, manager, factory,
+    settingRegistry.load(id), hasOpenDocuments);
 
   // Add the file browser widget to the application restorer.
   restorer.add(browser, NAMESPACE);
