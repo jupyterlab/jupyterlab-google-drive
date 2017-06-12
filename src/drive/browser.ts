@@ -26,7 +26,7 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  driveReady, signIn, DEFAULT_CLIENT_ID
+  gapiAuthorized, initializeGapi, signIn
 } from '../gapi';
 
 
@@ -73,7 +73,7 @@ class GoogleDriveFileBrowser extends Widget {
 
     // After authorization and we are ready to use the
     // drive, swap out the widgets.
-    driveReady.then(() => {
+    gapiAuthorized.promise.then(() => {
       this._browser = createFileBrowser(this._registry, this._commands,
                                         this._manager, this._factory,
                                         this._driveName);
@@ -138,10 +138,9 @@ class GoogleDriveLogin extends Widget {
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
     settingsPromise.then( settings => {
-      let cached = settings.get('clientId') as string || null;
-      this._clientId = cached === null ? DEFAULT_CLIENT_ID : cached;
-      signIn(this._clientId).then(success => {
-        if (!success) {
+      this._clientId = settings.get('clientId') as string || null;
+      initializeGapi(this._clientId).then(loggedIn => {
+        if (!loggedIn) {
           this._button.style.visibility = 'visible';
         }
       });
@@ -153,11 +152,11 @@ class GoogleDriveLogin extends Widget {
   }
 
   private _onLoginClicked(): void {
-    signIn(this._clientId);
+    signIn();
   }
 
   private _button: HTMLElement = null;
-  private _clientId: string = DEFAULT_CLIENT_ID;
+  private _clientId: string;
 }
 
 

@@ -39,6 +39,10 @@ import {
   GoogleDrive
 } from './drive/contents';
 
+import {
+  loadGapi
+} from './gapi';
+
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
   requires: [ICommandPalette, IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
@@ -52,6 +56,9 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer, settingRegistry: ISettingRegistry): void {
   let { commands } = app;
   const id = fileBrowserPlugin.id;
+
+  // Load the gapi libraries onto the page.
+  loadGapi();
 
   // Add the Google Drive backend to the contents manager.
   let drive = new GoogleDrive(registry);

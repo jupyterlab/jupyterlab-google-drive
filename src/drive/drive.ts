@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  driveApiRequest, driveReady, gapiLoaded, pickFile
+  driveApiRequest, gapiAuthorized, gapiInitialized
 } from '../gapi';
 
 //TODO: Complete gapi typings and commit upstream
@@ -467,7 +467,7 @@ function createRealtimeDocument(): Promise<string> {
 export
 function loadRealtimeDocument(resource: FilesResource, picked: boolean = false): Promise<gapi.drive.realtime.Document> {
   return new Promise((resolve, reject) => {
-    driveReady.then(() => {
+    gapiAuthorized.promise.then(() => {
       console.log("gapi: attempting to load realtime file " + resource.id);
       gapi.drive.realtime.load(resource.id, (doc: gapi.drive.realtime.Document ): any => {
         resolve(doc);
@@ -552,7 +552,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FilesResourc
  */
 export
 function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
-  return gapiLoaded.then(() => {
+  return gapiInitialized.promise.then(() => {
     // Construct the query.
     let fullQuery = 'sharedWithMe = true';
     if(query) fullQuery += ' and '+query;
@@ -896,7 +896,7 @@ function fileResourceFromContentsModel(contents: Contents.IModel): FilesResource
  *   file/folder, or rejected with an Error object.
  */
 function getResourceForRelativePath(pathComponent: string, folderId: string): Promise<FilesResource> {
-  return gapiLoaded.then(() => {
+  return gapiInitialized.promise.then(() => {
     // Construct a search query for the file at hand.
     let query = 'name = \'' + pathComponent + '\' and trashed = false '
                 + 'and \'' + folderId + '\' in parents';
@@ -932,7 +932,7 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
  *   corresponding to `id`.
  */
 function resourceFromFileId(id: string): Promise<FilesResource> {
-  return gapiLoaded.then(() => {
+  return gapiInitialized.promise.then(() => {
     let request: DriveApiRequest = gapi.client.drive.files.get({
      fileId: id,
      fields: RESOURCE_FIELDS
@@ -1049,7 +1049,7 @@ function getResourceForPath(path: string): Promise<FilesResource> {
  * @returns a promise fulfilled with the contents of the file.
  */
 function downloadResource(resource: FilesResource, picked: boolean = false): Promise<any> {
-  return gapiLoaded.then(() => {
+  return gapiInitialized.promise.then(() => {
     let request: DriveApiRequest = gapi.client.drive.files.get({
      fileId: resource.id,
      alt: 'media'
@@ -1057,20 +1057,7 @@ function downloadResource(resource: FilesResource, picked: boolean = false): Pro
     return driveApiRequest(request).then((result: any) => {
       return result;
     }).catch((error: any) => {
-      // If the request failed, there may be insufficient
-      // permissions to download this file. Try to choose
-      // it with a picker to explicitly grant permission.
-      if(error.xhr.responseText === 'appNotAuthorizedToFile'
-         && picked === false) {
-        //TODO: get the client Id here properly.
-        return pickFile(resource, '').then(() => {
-          return downloadResource(resource, true);
-        }).catch(() => {
-          throw error;
-        });
-      } else {
-        throw error;
-      }
+      throw error;
     });
   });
 }
