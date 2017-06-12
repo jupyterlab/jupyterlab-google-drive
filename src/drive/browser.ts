@@ -10,6 +10,10 @@ import {
 } from '@phosphor/commands';
 
 import {
+  ToolbarButton
+} from '@jupyterlab/apputils';
+
+import {
   ISettingRegistry
 } from '@jupyterlab/coreutils';
 
@@ -26,7 +30,7 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  gapiAuthorized, initializeGapi, signIn
+  gapiAuthorized, initializeGapi, signIn, signOut
 } from '../gapi';
 
 
@@ -45,6 +49,11 @@ const GOOGLE_DRIVE_FILEBROWSER_CLASS = 'jp-GoogleDriveFileBrowser';
  * CSS class for login panel.
  */
 const LOGIN_SCREEN = 'jp-GoogleLoginScreen';
+
+/**
+ * Class for a logout button.
+ */
+const SHARE_BUTTON = 'jp-UserIcon';
 
 /**
  * Widget for hosting the Google Drive filebrowser.
@@ -74,11 +83,7 @@ class GoogleDriveFileBrowser extends Widget {
     // After authorization and we are ready to use the
     // drive, swap out the widgets.
     gapiAuthorized.promise.then(() => {
-      this._browser = createFileBrowser(this._registry, this._commands,
-                                        this._manager, this._factory,
-                                        this._driveName);
-      this._loginScreen.parent = null;
-      (this.layout as PanelLayout).addWidget(this._browser);
+      this._createBrowser();
     });
 
     this.title.label = 'Google Drive';
@@ -99,6 +104,39 @@ class GoogleDriveFileBrowser extends Widget {
     this._manager = null;
     this._factory = null;
     super.dispose();
+  }
+
+  private _createBrowser(): void {
+    // Create the file browser
+    this._browser = createFileBrowser(this._registry, this._commands,
+                                      this._manager, this._factory,
+                                      this._driveName);
+    // Create the logout button.
+    let logout = new ToolbarButton({
+      className: SHARE_BUTTON,
+      onClick: () => {
+        this._onLogoutClicked();
+      },
+      tooltip: 'Sign out'
+    });
+
+    this._browser.toolbar.addItem('logout', logout);
+    this._loginScreen.parent = null;
+    (this.layout as PanelLayout).addWidget(this._browser);
+  }
+
+  private _onLogoutClicked(): void {
+    this._browser.parent = null;
+    (this.layout as PanelLayout).addWidget(this._loginScreen);
+    this._browser.dispose();
+    signOut().then(() => {
+      // After sign-out, set up a new listener
+      // for authorization, should the user log
+      // back in.
+      gapiAuthorized.promise.then(() => {
+        this._createBrowser();
+      });
+    });
   }
 
   private _browser: FileBrowser = null;
@@ -142,6 +180,12 @@ class GoogleDriveLogin extends Widget {
       initializeGapi(this._clientId).then(loggedIn => {
         if (!loggedIn) {
           this._button.style.visibility = 'visible';
+        } else {
+          gapiAuthorized.promise.then(() => {
+            // Set the button style to visible in the
+            // eventuality that the user logs out.
+            this._button.style.visibility = 'visible';
+          });
         }
       });
     });

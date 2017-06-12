@@ -232,6 +232,20 @@ function signIn(): Promise<boolean> {
 }
 
 /**
+ * Sign a user out of their Google account.
+ *
+ * @returns a promise resolved when sign-out is complete.
+ */
+export
+function signOut(): Promise<void> {
+  let googleAuth = gapi.auth2.getAuthInstance();
+  // Invalidate the gapiAuthorized promise and set up a new one.
+  gapiAuthorized = null;
+  gapiAuthorized = new PromiseDelegate<void>();
+  return googleAuth.signOut();
+}
+
+/**
  * Refresh the authorization token for Google APIs.
  *
  * #### Notes
