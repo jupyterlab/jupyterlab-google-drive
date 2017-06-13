@@ -29,6 +29,21 @@
   background-image: url(drive.png);
 }
 
+.jp-GoogleUserBadge-container {
+  display: flex;
+  justify-content: center;
+}
+
+.jp-GoogleUserBadge {
+  background-color: #F37626;
+  color: white;
+  border-radius: 50%;
+  height: 18px;
+  width: 18px;
+  line-height: 18px;
+}
+
+
 .jp-ShareIcon {
   background-image: url(share.svg);
 }

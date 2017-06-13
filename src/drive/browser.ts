@@ -30,7 +30,8 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  gapiAuthorized, initializeGapi, signIn, signOut
+  gapiAuthorized, initializeGapi,
+  signIn, signOut, getCurrentUserProfile
 } from '../gapi';
 
 
@@ -51,9 +52,14 @@ const GOOGLE_DRIVE_FILEBROWSER_CLASS = 'jp-GoogleDriveFileBrowser';
 const LOGIN_SCREEN = 'jp-GoogleLoginScreen';
 
 /**
- * Class for a logout button.
+ * Class for a user badge UI button.
  */
-const SHARE_BUTTON = 'jp-UserIcon';
+const USER_BADGE = 'jp-GoogleUserBadge';
+
+/**
+ * Class for a container for the user badge.
+ */
+const USER_BADGE_CONTAINER = 'jp-GoogleUserBadge-container';
 
 /**
  * Widget for hosting the Google Drive filebrowser.
@@ -115,13 +121,21 @@ class GoogleDriveFileBrowser extends Widget {
                                       this._manager, this._factory,
                                       this._driveName);
     // Create the logout button.
+    let userProfile = getCurrentUserProfile();
+    let initial = userProfile.getGivenName()[0];
     let logout = new ToolbarButton({
-      className: SHARE_BUTTON,
       onClick: () => {
         this._onLogoutClicked();
       },
-      tooltip: 'Sign out'
+      tooltip: userProfile.getEmail()
     });
+    let badgeContainer = document.createElement('div');
+    badgeContainer.className = USER_BADGE_CONTAINER;
+    let badge = document.createElement('div');
+    badge.className = USER_BADGE;
+    badge.textContent = initial;
+    badgeContainer.appendChild(badge);
+    logout.node.appendChild(badgeContainer);
 
     this._browser.toolbar.addItem('logout', logout);
     this._loginScreen.parent = null;

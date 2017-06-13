@@ -246,6 +246,17 @@ function signOut(): Promise<void> {
 }
 
 /**
+ * Get the basic profile of the currently signed-in user.
+ *
+ * @returns a `gapi.auth2.BasicProfile instance.
+ */
+export
+function getCurrentUserProfile(): any {
+  let user = gapi.auth2.getAuthInstance().currentUser.get();
+  return user.getBasicProfile();
+}
+
+/**
  * Refresh the authorization token for Google APIs.
  *
  * #### Notes
