@@ -286,7 +286,6 @@ function refreshAuthToken(): Promise<void> {
   });
 }
 
-
 /**
  * Wrap an API error in a hacked-together error object
  * masquerading as an `IAJaxError`.
