@@ -10,6 +10,10 @@ import {
 } from '@phosphor/commands';
 
 import {
+  showDialog, Dialog, ToolbarButton
+} from '@jupyterlab/apputils';
+
+import {
   ISettingRegistry
 } from '@jupyterlab/coreutils';
 
@@ -26,7 +30,8 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
-  driveReady, authorize, DEFAULT_CLIENT_ID
+  gapiAuthorized, initializeGapi,
+  signIn, signOut, getCurrentUserProfile
 } from '../gapi';
 
 
@@ -47,6 +52,16 @@ const GOOGLE_DRIVE_FILEBROWSER_CLASS = 'jp-GoogleDriveFileBrowser';
 const LOGIN_SCREEN = 'jp-GoogleLoginScreen';
 
 /**
+ * Class for a user badge UI button.
+ */
+const USER_BADGE = 'jp-GoogleUserBadge';
+
+/**
+ * Class for a container for the user badge.
+ */
+const USER_BADGE_CONTAINER = 'jp-GoogleUserBadge-container';
+
+/**
  * Widget for hosting the Google Drive filebrowser.
  */
 export
@@ -54,7 +69,7 @@ class GoogleDriveFileBrowser extends Widget {
   /**
    * Construct the browser widget.
    */
-  constructor(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string, settingsPromise: Promise<ISettingRegistry.ISettings>) {
+  constructor(driveName: string, registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, settingsPromise: Promise<ISettingRegistry.ISettings>, hasOpenDocuments: () => boolean) {
     super();
     this.addClass(GOOGLE_DRIVE_FILEBROWSER_CLASS);
     this.layout = new PanelLayout();
@@ -62,6 +77,8 @@ class GoogleDriveFileBrowser extends Widget {
     // Initialize with the Login screen.
     this._loginScreen = new GoogleDriveLogin(settingsPromise);
     (this.layout as PanelLayout).addWidget(this._loginScreen);
+
+    this._hasOpenDocuments = hasOpenDocuments;
 
     // Keep references to the createFileBrowser arguments for
     // when we need to construct it.
@@ -73,12 +90,8 @@ class GoogleDriveFileBrowser extends Widget {
 
     // After authorization and we are ready to use the
     // drive, swap out the widgets.
-    driveReady.then(() => {
-      this._browser = createFileBrowser(this._registry, this._commands,
-                                        this._manager, this._factory,
-                                        this._driveName);
-      this._loginScreen.parent = null;
-      (this.layout as PanelLayout).addWidget(this._browser);
+    gapiAuthorized.promise.then(() => {
+      this._createBrowser();
     });
 
     this.title.label = 'Google Drive';
@@ -98,16 +111,75 @@ class GoogleDriveFileBrowser extends Widget {
     this._commands = null;
     this._manager = null;
     this._factory = null;
+    this._hasOpenDocuments = null;
     super.dispose();
+  }
+
+  private _createBrowser(): void {
+    // Create the file browser
+    this._browser = this._factory.createFileBrowser(NAMESPACE, {
+      commands: this._commands,
+      driveName: this._driveName
+    });
+
+    // Create the logout button.
+    let userProfile = getCurrentUserProfile();
+    let initial = userProfile.getGivenName()[0];
+    this._logoutButton = new ToolbarButton({
+      onClick: () => {
+        this._onLogoutClicked();
+      },
+      tooltip: `Sign Out (${userProfile.getEmail()})`
+    });
+    let badgeContainer = document.createElement('div');
+    badgeContainer.className = USER_BADGE_CONTAINER;
+    let badge = document.createElement('div');
+    badge.className = USER_BADGE;
+    badge.textContent = initial;
+    badgeContainer.appendChild(badge);
+    this._logoutButton.node.appendChild(badgeContainer);
+
+    this._browser.toolbar.addItem('logout', this._logoutButton);
+    this._loginScreen.parent = null;
+    (this.layout as PanelLayout).addWidget(this._browser);
+  }
+
+  private _onLogoutClicked(): void {
+    if (this._hasOpenDocuments()) {
+      showDialog({
+        title: 'Sign Out',
+        body: 'Please close all documents in Google Drive before signing out',
+        buttons: [Dialog.okButton({label: 'OK'})]
+        });
+      return;
+    }
+
+    // Swap out the file browser for the login screen.
+    this._browser.parent = null;
+    (this.layout as PanelLayout).addWidget(this._loginScreen);
+    this._browser.dispose();
+    this._logoutButton.dispose();
+
+    // Sign out.
+    signOut().then(() => {
+      // After sign-out, set up a new listener
+      // for authorization, should the user log
+      // back in.
+      gapiAuthorized.promise.then(() => {
+        this._createBrowser();
+      });
+    });
   }
 
   private _browser: FileBrowser = null;
   private _loginScreen: GoogleDriveLogin = null;
+  private _logoutButton: ToolbarButton = null;
   private _registry: IDocumentRegistry = null;
   private _commands: CommandRegistry = null;
   private _manager: IDocumentManager = null;
   private _factory: IFileBrowserFactory = null;
   private _driveName: string = null;
+  private _hasOpenDocuments: () => boolean = null;
 }
 
 export
@@ -127,7 +199,7 @@ class GoogleDriveLogin extends Widget {
     // Add the login button.
     this._button = document.createElement('button');
     this._button.title = 'Log into your Google account';
-    this._button.textContent = 'LOG IN';
+    this._button.textContent = 'SIGN IN';
     this._button.className = 'jp-Dialog-button jp-mod-styled jp-mod-accept';
     this._button.onclick = this._onLoginClicked.bind(this);
     this._button.style.visibility = 'hidden';
@@ -138,38 +210,28 @@ class GoogleDriveLogin extends Widget {
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
     settingsPromise.then( settings => {
-      let cached = settings.get('clientId') as string || null;
-      this._clientId = cached === null ? DEFAULT_CLIENT_ID : cached;
-      authorize(this._clientId, false).then(success => {
-        if (!success) {
+      this._clientId = settings.get('clientId') as string || null;
+      initializeGapi(this._clientId).then(loggedIn => {
+        if (!loggedIn) {
           this._button.style.visibility = 'visible';
+        } else {
+          gapiAuthorized.promise.then(() => {
+            // Set the button style to visible in the
+            // eventuality that the user logs out.
+            this._button.style.visibility = 'visible';
+          });
         }
       });
     });
   }
 
-  dispose(): void {
-    this._button = null;
-  }
-
+  /**
+   * Handle a click of the login button.
+   */
   private _onLoginClicked(): void {
-    authorize(this._clientId, true);
+    signIn();
   }
 
   private _button: HTMLElement = null;
-  private _clientId: string = DEFAULT_CLIENT_ID;
-}
-
-
-/**
- * Activate the file browser.
- */
-function createFileBrowser(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string): FileBrowser {
-
-  let fbWidget = factory.createFileBrowser(NAMESPACE, {
-    commands,
-    driveName: driveName
-  });
-
-  return fbWidget;
+  private _clientId: string;
 }

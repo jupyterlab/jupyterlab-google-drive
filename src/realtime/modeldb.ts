@@ -417,13 +417,17 @@ class GoogleModelDB implements IModelDB {
     if (this.isDisposed) {
       return;
     }
-    let db = this._db;
-    this._db = null;
+    let doc = this._doc;
+    this._doc = null;
+    doc.removeAllEventListeners();
+    doc.close();
     this._doc = null;
     this._model = null;
+    this._baseDB = null;
 
-    if (db) {
-      db.dispose();
+    if (this._db) {
+      this._db.dispose();
+      this._db = null;
     }
     this._disposables.dispose();
   }

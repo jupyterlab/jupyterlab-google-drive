@@ -4,6 +4,10 @@
 import '../style/index.css';
 
 import {
+  Widget
+} from '@phosphor/widgets';
+
+import {
   JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
@@ -39,6 +43,10 @@ import {
   GoogleDrive
 } from './drive/contents';
 
+import {
+  loadGapi
+} from './gapi';
+
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
   requires: [ICommandPalette, IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
@@ -53,6 +61,9 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   let { commands } = app;
   const id = fileBrowserPlugin.id;
 
+  // Load the gapi libraries onto the page.
+  loadGapi();
+
   // Add the Google Drive backend to the contents manager.
   let drive = new GoogleDrive(registry);
   manager.services.contents.addDrive(drive);
@@ -65,9 +76,24 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   });
   settingRegistry.annotate(id, 'clientId', { label: 'Client ID' });
 
+  // Construct a function that determines whether any documents
+  // associated with this filebrowser are currently open.
+  let hasOpenDocuments = () => {
+    let iterator = app.shell.widgets('main');
+    let widget: Widget;
+    while (widget = iterator.next()) {
+      let context = manager.contextForWidget(widget);
+      if (context && context.path.split(':')[0] === drive.name) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Create the file browser.
   let browser = new GoogleDriveFileBrowser(
-    registry, commands, manager, factory, drive.name, settingRegistry.load(id));
+    drive.name, registry, commands, manager, factory,
+    settingRegistry.load(id), hasOpenDocuments);
 
   // Add the file browser widget to the application restorer.
   restorer.add(browser, NAMESPACE);

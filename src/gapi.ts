@@ -14,7 +14,6 @@ import {
 
 // TODO: Complete gapi typings and commit upstream.
 declare let gapi: any;
-declare let google: any;
 
 /**
  * Default Client ID to let the Google Servers know who
@@ -28,7 +27,7 @@ const DEFAULT_CLIENT_ID = '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.go
  * Scope for the permissions needed for this extension.
  */
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
-const SCOPE = [DRIVE_SCOPE];
+const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 
 /**
  * Aliases for common API errors.
@@ -37,41 +36,94 @@ const FORBIDDEN_ERROR = 403;
 const RATE_LIMIT_REASON = 'rateLimitExceeded';
 
 /**
- * A Promise that loads the gapi scripts onto the page,
- * and resolves when it is done.
+ * A promise delegate that is resolved when the google client
+ * libraries are loaded onto the page.
  */
 export
-let gapiLoaded = new Promise<void>( (resolve, reject) => {
-  //get the gapi script from Google
-  $.getScript('https://apis.google.com/js/api.js')
-  .done( (script, textStatus)=> {
-    //load overall API
-    (window as any).gapi.load('auth:client,drive-realtime,drive-share,picker', () => {
-      //load client library (for some reason different
-      //from the toplevel API)
-      gapi.client.load('drive', 'v3').then(() => {
-        console.log("gapi: loaded onto page");
-        resolve();
-      });
-    });
-  }).fail( () => {
-    console.log("gapi: unable to load onto page");
-    reject();
-  });
-});
+let gapiLoaded = new PromiseDelegate<void>();
 
 /**
- * A promise that is resolved when the user authorizes
+ * A promise delegate that is resolved when the gapi client
+ * libraries are initialized.
+ */
+export
+let gapiInitialized = new PromiseDelegate<void>();
+
+/**
+ * A promise delegate that is resolved when the user authorizes
  * the app to access their Drive account.
  */
 export
 let gapiAuthorized = new PromiseDelegate<void>();
 
 /**
- * A promise that resolves when Google Drive is ready.
+ * Load the gapi scripts onto the page.
+ *
+ * @returns a promise that resolves when the gapi scripts are loaded.
  */
 export
-let driveReady = gapiAuthorized.promise;
+function loadGapi(): Promise<void> {
+  return new Promise<void>( (resolve, reject) => {
+    // Get the gapi script from Google.
+    $.getScript('https://apis.google.com/js/api.js')
+    .done((script, textStatus) => {
+      // Load overall API.
+      (window as any).gapi.load('client:auth2,drive-realtime,drive-share', () => {
+        // Load the specific client libraries we need.
+        console.log("gapi: loaded onto page");
+        gapiLoaded.resolve(void 0);
+        resolve(void 0);
+      });
+    }).fail( () => {
+      console.log("gapi: unable to load onto page");
+      gapiLoaded.reject(void 0);
+      reject(void 0);
+    });
+  });
+}
+
+/**
+ * Initialize the gapi client libraries.
+ *
+ * @param clientId: The client ID for the project from the
+ *   Google Developer Console. If not given, defaults to
+ *   a testing project client ID. However, if you are deploying
+ *   your own Jupyter server, or are making heavy use of the
+ *   API, it is probably a good idea to set up your own client ID.
+ *
+ * @returns a promise that resolves when the client libraries are loaded.
+ *   The return value of the promise is a boolean indicating whether
+ *   the user was automatically signed in by the initialization.
+ */
+export
+function initializeGapi(clientId: string): Promise<boolean> {
+  return new Promise<boolean>( (resolve, reject) => {
+    gapiLoaded.promise.then(() => {
+      gapi.client.init({
+        discoveryDocs: DISCOVERY_DOCS,
+        clientId: clientId || DEFAULT_CLIENT_ID,
+        scope: DRIVE_SCOPE
+      }).then(() => {
+        // Check if the user is logged in and we are
+        // authomatically authorized.
+        let googleAuth = gapi.auth2.getAuthInstance();
+        if (googleAuth.isSignedIn.get()) {
+          refreshAuthToken().then(() => {
+            gapiAuthorized.resolve(void 0);
+          });
+          gapiInitialized.resolve(void 0);
+          resolve(true);
+        } else {
+          gapiInitialized.resolve(void 0);
+          resolve(false);
+        }
+      }, (err: any) => {
+        gapiInitialized.reject(void 0);
+        reject(void 0);
+      });
+    });
+  });
+}
 
 /**
  * Constants used when attempting exponential backoff.
@@ -100,7 +152,7 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
     return Promise.reject(new Error('Maximum number of API retries reached.'));
   }
   return new Promise<any>((resolve, reject) => {
-    driveReady.then(() => {
+    gapiAuthorized.promise.then(() => {
       request.then( (response: any)=> {
         if(response.status !== successCode) {
           // Handle an HTTP error.
@@ -157,82 +209,79 @@ let authorizeRefresh: any = null;
  *   has been granted.
  */
 export
-function authorize(clientId: string, usePopup: boolean = false): Promise<boolean> {
+function signIn(): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
-    gapiLoaded.then( () => {
-      let handleAuthorization = function (authResult: any): void {
-        if (authResult && !authResult.error) {
-          console.log("gapi: authorized.");
-          // Set a timer to refresh the authorization.
-          if(authorizeRefresh) clearTimeout(authorizeRefresh);
-          authorizeRefresh = setTimeout( () => {
-            console.log('gapi: refreshing authorization.')
-            authorize(clientId, false);
-          }, 750 * Number(authResult.expires_in));
-          // Resolve the exported promise.
-          gapiAuthorized.resolve(void 0);
-          resolve(true);
-        } else {
-          // Return with permissions not granted.
-          resolve(false);
-        }
+    gapiInitialized.promise.then(() => {
+      let googleAuth = gapi.auth2.getAuthInstance();
+      if (!googleAuth.isSignedIn.get()) {
+        googleAuth.signIn({ prompt: 'select_account' }).then(() => {
+          refreshAuthToken().then(() => {
+            // Resolve the exported promise.
+            gapiAuthorized.resolve(void 0);
+            resolve(true);
+          });
+        });
+      } else {
+        // Otherwise we are already signed in.
+        // Resolve the exported promise.
+        gapiAuthorized.resolve(void 0);
+        resolve(true);
       }
-
-      // Attempt to authorize without a popup.
-      gapi.auth.authorize({
-        client_id: clientId,
-        scope: SCOPE,
-        immediate: !usePopup}, handleAuthorization);
     });
   });
 }
 
 /**
- * We do not automatically have permission to access files in a user's 
- * Google Drive which have not been created by this app. If such a file
- * is requested, we need to open a picker dialog to explicitly grant those
- * permissions.
+ * Sign a user out of their Google account.
  *
- * @param resource: the files resource that has been requested.
- * 
- * @returns a promise the resolves when the file has been picked.
+ * @returns a promise resolved when sign-out is complete.
  */
 export
-function pickFile(resource: any, clientId: string): Promise<void> {
-  let appId = clientId.split('-')[0];
-  return new Promise<any>((resolve,reject) => {
-    let pickerCallback = (response: any) => {
-      // Resolve if the user has picked the selected file.
-      if(response[google.picker.Response.ACTION] ===
-         google.picker.Action.PICKED &&
-         response[google.picker.Response.DOCUMENTS][0][google.picker.Document.ID] ===
-         resource.id) {
-        resolve(void 0);
-      } else if(response[google.picker.Response.ACTION] ===
-         google.picker.Action.PICKED &&
-         response[google.picker.Response.DOCUMENTS][0][google.picker.Document.ID] !==
-         resource.id) {
-        reject(new Error('Wrong file selected for permissions'));
-      } else if(response[google.picker.Response.ACTION] ===
-         google.picker.Action.CANCEL) {
-        reject(new Error('Insufficient permisson to open file'));
-      }
-    }
-    driveReady.then(() => {
-      let pickerView = new google.picker.DocsView(google.picker.ViewId.DOCS)
-          .setMode(google.picker.DocsViewMode.LIST)
-          .setParent(resource.parents[0])
-          .setQuery(resource.name);
+function signOut(): Promise<void> {
+  let googleAuth = gapi.auth2.getAuthInstance();
+  // Invalidate the gapiAuthorized promise and set up a new one.
+  gapiAuthorized = null;
+  gapiAuthorized = new PromiseDelegate<void>();
+  return googleAuth.signOut();
+}
 
-      let picker = new google.picker.PickerBuilder()
-        .addView(pickerView)
-        .enableFeature(google.picker.Feature.NAV_HIDDEN)
-        .setAppId(appId)
-        .setOAuthToken(gapi.auth.getToken()['access_token'])
-        .setTitle('Select to authorize opening this file with JupyterLab...')
-        .setCallback(pickerCallback)
-        .build();
-      picker.setVisible(true);
+/**
+ * Get the basic profile of the currently signed-in user.
+ *
+ * @returns a `gapi.auth2.BasicProfile instance.
+ */
+export
+function getCurrentUserProfile(): any {
+  let user = gapi.auth2.getAuthInstance().currentUser.get();
+  return user.getBasicProfile();
+}
+
+/**
+ * Refresh the authorization token for Google APIs.
+ *
+ * #### Notes
+ * Importantly, this calls `gapi.auth.setToken`.
+ * Without this step, the realtime API will not pick
+ * up the OAuth token, and it will not work. This step is
+ * completely undocumented, but without it we cannot
+ * use the newer, better documented, undeprecated `gapi.auth2`
+ * authorization API.
+ */
+function refreshAuthToken(): Promise<void> {
+  return new Promise<any>((resolve, reject) => {
+    let googleAuth = gapi.auth2.getAuthInstance();
+    let user = googleAuth.currentUser.get();
+    user.reloadAuthResponse().then((authResponse: any) => {
+      gapi.auth.setToken(authResponse);
+      // Set a timer to refresh the authorization.
+      if(authorizeRefresh) {
+        clearTimeout(authorizeRefresh);
+      }
+      authorizeRefresh = setTimeout(() => {
+        console.log('gapi: refreshing authorization.')
+        refreshAuthToken();
+      }, 750 * Number(authResponse.expires_in));
+      resolve(void 0);
     });
   });
 }
