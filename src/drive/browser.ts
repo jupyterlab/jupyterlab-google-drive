@@ -117,17 +117,19 @@ class GoogleDriveFileBrowser extends Widget {
 
   private _createBrowser(): void {
     // Create the file browser
-    this._browser = createFileBrowser(this._registry, this._commands,
-                                      this._manager, this._factory,
-                                      this._driveName);
+    this._browser = this._factory.createFileBrowser(NAMESPACE, {
+      commands: this._commands,
+      driveName: this._driveName
+    });
+
     // Create the logout button.
     let userProfile = getCurrentUserProfile();
     let initial = userProfile.getGivenName()[0];
-    let logout = new ToolbarButton({
+    this._logoutButton = new ToolbarButton({
       onClick: () => {
         this._onLogoutClicked();
       },
-      tooltip: userProfile.getEmail()
+      tooltip: `Sign Out (${userProfile.getEmail()})`
     });
     let badgeContainer = document.createElement('div');
     badgeContainer.className = USER_BADGE_CONTAINER;
@@ -135,9 +137,9 @@ class GoogleDriveFileBrowser extends Widget {
     badge.className = USER_BADGE;
     badge.textContent = initial;
     badgeContainer.appendChild(badge);
-    logout.node.appendChild(badgeContainer);
+    this._logoutButton.node.appendChild(badgeContainer);
 
-    this._browser.toolbar.addItem('logout', logout);
+    this._browser.toolbar.addItem('logout', this._logoutButton);
     this._loginScreen.parent = null;
     (this.layout as PanelLayout).addWidget(this._browser);
   }
@@ -145,16 +147,20 @@ class GoogleDriveFileBrowser extends Widget {
   private _onLogoutClicked(): void {
     if (this._hasOpenDocuments()) {
       showDialog({
-        title: 'Sign out',
-        body: 'Please close all documents in\nGoogle Drive before signing out',
+        title: 'Sign Out',
+        body: 'Please close all documents in Google Drive before signing out',
         buttons: [Dialog.okButton({label: 'OK'})]
         });
       return;
     }
 
+    // Swap out the file browser for the login screen.
     this._browser.parent = null;
     (this.layout as PanelLayout).addWidget(this._loginScreen);
     this._browser.dispose();
+    this._logoutButton.dispose();
+
+    // Sign out.
     signOut().then(() => {
       // After sign-out, set up a new listener
       // for authorization, should the user log
@@ -167,6 +173,7 @@ class GoogleDriveFileBrowser extends Widget {
 
   private _browser: FileBrowser = null;
   private _loginScreen: GoogleDriveLogin = null;
+  private _logoutButton: ToolbarButton = null;
   private _registry: IDocumentRegistry = null;
   private _commands: CommandRegistry = null;
   private _manager: IDocumentManager = null;
@@ -192,7 +199,7 @@ class GoogleDriveLogin extends Widget {
     // Add the login button.
     this._button = document.createElement('button');
     this._button.title = 'Log into your Google account';
-    this._button.textContent = 'LOG IN';
+    this._button.textContent = 'SIGN IN';
     this._button.className = 'jp-Dialog-button jp-mod-styled jp-mod-accept';
     this._button.onclick = this._onLoginClicked.bind(this);
     this._button.style.visibility = 'hidden';
@@ -218,28 +225,13 @@ class GoogleDriveLogin extends Widget {
     });
   }
 
-  dispose(): void {
-    this._button = null;
-  }
-
+  /**
+   * Handle a click of the login button.
+   */
   private _onLoginClicked(): void {
     signIn();
   }
 
   private _button: HTMLElement = null;
   private _clientId: string;
-}
-
-
-/**
- * Activate the file browser.
- */
-function createFileBrowser(registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, driveName: string): FileBrowser {
-
-  let fbWidget = factory.createFileBrowser(NAMESPACE, {
-    commands,
-    driveName: driveName
-  });
-
-  return fbWidget;
 }
