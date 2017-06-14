@@ -207,6 +207,7 @@ class GoogleModelDB implements IModelDB {
       getResourceForPath(options.filePath).then((resource: any) => {
         loadRealtimeDocument(resource).then((doc: gapi.drive.realtime.Document) => {
           // Update the references to the doc and model
+          let oldDoc = this._doc;
           this._doc = doc;
           this._model = doc.getModel();
 
@@ -270,6 +271,10 @@ class GoogleModelDB implements IModelDB {
 
           // Set up the collaborators map.
           this._collaborators = new CollaboratorMap(this._doc);
+
+          // Clean up after the temporary in-memory document.
+          oldDoc.removeAllEventListeners();
+          oldDoc.close();
 
           this._connected.resolve(void 0);
         });

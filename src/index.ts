@@ -111,6 +111,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
         showDialog({
           title: 'Add collaborator Gmail address',
           body: input,
+          primaryElement: input,
           buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'ADD'})]
         }).then( result=> {
           if (result.accept) {
