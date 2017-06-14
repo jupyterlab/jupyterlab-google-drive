@@ -352,7 +352,7 @@ class GoogleModelDB implements IModelDB {
    * Whether the database is disposed.
    */
   get isDisposed(): boolean {
-    return this._doc === null;
+    return this._disposables === null;
   }
 
   /**
@@ -553,19 +553,25 @@ class GoogleModelDB implements IModelDB {
     if (this.isDisposed) {
       return;
     }
-    let doc = this._doc;
-    this._doc = null;
-    doc.removeAllEventListeners();
-    doc.close();
-    this._doc = null;
+    let disposables = this._disposables;
+    this._disposables = null;
     this._model = null;
     this._baseDB = null;
+    this._localDB = null;
+    disposables.dispose();
 
+    // Possibly dispose of the doc if this is a root DB.
+    if (this._doc) {
+      this._doc.removeAllEventListeners();
+      this._doc.close();
+      this._doc = null;
+    }
+
+    // Possibly dispose of the db if this is a root DB.
     if (this._db) {
       this._db.dispose();
       this._db = null;
     }
-    this._disposables.dispose();
   }
 
   /**
@@ -584,7 +590,7 @@ class GoogleModelDB implements IModelDB {
   }
 
   private _filePath: string;
-  private _db: GoogleMap<GoogleSynchronizable>;
+  private _db: GoogleMap<GoogleSynchronizable> = null;
   private _localDB = new Map<string, any>();
   private _disposables = new DisposableSet();
   private _model: gapi.drive.realtime.Model = null;
