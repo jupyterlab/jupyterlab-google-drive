@@ -20,12 +20,12 @@ In future versions, this origin will be configurable.
 
 ## Prerequisites
 
-* JupyterLab 0.23.0 or later
+* JupyterLab 0.24.0 or later
 * A Google Drive account
 
 ## Installation
 
-To install this extension into JupyterLab (requires node 6 or later), do the following:
+To install this extension into JupyterLab (requires node 5 or later), do the following:
 
 ```bash
 jupyter labextension install @jupyterlab/google-drive

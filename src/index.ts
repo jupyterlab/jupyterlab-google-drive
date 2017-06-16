@@ -8,11 +8,11 @@ import {
 } from '@phosphor/widgets';
 
 import {
-  JupyterLab, JupyterLabPlugin
+  ILayoutRestorer, JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 
 import {
-  ILayoutRestorer, showDialog, Dialog, ICommandPalette
+  showDialog, Dialog, ICommandPalette
 } from '@jupyterlab/apputils';
 
 import {
