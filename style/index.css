@@ -22,10 +22,23 @@
   align-items: center;
 }
 
-.jp-GoogleDriveLogo {
+.jp-GoogleDrive-logo {
   background-size: 100%;
   width: 150px;
   height: 150px;
+  background-image: url(drive.png);
+}
+
+.jp-GoogleDrive-text {
+  font-size: var(--jp-ui-font-size3);
+  padding: 12px;
+}
+
+
+.jp-GoogleDrive-tablogo {
+  background-size: 100%;
+  width: var(--jp-private-sidebar-tab-width);
+  height: var(--jp-private-sidebar-tab-width);
   background-image: url(drive.png);
 }
 
@@ -42,7 +55,6 @@
   width: 18px;
   line-height: 18px;
 }
-
 
 .jp-ShareIcon {
   background-image: url(share.svg);

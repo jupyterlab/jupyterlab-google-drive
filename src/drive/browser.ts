@@ -94,7 +94,7 @@ class GoogleDriveFileBrowser extends Widget {
       this._createBrowser();
     });
 
-    this.title.label = 'Google Drive';
+    this.title.iconClass = 'jp-GoogleDrive-tablogo';
     this.id = 'google-drive-file-browser';
   }
 
@@ -193,8 +193,14 @@ class GoogleDriveLogin extends Widget {
 
     // Add the logo.
     let logo = document.createElement('div');
-    logo.className = 'jp-GoogleDriveLogo';
+    logo.className = 'jp-GoogleDrive-logo';
     this.node.appendChild(logo);
+
+    // Add the text.
+    let text = document.createElement('div');
+    text.className = 'jp-GoogleDrive-text';
+    text.textContent = 'Google Drive';
+    this.node.appendChild(text);
 
     // Add the login button.
     this._button = document.createElement('button');
