@@ -354,6 +354,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    */
   removeValue(value: T): number {
     let index = this._vec.indexOf(value, this._itemCmp);
+    if (index === -1) {
+      return index;
+    }
     this.remove(index);
     return index;
   }
@@ -376,6 +379,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * An `index` which is non-integral.
    */
   remove(index: number): T {
+    if (index < 0 || index >= this.length) {
+      return undefined;
+    }
     let value = this.get(index);
     this._vec.remove(index);
     this._changed.emit({
