@@ -52,6 +52,51 @@ describe('GoogleMap', () => {
     });
   });
 
+  describe('#googleObject', () => {
+    it('should get the CollaborativeObject associated with the list', () => {
+      let value = new GoogleMap<number>(map);
+      expect(value.googleObject).to.be(map);
+    });
+
+    it('should be settable', () => {
+      let value = new GoogleMap<number>(map);
+      let map2 = model.model.createMap<number>();
+      map2.set('foo', 1);
+      value.googleObject = map2;
+      expect(value.get('foo')).to.be(1);
+      map2.removeAllEventListeners();
+    });
+
+    it('should emit change signals upon being set', () => {
+      let called1 = false;
+      let called2 = false;
+      let value = new GoogleMap<number>(map);
+      value.set('foo', 1);
+      let map2 = model.model.createMap<number>();
+      map2.set('bar', 2);
+      value.changed.connect((sender, args) => {
+        expect(sender).to.be(value);
+        if (args.type === 'add') {
+          expect(args.key).to.be('bar');
+          expect(args.oldValue).to.be(undefined);
+          expect(args.newValue).to.be(2);
+          called1 = true;
+        }
+        if (args.type === 'remove') {
+          expect(args.key).to.be('foo');
+          expect(args.oldValue).to.be(1);
+          expect(args.newValue).to.be(undefined);
+          called2 = true;
+        }
+      });
+      value.googleObject = map2;
+      expect(called1).to.be(true);
+      expect(called2).to.be(true);
+      map2.removeAllEventListeners();
+    });
+
+  });
+
   describe('#size', ()=>{
     it('should return the number of entries in the map', ()=>{
       let value = new GoogleMap<number>(map);
