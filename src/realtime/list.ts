@@ -121,9 +121,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     // to send the appropriate signals.
     if(this._vec) {
       this.clear();
-      for(let i = 0; i < vec.length; i++) {
-        this.push(vec.get(i));
-      }
+      this.pushAll(vec.asArray());
       this._vec.removeAllEventListeners();
     }
 
@@ -404,6 +402,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * All current iterators are invalidated.
    */
   clear(): void {
+    if (this.length === 0) {
+      return;
+    }
     let oldValues = this._vec.asArray();
     this._vec.clear();
     this._changed.emit({
