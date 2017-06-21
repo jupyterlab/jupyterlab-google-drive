@@ -56,6 +56,41 @@ describe('GoogleList', () => {
     });
   });
 
+  describe('#googleObject', () => {
+    it('should get the CollaborativeObject associated with the list', () => {
+      let value = new GoogleList<number>(list);
+      expect(value.googleObject).to.be(list);
+    });
+
+    it('should be settable', () => {
+      let value = new GoogleList<number>(list);
+      let list2 = model.model.createList<number>([0, 1, 2]);
+      value.googleObject = list2;
+      expect(toArray(value)).to.eql([0, 1, 2]);
+      list2.removeAllEventListeners();
+    });
+
+    it('should emit change signals upon being set', () => {
+      let called = false;
+      let value = new GoogleList<number>(list);
+      let list2 = model.model.createList<number>([6, 7, 8]);
+      value.changed.connect((sender, args) => {
+        expect(sender).to.be(value);
+        expect(args.type).to.be('add');
+        expect(args.newIndex).to.be(0);
+        expect(args.oldIndex).to.be(-1);
+        expect(args.newValues[1]).to.be(7);
+        expect(args.oldValues.length).to.be(0);
+        expect(args.newValues.length).to.be(3);
+        called = true;
+      });
+      value.googleObject = list2;
+      expect(toArray(value)).to.eql([6, 7, 8]);
+      expect(called).to.be(true);
+      list2.removeAllEventListeners();
+    });
+
+  });
 
   describe('#changed', () => {
 
