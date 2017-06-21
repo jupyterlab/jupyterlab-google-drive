@@ -27,7 +27,13 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
     this.googleObject = map;
   }
 
-  type: 'Map';
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'Map' {
+    return 'Map';
+  }
+
 
   /**
    * A signal emitted when the map has changed.

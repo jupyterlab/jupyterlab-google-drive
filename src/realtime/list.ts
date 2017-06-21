@@ -33,7 +33,12 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     this.googleObject = list;
   }
 
-  type: 'List';
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'List' {
+    return 'List';
+  }
 
   /**
    * A signal emitted when the list has changed.

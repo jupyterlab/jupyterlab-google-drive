@@ -27,7 +27,12 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
     this.googleObject = str;
   }
 
-  type: 'String';
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'String' {
+    return 'String';
+  }
 
   /**
    * Set the value of the string.
