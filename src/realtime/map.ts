@@ -71,7 +71,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
   set googleObject(map: gapi.drive.realtime.CollaborativeMap<T>) {
     // Recreate the new map locally to fire the right signals.
     if(this._map) {
-      this._map.clear();
+      this.clear();
       for(let key of map.keys()) {
         this.set(key, map.get(key));
       }
