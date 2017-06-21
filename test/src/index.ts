@@ -5,3 +5,4 @@ import './list.spec';
 import './json.spec';
 import './map.spec';
 import './string.spec';
+import './undoablelist.spec';
