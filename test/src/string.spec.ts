@@ -79,6 +79,48 @@ describe('GoogleString', () => {
 
   });
 
+  describe('#googleObject', () => {
+    it('should get the CollaborativeObject associated with the string', () => {
+      let value = new GoogleString(str);
+      expect(value.googleObject).to.be(str);
+    });
+
+    it('should be settable', () => {
+      let value = new GoogleString(str);
+      let str2 = model.model.createString('new text');
+      value.googleObject = str2;
+      expect(value.text).to.be('new text');
+      str2.removeAllEventListeners();
+    });
+
+    it('should emit change signals upon being set', () => {
+      let called = false;
+      let str2 = model.model.createString('text');
+      let str3 = model.model.createString('new');
+      let value = new GoogleString(str);
+      value.text = 'text';
+      value.changed.connect((sender, args) => {
+        expect(sender).to.be(value);
+        expect(args.type).to.be('set');
+        expect(args.start).to.be(0);
+        expect(args.end).to.be(3);
+        expect(args.value).to.be('new');
+        called = true;
+      });
+      // Don't expect a change signal if the text is the same.
+      value.googleObject = str2;
+      expect(called).to.be(false);
+      expect(value.text).to.be('text');
+      // Do expect a change signal if the text is different.
+      value.googleObject = str3;
+      expect(called).to.be(true);
+      expect(value.text).to.be('new');
+      str2.removeAllEventListeners();
+      str3.removeAllEventListeners();
+    });
+
+  });
+
   describe('#isDisposed', () => {
 
     it('should test whether the string is disposed', () => {
