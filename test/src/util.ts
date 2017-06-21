@@ -24,6 +24,10 @@ class inMemoryModel {
     return this._model;
   }
 
+  get doc(): gapi.drive.realtime.Document {
+    return this._doc;
+  }
+
   dispose(): void {
     let doc = this._doc;
     this._doc = null;
