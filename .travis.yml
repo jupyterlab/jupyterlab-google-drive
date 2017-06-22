@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+- '5'
+before_script:
+  - npm run build
+  - npm run build:test
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+sudo: false
+addons:
+  firefox: latest
