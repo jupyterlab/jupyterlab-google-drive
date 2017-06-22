@@ -1,11 +1,23 @@
 language: node_js
 node_js:
 - '5'
-before_script:
-  - npm run build
-  - npm run build:test
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
 sudo: false
 addons:
   firefox: latest
+notifications:
+  email: false
+before_install:
+  - cd ..
+  - git clone --depth=50 --branch=master https://github.com/jupyterlab/jupyterlab.git
+  - cd jupyterlab
+  - npm install
+  - npm run addsibling $TRAVIS_BUILD_DIR && npm install
+install:
+  - npm run build:src
+  - cd packages && cd `basename $TRAVIS_BUILD_DIR`
+before_script:
+  - npm run build:test
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+script:
+  - npm test
