@@ -40,3 +40,15 @@ class inMemoryModel {
   private _doc: gapi.drive.realtime.Document = null;
   private _model: gapi.drive.realtime.Model = null;
 }
+
+/**
+ * Function to simulate the loading of a `gapi.drive.realtime.Document`
+ * from a remote server.
+ */
+export
+function documentLoader(path: string, connect: PromiseDelegate<void>) {
+  return connect.promise.then(() => {
+    let model = new inMemoryModel();
+    return model.doc;
+  });
+}
