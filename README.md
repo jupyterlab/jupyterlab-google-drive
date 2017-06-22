@@ -1,5 +1,7 @@
 # jupyterlab-google-drive
 
+[![Build Status](https://travis-ci.org/jupyterlab/jupyterlab-google-drive.svg?branch=master)](https://travis-ci.org/jupyterlab/jupyterlab-google-drive)
+
 Realtime collaboration and cloud storage for JupyterLab through Google Drive.
 
 Note that this is alpha software and is rapidly changing.
