@@ -572,7 +572,9 @@ class GoogleModelDB implements IModelDB {
    *   `GoogleModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): GoogleModelDB {
-    return new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
+    let view = new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
+    this._disposables.add(view);
+    return view;
   }
 
   /**
@@ -586,7 +588,6 @@ class GoogleModelDB implements IModelDB {
     this._disposables = null;
     this._model = null;
     this._baseDB = null;
-    this._localDB = null;
     disposables.dispose();
 
     // Possibly dispose of the doc if this is a root DB.
@@ -599,6 +600,7 @@ class GoogleModelDB implements IModelDB {
     // Possibly dispose of the db if this is a root DB.
     if (this._db) {
       this._db.dispose();
+      this._localDB = null;
       this._db = null;
     }
   }
