@@ -211,6 +211,10 @@ class GoogleModelDB implements IModelDB {
       this._doc = gapi.drive.realtime.newInMemoryDocument();
       this._model = this._doc.getModel();
 
+      this._connected = new PromiseDelegate<void>();
+      this._localDB =
+        new Map<string, GoogleRealtimeObject | GoogleObservableValue>();
+
       // If a testing documentLoader has been supplied, use that.
       let documentLoader = options.documentLoader || Private.documentLoader;
 
@@ -380,7 +384,11 @@ class GoogleModelDB implements IModelDB {
    * @returns an `IObservable`.
    */
   get(path: string): IObservable {
-    return this._localDB.get(path);
+    if (this._baseDB) {
+      return this._baseDB.get(this._basePath+'.'+path);
+    } else {
+      return this._localDB.get(path);
+    }
   }
 
   /**
@@ -421,13 +429,16 @@ class GoogleModelDB implements IModelDB {
    *
    * @param value: the value to set at the path.
    */
-  set(path: string, value: GoogleRealtimeObject): void {
-    this._localDB.set(path, value);
+  set(path: string, value: GoogleRealtimeObject | GoogleObservableValue): void {
     if(this._baseDB) {
       this._baseDB.set(this._basePath+'.'+path, value);
     } else {
-      if(value && value.googleObject) {
-        this._db.set(path, value.googleObject);
+      this._localDB.set(path, value);
+      if(value && (value as GoogleRealtimeObject).googleObject) {
+        this._db.set(path, (value as GoogleRealtimeObject).googleObject);
+      } else if (value && value.type === 'Value') {
+        // Do nothing, it has already been set
+        // at object creation time.
       } else {
         throw Error('Unexpected type set in GoogleModelDB');
       }
@@ -514,9 +525,10 @@ class GoogleModelDB implements IModelDB {
     if(this.has(path)) {
       val = this.getGoogleObject(path) as JSONValue;
     }
-    let newVal = new GoogleObservableValue(this.fullPath(path),
+    let fullPath = this.fullPath(path);
+    let newVal = new GoogleObservableValue(fullPath,
                                            this.model, val);
-    this._localDB.set(path, newVal);
+    this.set(path, newVal);
     this._disposables.add(newVal);
     return newVal;
   }
@@ -608,13 +620,13 @@ class GoogleModelDB implements IModelDB {
 
   private _filePath: string;
   private _db: GoogleMap<GoogleSynchronizable> = null;
-  private _localDB = new Map<string, any>();
+  private _localDB: Map<string, any> = null;
   private _disposables = new DisposableSet();
   private _model: gapi.drive.realtime.Model = null;
   private _doc: gapi.drive.realtime.Document = null;
   private _basePath: string;
   private _baseDB: GoogleModelDB = null;
-  private _connected = new PromiseDelegate<void>()
+  private _connected: PromiseDelegate<void> = null;
   private _isPrepopulated = false;
   private _collaborators: CollaboratorMap = null;
 }

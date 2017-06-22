@@ -11,6 +11,7 @@ import {
  */
 export
 interface GoogleRealtimeObject {
+  readonly type: 'String' | 'Map' | 'List';
   /**
    * Access to the underlying collaborative object.
    */
