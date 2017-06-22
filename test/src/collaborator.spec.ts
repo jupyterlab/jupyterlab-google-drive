@@ -265,7 +265,6 @@ describe('CollaboratorMap', () => {
       value.set(collaborator.sessionId, collaborator);
       let called = false;
       value.changed.connect((sender, args) => {
-        console.log(args);
         expect(sender).to.be(value);
         expect(args.type).to.be('remove');
         expect(args.key).to.be(collaborator.sessionId);

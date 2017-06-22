@@ -4,6 +4,10 @@
 import expect = require('expect.js');
 
 import {
+  toArray
+} from '@phosphor/algorithm';
+
+import {
   JSONExt, PromiseDelegate
 } from '@phosphor/coreutils';
 
@@ -91,7 +95,6 @@ describe('GoogleObservableValue', () => {
       let called = false;
       let value = new GoogleObservableValue('value', model.model);
       value.changed.connect((sender, args) => {
-        console.log(args);
         expect(sender).to.be(value);
         expect(args.newValue).to.be('set');
         expect(args.oldValue).to.be(undefined);
@@ -133,19 +136,24 @@ describe('GoogleModelDB', () => {
 
   let defaultOptions: GoogleModelDB.ICreateOptions;
   let connector: PromiseDelegate<void>;
+  let model: inMemoryModel;
 
   beforeEach(() => {
     connector = new PromiseDelegate<void>();
+    model = new inMemoryModel();
     defaultOptions = {
       filePath: 'path',
       documentLoader: (path: string) => {
-        let model = new inMemoryModel();
         return connector.promise.then(() => {
           return model.doc;
         });
       }
     }
-  })
+  });
+
+  afterEach(() => {
+    model.dispose();
+  });
 
   describe('#constructor()', () => {
 
@@ -164,6 +172,41 @@ describe('GoogleModelDB', () => {
       let db = new GoogleModelDB({ baseDB: base, ...defaultOptions });
       expect(db instanceof GoogleModelDB).to.be(true);
     });
+
+    it('should update DB values on file load', (done) => {
+      let db = new GoogleModelDB(defaultOptions);
+      // Create empty placeholder values that will
+      // be filled on file load
+      let str = db.createString('string');
+      let list = db.createList('list');
+      let map = db.createMap('map');
+      let val = db.createValue('val');
+
+      db.connected.then(() => {
+        let checkStr = db.get('string') as GoogleString;
+        expect(checkStr.text).to.be('some text');
+        let checkList = db.get('list') as GoogleUndoableList;
+        expect(toArray(checkList)).to.eql([1, 2, 3]);
+        let checkMap = db.get('map') as GoogleJSON;
+        expect(checkMap.get('foo')).to.be('bar');
+        let checkVal = db.get('val') as GoogleObservableValue;
+        expect(checkVal.get()).to.eql({ a: 1, b: 2 });
+        done();
+      });
+
+      // Create filled values.
+      let newStr = model.model.createString('some text');
+      let newList = model.model.createList([1, 2, 3]);
+      let newMap = model.model.createMap();
+      newMap.set('foo', 'bar');
+      model.model.getRoot().set('string', newStr);
+      model.model.getRoot().set('list', newList);
+      model.model.getRoot().set('map', newMap);
+      model.model.getRoot().set('val', { a: 1, b: 2 });
+
+      connector.resolve(void 0);
+    });
+
 
   });
 
@@ -203,6 +246,16 @@ describe('GoogleModelDB', () => {
       connector.resolve(void 0)
     });
 
+    it('should return true for a database that has values in it', (done) => {
+      let db = new GoogleModelDB(defaultOptions);
+      db.connected.then(() => {
+        expect(db.isPrepopulated).to.be(true);
+        done();
+      });
+      let str = model.model.createString('Hello, world');
+      model.model.getRoot().set('value', str);
+      connector.resolve(void 0)
+    });
   });
 
   describe('#isCollaborative', () => {
