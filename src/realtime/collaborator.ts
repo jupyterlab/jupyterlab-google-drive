@@ -104,7 +104,12 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     );
   }
 
-  type: 'Map';
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'Map' {
+    return 'Map';
+  }
 
   /**
    * The number of key-value pairs in the map.
@@ -143,7 +148,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    *   if that did not exist.
    */
   set(key: string, value: ICollaborator): ICollaborator {
-    let oldVal = this._map.get(key);
+    let oldVal = this.get(key);
     this._map.set(key, value);
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -163,7 +168,8 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    * @returns the value for that key.
    */
   get(key: string): ICollaborator {
-    return this._map.get(key);
+    let val = this._map.get(key);
+    return val === null ? undefined : val;
   }
 
   /**
@@ -204,7 +210,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    *   or undefined if that does not exist. 
    */
   delete(key: string): ICollaborator {
-    let oldVal = this._map.get(key);
+    let oldVal = this.get(key);
     this._map.delete(key);
     this._changed.emit({
       type: 'remove',
@@ -216,10 +222,14 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   }
 
   /**
-   * Set the ObservableMap to an empty map.
+   * Set the CollaboratorMap to an empty map.
    */
   clear(): void {
-    this._map.clear();
+    // Delete one by one to emit the correct signals.
+    let keyList = this.keys();
+    for (let i = 0; i < keyList.length; i++) {
+      this.delete(keyList[i]);
+    }
   }
 
   /**

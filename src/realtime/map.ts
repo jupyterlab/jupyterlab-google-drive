@@ -27,7 +27,13 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
     this.googleObject = map;
   }
 
-  type: 'Map';
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'Map' {
+    return 'Map';
+  }
+
 
   /**
    * A signal emitted when the map has changed.
@@ -65,7 +71,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
   set googleObject(map: gapi.drive.realtime.CollaborativeMap<T>) {
     // Recreate the new map locally to fire the right signals.
     if(this._map) {
-      this._map.clear();
+      this.clear();
       for(let key of map.keys()) {
         this.set(key, map.get(key));
       }
@@ -109,7 +115,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    *   if that did not exist.
    */
   set(key: string, value: T): T {
-    let oldVal = this._map.get(key);
+    let oldVal = this.get(key);
     if (oldVal !== undefined && this._itemCmp(oldVal, value)) {
       return;
     }
@@ -132,7 +138,8 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * @returns the value for that key.
    */
   get(key: string): T {
-    return this._map.get(key);
+    let val = this._map.get(key);
+    return val === null ? undefined : val;
   }
 
   /**
@@ -173,7 +180,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    *   or undefined if that does not exist. 
    */
   delete(key: string): T {
-    let oldVal = this._map.get(key);
+    let oldVal = this.get(key);
     this._map.delete(key);
     this._changed.emit({
       type: 'remove',

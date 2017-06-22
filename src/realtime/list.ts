@@ -33,7 +33,12 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     this.googleObject = list;
   }
 
-  type: 'List';
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'List' {
+    return 'List';
+  }
 
   /**
    * A signal emitted when the list has changed.
@@ -116,9 +121,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     // to send the appropriate signals.
     if(this._vec) {
       this.clear();
-      for(let i = 0; i < vec.length; i++) {
-        this.push(vec.get(i));
-      }
+      this.pushAll(vec.asArray());
       this._vec.removeAllEventListeners();
     }
 
@@ -349,6 +352,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    */
   removeValue(value: T): number {
     let index = this._vec.indexOf(value, this._itemCmp);
+    if (index === -1) {
+      return index;
+    }
     this.remove(index);
     return index;
   }
@@ -371,6 +377,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * An `index` which is non-integral.
    */
   remove(index: number): T {
+    if (index < 0 || index >= this.length) {
+      return undefined;
+    }
     let value = this.get(index);
     this._vec.remove(index);
     this._changed.emit({
@@ -393,6 +402,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * All current iterators are invalidated.
    */
   clear(): void {
+    if (this.length === 0) {
+      return;
+    }
     let oldValues = this._vec.asArray();
     this._vec.clear();
     this._changed.emit({

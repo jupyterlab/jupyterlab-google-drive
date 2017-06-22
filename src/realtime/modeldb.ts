@@ -6,7 +6,7 @@ import {
 } from '@phosphor/disposable';
 
 import {
-  JSONValue, PromiseDelegate, JSONExt
+  JSONValue, PromiseDelegate, JSONExt, JSONObject
 } from '@phosphor/coreutils';
 
 import {
@@ -52,6 +52,12 @@ import {
 declare let gapi: any;
 
 /**
+ * Wrapper for bare null values, which do not
+ * work well in the Google realtime model databases.
+ */
+const NULL_WRAPPER: JSONObject = { _internalNullObject3141592654: null };
+
+/**
  * A class representing an IObservableValue, which
  * listens for changes to a `gapi.drive.realtime.Model`.
  */
@@ -74,8 +80,8 @@ class GoogleObservableValue implements IObservableValue {
     this._onValueChanged = (evt: any) => {
       if (evt.property === this._path) {
         this._changed.emit({
-          oldValue: evt.oldValue,
-          newValue: evt.newValue
+          oldValue: Private.resolveValue(evt.oldValue),
+          newValue: Private.resolveValue(evt.newValue)
         });
       }
     }
@@ -106,7 +112,7 @@ class GoogleObservableValue implements IObservableValue {
       return;
     }
     // Set the value to that in the new model to fire the right signal.
-    this.set(model.getRoot().get(this._path));
+    this._model.getRoot().set(this._path, model.getRoot().get(this._path));
 
     // Swap out the old model.
     let oldModel = this._model;
@@ -142,7 +148,7 @@ class GoogleObservableValue implements IObservableValue {
    * Get the current value.
    */
   get(): JSONValue {
-    return this._model.getRoot().get(this._path);;
+    return Private.resolveValue(this._model.getRoot().get(this._path));
   }
 
   /**
@@ -151,10 +157,15 @@ class GoogleObservableValue implements IObservableValue {
    * @param value: the value to set.
    */
   set(value: JSONValue): void {
-    if (JSONExt.deepEqual(value, this._model.getRoot().get(this._path))) {
+    let oldVal = this.get();
+    if (oldVal !== undefined && JSONExt.deepEqual(value, oldVal)) {
       return;
     }
-    this._model.getRoot().set(this._path, value);
+    if (value === null) {
+      this._model.getRoot().set(this._path, NULL_WRAPPER);
+    } else {
+      this._model.getRoot().set(this._path, value);
+    }
   }
 
   /**
@@ -200,84 +211,89 @@ class GoogleModelDB implements IModelDB {
       this._doc = gapi.drive.realtime.newInMemoryDocument();
       this._model = this._doc.getModel();
 
+      this._connected = new PromiseDelegate<void>();
+      this._localDB =
+        new Map<string, GoogleRealtimeObject | GoogleObservableValue>();
+
+      // If a testing documentLoader has been supplied, use that.
+      let documentLoader = options.documentLoader || Private.documentLoader;
+
       // Wrap the model root in a `GoogleMap`.
       this._db = new GoogleMap(this._model.getRoot());
 
       // Load the document from Google Drive.
-      getResourceForPath(options.filePath).then((resource: any) => {
-        loadRealtimeDocument(resource).then((doc: gapi.drive.realtime.Document) => {
-          // Update the references to the doc and model
-          let oldDoc = this._doc;
-          this._doc = doc;
-          this._model = doc.getModel();
+      documentLoader(options.filePath).then(doc => {
+        // Update the references to the doc and model
+        let oldDoc = this._doc;
+        this._doc = doc;
+        this._model = doc.getModel();
 
-          let oldDB = this._db;
-          this._db = new GoogleMap(this._model.getRoot());
+        let oldDB = this._db;
+        this._db = new GoogleMap(this._model.getRoot());
 
-          if (this._model.getRoot().size !== 0) {
-            // If the model is not empty, it is coming prepopulated.
-            this._isPrepopulated = true;
+        if (this._model.getRoot().size !== 0) {
+          // If the model is not empty, it is coming prepopulated.
+          this._isPrepopulated = true;
 
-            // Iterate over the keys in the original, unconnected
-            // model database. If there is a matching key in the
-            // new one, plug in the GoogleRealtimeObject associated
-            // with it. This takes care of updating the values
-            // and sending the right signals.
-            for (let key of oldDB.keys()) {
-              let oldVal = this._localDB.get(key);
-              if (this._db.has(key)) {
-                let dbVal = this._db.get(key);
-                if (oldVal.googleObject) {
-                  oldVal.googleObject = dbVal;
-                } else if (oldVal instanceof GoogleObservableValue) {
-                  oldVal.model = this._model;
-                }
-              }
-            }
-          } else {
-            // Handle the case where we populate the model.
-            for(let key of oldDB.keys()) {
-              let val = this._localDB.get(key);
-              if(val.googleObject) {
-                // If the value is a string, map, or list,
-                // swap out the underlying Collaborative Object.
-                let newVal: gapi.drive.realtime.CollaborativeObject;
-                if(val.googleObject.type === 'EditableString') {
-                  // Create a string.
-                  newVal = this._model.createString(val.text);
-                } else if (val.googleObject.type === 'List') {
-                  // Create a list.
-                  newVal = this._model.createList(val.googleObject.asArray());
-                } else if (val.googleObject.type === 'Map') {
-                  // Create a map.
-                  newVal = this._model.createMap();
-                  for(let item of val.keys()) {
-                    (newVal as gapi.drive.realtime.CollaborativeMap<JSONValue>)
-                    .set(item, val.get(item));
-                  }
-                }
-                val.googleObject = newVal;
-                this._db.set(key, newVal);
-              } else if (val.type === 'Value') {
-                // If the value is just an IObservableValue, copy
-                // the value into the new model object, then
-                // set the model object so it can listen for the
-                // right changes.
-                this._model.getRoot().set(key, val.get());
-                val.model = this._model;
+          // Iterate over the keys in the original, unconnected
+          // model database. If there is a matching key in the
+          // new one, plug in the GoogleRealtimeObject associated
+          // with it. This takes care of updating the values
+          // and sending the right signals.
+          for (let key of oldDB.keys()) {
+            let oldVal = this._localDB.get(key);
+            if (this._db.has(key)) {
+              let dbVal = this._db.get(key);
+              if (oldVal.googleObject) {
+                oldVal.googleObject = dbVal;
+              } else if (oldVal instanceof GoogleObservableValue) {
+                oldVal.model = this._model;
               }
             }
           }
+        } else {
+          // Handle the case where we populate the model.
+          for(let key of oldDB.keys()) {
+            let val = this._localDB.get(key);
+            if(val.googleObject) {
+              // If the value is a string, map, or list,
+              // swap out the underlying Collaborative Object.
+              let newVal: gapi.drive.realtime.CollaborativeObject;
+              if(val.googleObject.type === 'EditableString') {
+                // Create a string.
+                newVal = this._model.createString(val.text);
+              } else if (val.googleObject.type === 'List') {
+                // Create a list.
+                newVal = this._model.createList(val.googleObject.asArray());
+              } else if (val.googleObject.type === 'Map') {
+                // Create a map.
+                newVal = this._model.createMap();
+                for(let item of val.keys()) {
+                  (newVal as gapi.drive.realtime.CollaborativeMap<JSONValue>)
+                  .set(item, val.get(item));
+                }
+              }
+              val.googleObject = newVal;
+              this._db.set(key, newVal);
+            } else if (val.type === 'Value') {
+              // If the value is just an IObservableValue, copy
+              // the value into the new model object, then
+              // set the model object so it can listen for the
+              // right changes.
+              this._model.getRoot().set(key, val.get());
+              val.model = this._model;
+            }
+          }
+        }
 
-          // Set up the collaborators map.
-          this._collaborators = new CollaboratorMap(this._doc);
+        // Set up the collaborators map.
+        this._collaborators = new CollaboratorMap(this._doc);
 
-          // Clean up after the temporary in-memory document.
-          oldDoc.removeAllEventListeners();
-          oldDoc.close();
+        // Clean up after the temporary in-memory document.
+        oldDoc.removeAllEventListeners();
+        oldDoc.close();
 
-          this._connected.resolve(void 0);
-        });
+        this._connected.resolve(void 0);
       });
     }
   }
@@ -368,7 +384,11 @@ class GoogleModelDB implements IModelDB {
    * @returns an `IObservable`.
    */
   get(path: string): IObservable {
-    return this._localDB.get(path);
+    if (this._baseDB) {
+      return this._baseDB.get(this._basePath+'.'+path);
+    } else {
+      return this._localDB.get(path);
+    }
   }
 
   /**
@@ -409,13 +429,16 @@ class GoogleModelDB implements IModelDB {
    *
    * @param value: the value to set at the path.
    */
-  set(path: string, value: GoogleRealtimeObject): void {
-    this._localDB.set(path, value);
+  set(path: string, value: GoogleRealtimeObject | GoogleObservableValue): void {
     if(this._baseDB) {
       this._baseDB.set(this._basePath+'.'+path, value);
     } else {
-      if(value && value.googleObject) {
-        this._db.set(path, value.googleObject);
+      this._localDB.set(path, value);
+      if(value && (value as GoogleRealtimeObject).googleObject) {
+        this._db.set(path, (value as GoogleRealtimeObject).googleObject);
+      } else if (value && value.type === 'Value') {
+        // Do nothing, it has already been set
+        // at object creation time.
       } else {
         throw Error('Unexpected type set in GoogleModelDB');
       }
@@ -498,13 +521,14 @@ class GoogleModelDB implements IModelDB {
    * @returns the value that was created.
    */
   createValue(path: string): IObservableValue {
-    let val: JSONValue = null;
+    let val: JSONValue = NULL_WRAPPER;
     if(this.has(path)) {
       val = this.getGoogleObject(path) as JSONValue;
     }
-    let newVal = new GoogleObservableValue(this.fullPath(path),
+    let fullPath = this.fullPath(path);
+    let newVal = new GoogleObservableValue(fullPath,
                                            this.model, val);
-    this._localDB.set(path, newVal);
+    this.set(path, newVal);
     this._disposables.add(newVal);
     return newVal;
   }
@@ -548,7 +572,9 @@ class GoogleModelDB implements IModelDB {
    *   `GoogleModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): GoogleModelDB {
-    return new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
+    let view = new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
+    this._disposables.add(view);
+    return view;
   }
 
   /**
@@ -562,7 +588,6 @@ class GoogleModelDB implements IModelDB {
     this._disposables = null;
     this._model = null;
     this._baseDB = null;
-    this._localDB = null;
     disposables.dispose();
 
     // Possibly dispose of the doc if this is a root DB.
@@ -575,6 +600,7 @@ class GoogleModelDB implements IModelDB {
     // Possibly dispose of the db if this is a root DB.
     if (this._db) {
       this._db.dispose();
+      this._localDB = null;
       this._db = null;
     }
   }
@@ -596,13 +622,13 @@ class GoogleModelDB implements IModelDB {
 
   private _filePath: string;
   private _db: GoogleMap<GoogleSynchronizable> = null;
-  private _localDB = new Map<string, any>();
+  private _localDB: Map<string, any> = null;
   private _disposables = new DisposableSet();
   private _model: gapi.drive.realtime.Model = null;
   private _doc: gapi.drive.realtime.Document = null;
   private _basePath: string;
   private _baseDB: GoogleModelDB = null;
-  private _connected = new PromiseDelegate<void>()
+  private _connected: PromiseDelegate<void> = null;
   private _isPrepopulated = false;
   private _collaborators: CollaboratorMap = null;
 }
@@ -633,5 +659,44 @@ namespace GoogleModelDB {
      * `GoogleModelDB`. If none is given, it uses its own store.
      */
     baseDB?: GoogleModelDB;
+
+    /**
+     * A function to load a `gapi.drive.realtime.Document` given
+     * a path. Meant only for testing purposes, and should not
+     * be called by user code.
+     */
+    documentLoader?: (path: string) => Promise<gapi.drive.realtime.Document>;
+  }
+}
+
+/**
+ * A private namespace for `GoogleModelDB`.
+ */
+namespace Private {
+  /**
+   * Default document loader for the GoogleModelDB: load it
+   * from the user's Google Drive account.
+   */
+  export
+  function documentLoader(path: string): Promise<gapi.drive.realtime.Document> {
+    return getResourceForPath(path).then((resource: any) => {
+      return loadRealtimeDocument(resource);
+    });
+  }
+
+  /**
+   * Patch up a value coming out of a GoogleModelDB.
+   * If `null` return `undefined`. If NULL_WRAPPER,
+   * return `null`.
+   */
+  export
+  function resolveValue(value: JSONObject) {
+    if (value === undefined || value === null) {
+      return undefined;
+    } else if (JSONExt.deepEqual(value, NULL_WRAPPER)) {
+      return null;
+    } else {
+      return value;
+    }
   }
 }
