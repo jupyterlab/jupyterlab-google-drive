@@ -47,6 +47,25 @@ import {
   loadGapi
 } from './gapi';
 
+/* tslint:disable */
+/**
+ * The plugin setting schema.
+ *
+ * #### Notes
+ * This will eventually reside in its own settings file.
+ */
+const schema = {
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "jupyter.lab.setting-icon-class": "jp-GoogleDrive-logo",
+  "jupyter.lab.setting-icon-label": "Google Drive",
+  "title": "Google Drive",
+  "description": "Settings for the Google Drive plugin.",
+  "properties": {
+    "clientId": {"type": "string", "title": "Client ID", "default": ''}
+  }
+};
+/* tslint:enable */
+
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
   requires: [ICommandPalette, IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
@@ -68,13 +87,8 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   let drive = new GoogleDrive(registry);
   manager.services.contents.addDrive(drive);
 
-  // Add an annotation to the settings registry.
-  settingRegistry.annotate(id, '', {
-    label: 'Google Drive',
-    iconLabel: 'Google Drive',
-    iconClass: 'jp-GoogleDriveLogo'
-  });
-  settingRegistry.annotate(id, 'clientId', { label: 'Client ID' });
+  // Preload the settings schema into the registry. This is deprecated.
+  settingRegistry.preload(id, schema);
 
   // Construct a function that determines whether any documents
   // associated with this filebrowser are currently open.
