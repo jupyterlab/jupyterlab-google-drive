@@ -10,7 +10,7 @@ before_install:
   - cd ..
   - git clone --depth=50 --branch=master https://github.com/jupyterlab/jupyterlab.git
   - cd jupyterlab
-  - npm install
+  - npm install fs-extra child-process path
   - npm run addsibling $TRAVIS_BUILD_DIR && npm install
 install:
   - npm run build:src
