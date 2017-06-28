@@ -216,7 +216,7 @@ class GoogleDriveLogin extends Widget {
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
     settingsPromise.then( settings => {
-      this._clientId = settings.get('clientId') as string || null;
+      this._clientId = settings.get('clientId').composite as string || null;
       initializeGapi(this._clientId).then(loggedIn => {
         if (!loggedIn) {
           this._button.style.visibility = 'visible';
