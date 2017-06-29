@@ -7,7 +7,7 @@ Realtime collaboration and cloud storage for JupyterLab through Google Drive.
 Note that this is alpha software and is rapidly changing.
 Files stored on Google Drive using this plugin should still be backed-up elsewhere.
 
-This adds a `Google Drive` filebrowser to the left sidepanel of JupyterLab.
+This adds a Google Drive filebrowser to the left sidepanel of JupyterLab.
 When you are logged into your Google account, you will have the
 files stored in it available to JupyterLab.
 Notebooks and text files may be shared and edited with collaborators
@@ -18,7 +18,7 @@ code execution, and the outputs from running cells will reflect that.
 
 Google's servers expect traffic from computers using `http://localhost` on ports`8888` through `8899`,
 and other origins will be rejected, so drive integration will not work.
-In future versions, this origin will be configurable.
+See [advanced.md](advanced.md) for instructions on how to set up your own credentials with Google's servers.
 
 ## Prerequisites
 
