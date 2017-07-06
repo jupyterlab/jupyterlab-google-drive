@@ -51,14 +51,14 @@ import {
  * This will eventually reside in its own settings file.
  */
 const schema = {
-  "$schema": "http://json-schema.org/draft-06/schema",
   "jupyter.lab.setting-icon-class": "jp-GoogleDrive-logo",
   "jupyter.lab.setting-icon-label": "Google Drive",
   "title": "Google Drive",
   "description": "Settings for the Google Drive plugin.",
   "properties": {
     "clientId": {"type": "string", "title": "Client ID", "default": ''}
-  }
+  },
+  "type": "object"
 };
 /* tslint:enable */
 
