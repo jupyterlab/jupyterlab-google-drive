@@ -39,7 +39,7 @@
   background-size: 100%;
   width: var(--jp-private-sidebar-tab-width);
   height: var(--jp-private-sidebar-tab-width);
-  background-image: url(drive.png);
+  background-image: url(drive_monochrome.png);
 }
 
 .jp-GoogleUserBadge-container {
