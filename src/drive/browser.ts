@@ -22,7 +22,7 @@ import {
 } from '@jupyterlab/docmanager';
 
 import {
-  IDocumentRegistry
+  DocumentRegistry
 } from '@jupyterlab/docregistry';
 
 import {
@@ -69,7 +69,7 @@ class GoogleDriveFileBrowser extends Widget {
   /**
    * Construct the browser widget.
    */
-  constructor(driveName: string, registry: IDocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, settingsPromise: Promise<ISettingRegistry.ISettings>, hasOpenDocuments: () => boolean) {
+  constructor(driveName: string, registry: DocumentRegistry, commands: CommandRegistry, manager: IDocumentManager, factory: IFileBrowserFactory, settingsPromise: Promise<ISettingRegistry.ISettings>, hasOpenDocuments: () => boolean) {
     super();
     this.addClass(GOOGLE_DRIVE_FILEBROWSER_CLASS);
     this.layout = new PanelLayout();
@@ -174,7 +174,7 @@ class GoogleDriveFileBrowser extends Widget {
   private _browser: FileBrowser = null;
   private _loginScreen: GoogleDriveLogin = null;
   private _logoutButton: ToolbarButton = null;
-  private _registry: IDocumentRegistry = null;
+  private _registry: DocumentRegistry = null;
   private _commands: CommandRegistry = null;
   private _manager: IDocumentManager = null;
   private _factory: IFileBrowserFactory = null;

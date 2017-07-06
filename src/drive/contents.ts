@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  IDocumentRegistry
+  DocumentRegistry
 } from '@jupyterlab/docregistry';
 
 import {
@@ -37,7 +37,7 @@ class GoogleDrive implements Contents.IDrive {
    *
    * @param options - The options used to initialize the object.
    */
-  constructor(registry: IDocumentRegistry) {
+  constructor(registry: DocumentRegistry) {
     this._docRegistry = registry;
   }
 
@@ -378,6 +378,6 @@ class GoogleDrive implements Contents.IDrive {
 
   private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
-  private _docRegistry: IDocumentRegistry = null;
+  private _docRegistry: DocumentRegistry = null;
   private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }
