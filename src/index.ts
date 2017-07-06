@@ -24,10 +24,6 @@ import {
 } from '@jupyterlab/docmanager';
 
 import {
-  IDocumentRegistry
-} from '@jupyterlab/docregistry';
-
-import {
   IFileBrowserFactory
 } from '@jupyterlab/filebrowser';
 
@@ -68,7 +64,7 @@ const schema = {
 
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
-  requires: [ICommandPalette, IDocumentManager, IDocumentRegistry, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
+  requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
   activate: activateFileBrowser,
   autoStart: true
 };
@@ -76,7 +72,7 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, registry: IDocumentRegistry, factory: IFileBrowserFactory, restorer: ILayoutRestorer, settingRegistry: ISettingRegistry): void {
+function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, factory: IFileBrowserFactory, restorer: ILayoutRestorer, settingRegistry: ISettingRegistry): void {
   let { commands } = app;
   const id = fileBrowserPlugin.id;
 
@@ -84,7 +80,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   loadGapi();
 
   // Add the Google Drive backend to the contents manager.
-  let drive = new GoogleDrive(registry);
+  let drive = new GoogleDrive(app.docRegistry);
   manager.services.contents.addDrive(drive);
 
   // Preload the settings schema into the registry. This is deprecated.
@@ -106,7 +102,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
 
   // Create the file browser.
   let browser = new GoogleDriveFileBrowser(
-    drive.name, registry, commands, manager, factory,
+    drive.name, app.docRegistry, commands, manager, factory,
     settingRegistry.load(id), hasOpenDocuments);
 
   // Add the file browser widget to the application restorer.
