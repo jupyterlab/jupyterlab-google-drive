@@ -22,7 +22,7 @@ See [advanced.md](advanced.md) for instructions on how to set up your own creden
 
 ## Prerequisites
 
-* JupyterLab 0.24.0 or later
+* JupyterLab 0.25.0 or later
 * A Google Drive account
 
 ## Installation
