@@ -2,6 +2,10 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
+  lookup
+} from 'mime';
+
+import {
   map, filter, toArray
 } from '@phosphor/algorithm';
 
@@ -284,7 +288,7 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
     } else {
       contentType = 'file';
       format = 'base64';
-      mimeType = 'application/octet-stream';
+      mimeType = lookup(resource.name);
     }
     let contents: any = {
       name: resource.name,
@@ -300,7 +304,7 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
     // Download the contents from the server if necessary.
     if(includeContents) {
       return downloadResource(resource).then((result: any) => {
-        contents.content = result;
+        contents.content = contents.format === 'base64' ? btoa(result) : result;
         return contents as Contents.IModel;
       });
     } else {
@@ -816,7 +820,7 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
     } else {
       contentType = 'file';
       format = 'base64';
-      mimeType = 'application/octet-stream';
+      mimeType = lookup(path);
     }
     // Reconstruct the Contents.IModel from the retrieved contents.
     let contents: Contents.IModel = {
@@ -867,7 +871,7 @@ function fileResourceFromContentsModel(contents: Contents.IModel): FilesResource
         if(contents.format === 'text')
           mimeType = 'text/plain';
         else if (contents.format === 'base64')
-          mimeType = 'application/octet-stream';
+          mimeType = lookup(contents.path);
       }
       break;
     default:
