@@ -249,6 +249,8 @@ class GoogleModelDB implements IModelDB {
               } else if (oldVal instanceof GoogleObservableValue) {
                 oldVal.model = this._model;
               }
+            } else {
+              oldVal.dispose();
             }
           }
         } else {
@@ -288,6 +290,7 @@ class GoogleModelDB implements IModelDB {
 
         // Set up the collaborators map.
         this._collaborators = new CollaboratorMap(this._doc);
+        this._disposables.add(this._collaborators);
 
         // Clean up after the temporary in-memory document.
         oldDoc.removeAllEventListeners();
