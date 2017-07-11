@@ -253,6 +253,18 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
   });
   palette.addItem({ command, category });
 
+  // Add keybindings to the chatbox
+  commands.addKeyBinding({
+    command: 'chatbox:post',
+    selector: '.jp-Chatbox-prompt',
+     keys: ['Enter']
+  });
+  commands.addKeyBinding({
+    command: 'chatbox:linebreak',
+    selector: '.jp-Chatbox-prompt',
+    keys: ['Ctrl Enter']
+  });
+
   let updateDocumentContext = function (): void {
     let context = docManager.contextForWidget(shell.currentWidget);
     if (context && context.model.modelDB.isCollaborative) {
