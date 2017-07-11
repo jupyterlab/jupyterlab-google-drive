@@ -21,11 +21,11 @@ import {
  * A concrete implementation of a realtime undoable list.
  */
 export
-class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUndoableList<JSONValue> {
+class GoogleUndoableList<T extends JSONValue> extends GoogleList<T> implements IObservableUndoableList<T> {
   /**
    * Construct a new undoable list.
    */
-  constructor(list: gapi.drive.realtime.CollaborativeList<JSONValue>) {
+  constructor(list: gapi.drive.realtime.CollaborativeList<T>) {
     super(list);
     this.changed.connect(this._onListChanged, this);
   }
@@ -118,7 +118,7 @@ class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUnd
   /**
    * Handle a change in the list.
    */
-  private _onListChanged(list: IObservableList<JSONValue>, change: IObservableList.IChangedArgs<JSONValue>): void {
+  private _onListChanged(list: IObservableList<T>, change: IObservableList.IChangedArgs<T>): void {
     if (this.isDisposed || !this._isUndoable) {
       return;
     }
@@ -145,7 +145,7 @@ class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUnd
   /**
    * Undo a change event.
    */
-  private _undoChange(change: IObservableList.IChangedArgs<JSONValue>): void {
+  private _undoChange(change: IObservableList.IChangedArgs<T>): void {
     let index = 0;
     switch (change.type) {
     case 'add':
@@ -176,7 +176,7 @@ class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUnd
   /**
    * Redo a change event.
    */
-  private _redoChange(change: IObservableList.IChangedArgs<JSONValue>): void {
+  private _redoChange(change: IObservableList.IChangedArgs<T>): void {
     let index = 0;
     switch (change.type) {
     case 'add':
@@ -207,12 +207,12 @@ class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUnd
   /**
    * Copy a change as JSON.
    */
-  private _copyChange(change: IObservableList.IChangedArgs<JSONValue>): IObservableList.IChangedArgs<JSONValue> {
-    let oldValues: JSONValue[] = [];
+  private _copyChange(change: IObservableList.IChangedArgs<T>): IObservableList.IChangedArgs<T> {
+    let oldValues: T[] = [];
     each(change.oldValues, value => {
       oldValues.push(value);
     });
-    let newValues: JSONValue[] = [];
+    let newValues: T[] = [];
     each(change.newValues, value => {
       newValues.push(value);
     });
@@ -229,5 +229,5 @@ class GoogleUndoableList extends GoogleList<JSONValue> implements IObservableUnd
   private _isUndoable = true;
   private _madeCompoundChange = false;
   private _index = -1;
-  private _stack: IObservableList.IChangedArgs<JSONValue>[][] = [];
+  private _stack: IObservableList.IChangedArgs<T>[][] = [];
 }

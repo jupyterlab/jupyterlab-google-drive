@@ -121,7 +121,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   /**
    * A signal emitted when the map has changed.
    */
-  get changed(): ISignal<CollaboratorMap, IObservableMap.IChangedArgs<ICollaborator>> {
+  get changed(): ISignal<this, IObservableMap.IChangedArgs<ICollaborator>> {
     return this._changed;
   }
 
@@ -250,5 +250,5 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   private _doc: gapi.drive.realtime.Document = null;
   private _map: gapi.drive.realtime.CollaborativeMap<ICollaborator> = null;
   private _isDisposed: boolean = false;
-  private _changed = new Signal<CollaboratorMap, IObservableMap.IChangedArgs<ICollaborator>>(this);
+  private _changed = new Signal<this, IObservableMap.IChangedArgs<ICollaborator>>(this);
 }
