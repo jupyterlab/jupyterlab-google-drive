@@ -16,7 +16,7 @@ import {
 } from '@jupyterlab/apputils';
 
 import {
-  ISettingRegistry
+  ISettingRegistry, PathExt
 } from '@jupyterlab/coreutils';
 
 import {
@@ -117,17 +117,42 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
       const context = manager.contextForWidget(widget);
       if (context) {
         let path = context.path;
+        let body = document.createElement('div');
+        let text = document.createElement('p');
+        text.textContent = 'Enter collaborator Gmail address. '+
+                           'Multiple addresses may be separated by commas';
         let input = document.createElement('input');
+        body.appendChild(text);
+        body.appendChild(input);
+        // Set 'multiple' and 'type=email' attributes,
+        // which strips leading and trailing whitespace from
+        // the email adresses.
+        input.setAttribute('type', 'email');
+        input.setAttribute('multiple', '');
         showDialog({
-          title: 'Add collaborator Gmail address',
-          body: input,
+          title: `Share "${PathExt.basename(path)}"`,
+          body,
           primaryElement: input,
           buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'ADD'})]
         }).then( result=> {
           if (result.accept) {
+            // Pick out the valid email addresses
+            let candidateAddresses = input.value.split(',');
+            let addresses: string[] = [];
+            for (let address of candidateAddresses) {
+              if (Private.isEmail(address)) {
+               addresses.push(address);
+              } else {
+                console.warn(`${address} is not a valid email address`);
+              }
+            }
+            // Get the file resource for the path and create
+            // permissions for the valid email addresses.
             let localPath = path.split(':').pop();
             getResourceForPath(localPath).then((resource: any) => {
-              createPermissions(resource.id, input.value);
+              for (let address of addresses) {
+                createPermissions(resource.id, address);
+              }
             });
           }
         });
@@ -145,3 +170,25 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
  * Export the plugin as default.
  */
 export default fileBrowserPlugin;
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+  /**
+   * Return whether an email address is valid.
+   * Uses a regexp given in the html spec here:
+   * https://html.spec.whatwg.org/multipage/input.html#e-mail-state-(type=email)
+   * 
+   * #### Notes: this is not a perfect test, but it should be
+   *   good enough for most use cases.
+   *
+   * @param email: the canditate email address.
+   *
+   * @returns a boolean for whether it is a valid email.
+   */
+  export function isEmail(email: string): boolean {
+    let re = RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
+    return re.test(email);
+  }
+}
