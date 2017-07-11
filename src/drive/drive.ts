@@ -3,7 +3,7 @@
 
 import {
   lookup
-} from 'mime';
+} from 'mime-types';
 
 import {
   map, filter, toArray
@@ -288,7 +288,7 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
     } else {
       contentType = 'file';
       format = 'base64';
-      mimeType = lookup(resource.name);
+      mimeType = lookup(resource.name) || 'application/octet-stream';
     }
     let contents: any = {
       name: resource.name,
@@ -820,7 +820,7 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
     } else {
       contentType = 'file';
       format = 'base64';
-      mimeType = lookup(path);
+      mimeType = lookup(path) || 'application/octet-stream';
     }
     // Reconstruct the Contents.IModel from the retrieved contents.
     let contents: Contents.IModel = {
@@ -871,7 +871,7 @@ function fileResourceFromContentsModel(contents: Contents.IModel): FilesResource
         if(contents.format === 'text')
           mimeType = 'text/plain';
         else if (contents.format === 'base64')
-          mimeType = lookup(contents.path);
+          mimeType = lookup(contents.path) || 'application/octet-stream';
       }
       break;
     default:
