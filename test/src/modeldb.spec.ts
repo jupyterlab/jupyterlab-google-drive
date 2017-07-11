@@ -8,7 +8,7 @@ import {
 } from '@phosphor/algorithm';
 
 import {
-  JSONExt, PromiseDelegate
+  JSONValue, JSONExt, PromiseDelegate
 } from '@phosphor/coreutils';
 
 import {
@@ -178,14 +178,14 @@ describe('GoogleModelDB', () => {
       // Create empty placeholder values that will
       // be filled on file load
       let str = db.createString('string');
-      let list = db.createList('list');
+      let list = db.createList<JSONValue>('list');
       let map = db.createMap('map');
       let val = db.createValue('val');
 
       db.connected.then(() => {
         let checkStr = db.get('string') as GoogleString;
         expect(checkStr.text).to.be('some text');
-        let checkList = db.get('list') as GoogleUndoableList;
+        let checkList = db.get('list') as GoogleUndoableList<number>;
         expect(toArray(checkList)).to.eql([1, 2, 3]);
         let checkMap = db.get('map') as GoogleJSON;
         expect(checkMap.get('foo')).to.be('bar');
@@ -196,7 +196,7 @@ describe('GoogleModelDB', () => {
 
       // Create filled values.
       let newStr = model.model.createString('some text');
-      let newList = model.model.createList([1, 2, 3]);
+      let newList = model.model.createList<number>([1, 2, 3]);
       let newMap = model.model.createMap();
       newMap.set('foo', 'bar');
       model.model.getRoot().set('string', newStr);
@@ -328,13 +328,13 @@ describe('GoogleModelDB', () => {
 
     it('should create an GoogleUndoableList`', () => {
       let db = new GoogleModelDB(defaultOptions);
-      let str = db.createList('vec');
+      let str = db.createList<JSONValue>('vec');
       expect(str instanceof GoogleUndoableList).to.be(true);
     });
 
     it('should be able to retrieve that vector using `get`', () => {
       let db = new GoogleModelDB(defaultOptions);
-      let vec = db.createList('vec');
+      let vec = db.createList<JSONValue>('vec');
       expect(db.get('vec')).to.be(vec);
     });
 

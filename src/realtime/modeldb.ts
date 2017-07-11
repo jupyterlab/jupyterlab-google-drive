@@ -479,12 +479,12 @@ class GoogleModelDB implements IModelDB {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createList(path: string): IObservableUndoableList<JSONValue> {
-    let vec: gapi.drive.realtime.CollaborativeList<JSONValue>;
+  createList<T extends JSONValue>(path: string): IObservableUndoableList<T> {
+    let vec: gapi.drive.realtime.CollaborativeList<T>;
     if(this.has(path)) {
-      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<JSONValue>;
+      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<T>;
     } else {
-      vec = this.model.createList<JSONValue>();
+      vec = this.model.createList<T>();
     }
     let newVec = new GoogleUndoableList(vec);
     this._disposables.add(newVec);
