@@ -2,12 +2,43 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IModelDB
+  IModelDB, uuid
 } from '@jupyterlab/coreutils';
+
+import {
+  TextModelFactory, DocumentRegistry, Context
+} from '@jupyterlab/docregistry';
+
+import {
+  IRenderMime, RenderMime, RenderedHTML, defaultRendererFactories
+} from '@jupyterlab/rendermime';
+
+import {
+  ServiceManager
+} from '@jupyterlab/services';
 
 import {
   PromiseDelegate
 } from '@phosphor/coreutils';
+
+/**
+ * Get a copy of the default rendermime instance.
+ */
+export
+function defaultRenderMime(): RenderMime {
+  return Private.rendermime.clone();
+}
+
+/**
+ * Create a context for a file.
+ */
+export
+function createFileContext(path?: string, manager?: ServiceManager.IManager): Context<DocumentRegistry.IModel> {
+  manager = manager || Private.manager;
+  let factory = Private.textFactory;
+  path = path || uuid() + '.txt';
+  return new Context({ manager, factory, path });
+}
 
 /**
  * Class for an in memory `gapi.drive.realtime.Model`,
@@ -50,5 +81,22 @@ function documentLoader(path: string, connect: PromiseDelegate<void>) {
   return connect.promise.then(() => {
     let model = new inMemoryModel();
     return model.doc;
+  });
+}
+
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+  export
+  const manager = new ServiceManager();
+
+  export
+  const textFactory = new TextModelFactory();
+
+  export
+  const rendermime = new RenderMime({
+    initialFactories: defaultRendererFactories
   });
 }

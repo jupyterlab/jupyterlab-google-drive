@@ -2,6 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import './collaborator.spec';
+import './chatbox.spec';
 import './list.spec';
 import './json.spec';
 import './map.spec';

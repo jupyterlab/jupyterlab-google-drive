@@ -1,61 +1,9 @@
+
 /*-----------------------------------------------------------------------------
-| Copyright (c) Jupyter Development Team.
+| Copyright (c) 2014-2017, Jupyter Development Team.
+|
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 
-
-.jp-GoogleDriveFileBrowser {
-  background-color: var(--jp-layout-color1);
-  height: 100%;
-}
-
-.jp-GoogleDriveFileBrowser .jp-FileBrowser {
-  flex-grow: 1;
-  height: 100%;
-}
-
-.jp-GoogleLoginScreen {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.jp-GoogleDrive-logo {
-  background-size: 100%;
-  width: 150px;
-  height: 150px;
-  background-image: url(drive.png);
-}
-
-.jp-GoogleDrive-text {
-  font-size: var(--jp-ui-font-size3);
-  padding: 12px;
-}
-
-
-.jp-GoogleDrive-tablogo {
-  background-size: 100%;
-  width: var(--jp-private-sidebar-tab-width);
-  height: var(--jp-private-sidebar-tab-width);
-  background-image: url(drive_monochrome.png);
-}
-
-.jp-GoogleUserBadge-container {
-  display: flex;
-  justify-content: center;
-}
-
-.jp-GoogleUserBadge {
-  background-color: #F37626;
-  color: white;
-  border-radius: 50%;
-  height: 18px;
-  width: 18px;
-  line-height: 18px;
-}
-
-.jp-ShareIcon {
-  background-image: url(share.svg);
-}
+@import './chatbox.css';
+@import './browser.css';

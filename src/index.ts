@@ -20,12 +20,20 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
+  IEditorServices
+} from '@jupyterlab/codeeditor';
+
+import {
   IDocumentManager
 } from '@jupyterlab/docmanager';
 
 import {
   IFileBrowserFactory
 } from '@jupyterlab/filebrowser';
+
+import {
+  ChatboxPanel
+} from './chatbox';
 
 import {
   GoogleDriveFileBrowser, NAMESPACE
@@ -42,6 +50,21 @@ import {
 import {
   loadGapi
 } from './gapi';
+
+/**
+ * The command IDs used by the chatbox plugin.
+ */
+namespace CommandIDs {
+  export
+  const clear = 'chatbox:clear';
+
+  export
+  const run = 'chatbox:post';
+
+  export
+  const linebreak = 'chatbox:linebreak';
+};
+
 
 /* tslint:disable */
 /**
@@ -167,9 +190,107 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
 }
 
 /**
- * Export the plugin as default.
+ * The chatbox widget content factory.
  */
-export default fileBrowserPlugin;
+export
+const chatboxPlugin: JupyterLabPlugin<void> = {
+  id: 'jupyter.extensions.chatbox',
+  requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer],
+  autoStart: true,
+  activate: activateChatbox
+};
+
+/**
+ * Activate the chatbox extension.
+ */
+function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer): void {
+  const id = 'chatbox';
+  let { commands, shell } = app;
+  let category = 'Chatbox';
+  let command: string;
+
+  /**
+   * Create a chatbox for a given path.
+   */
+  let editorFactory = editorServices.factoryService.newInlineEditor.bind(
+    editorServices.factoryService);
+  let contentFactory = new ChatboxPanel.ContentFactory({ editorFactory });
+  let panel = new ChatboxPanel({
+    rendermime: app.rendermime.clone(),
+    contentFactory
+  });
+
+  // Add the chatbox panel to the tracker.
+  panel.title.label = 'Chat';
+  panel.id = id;
+
+  restorer.add(panel, 'chatbox');
+
+  command = CommandIDs.clear;
+  commands.addCommand(command, {
+    label: 'Clear Chat',
+    execute: args => {
+      panel.chatbox.clear();
+    }
+  });
+  palette.addItem({ command, category });
+
+  command = CommandIDs.run;
+  commands.addCommand(command, {
+    label: 'Post Chat Entry',
+    execute: args => {
+      panel.chatbox.post();
+    }
+  });
+  palette.addItem({ command, category });
+
+  command = CommandIDs.linebreak;
+  commands.addCommand(command, {
+    label: 'Insert Line Break',
+    execute: args => {
+      panel.chatbox.insertLinebreak();
+    }
+  });
+  palette.addItem({ command, category });
+
+  // Add keybindings to the chatbox
+  commands.addKeyBinding({
+    command: 'chatbox:post',
+    selector: '.jp-Chatbox-prompt',
+     keys: ['Enter']
+  });
+  commands.addKeyBinding({
+    command: 'chatbox:linebreak',
+    selector: '.jp-Chatbox-prompt',
+    keys: ['Ctrl Enter']
+  });
+
+  let updateDocumentContext = function (): void {
+    let context = docManager.contextForWidget(shell.currentWidget);
+    if (context && context.model.modelDB.isCollaborative) {
+      if (!panel.isAttached) {
+        shell.addToLeftArea(panel);
+      }
+      panel.context = context;
+    }
+  };
+
+  app.restored.then(() => {
+    updateDocumentContext();
+  });
+  shell.currentChanged.connect(updateDocumentContext);
+}
+
+
+/**
+ * Export the plugins as default.
+ */
+const plugins: JupyterLabPlugin<any>[] = [
+  fileBrowserPlugin,
+  chatboxPlugin
+];
+export default plugins;
+
 
 /**
  * A namespace for private data.
