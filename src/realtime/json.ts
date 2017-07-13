@@ -33,6 +33,9 @@ class GoogleJSON extends GoogleMap<JSONValue> implements IObservableJSON {
     let out: JSONObject = Object.create(null);
     for (let key of this.keys()) {
       let value = this.get(key);
+      if (!value) {
+        continue;
+      }
       if (JSONExt.isPrimitive(value)) {
         out[key] = value;
       } else {

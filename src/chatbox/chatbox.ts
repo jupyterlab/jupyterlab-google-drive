@@ -161,15 +161,15 @@ class Chatbox extends Widget {
    * Whether the chatbox has been disposed.
    */
   get isDisposed(): boolean {
-    return this._disposables === null;
+    return this._isDisposed;
   }
 
   /*
    * The chatbox input prompt.
    */
-  get prompt(): MarkdownCell | null {
+  get prompt(): MarkdownCell {
     let inputLayout = (this._input.layout as PanelLayout);
-    return inputLayout.widgets[0] as MarkdownCell || null;
+    return inputLayout.widgets[0] as MarkdownCell;
   }
 
   /**
@@ -192,7 +192,7 @@ class Chatbox extends Widget {
     // Set the new model.
     this._model = model;
     if (!model) {
-      this._log = null;
+      this._log = undefined;
       return;
     }
 
@@ -217,7 +217,7 @@ class Chatbox extends Widget {
   /**
    * The log of chat entries for the current document model.
    */
-  get log(): IObservableList<ChatEntry.IModel> {
+  get log(): IObservableList<ChatEntry.IModel> | undefined {
     return this._log;
   }
 
@@ -244,13 +244,12 @@ class Chatbox extends Widget {
    */
   dispose() {
     // Do nothing if already disposed.
-    if (this._disposables === null) {
+    if (this.isDisposed) {
       return;
     }
-    let disposables = this._disposables;
-    this._disposables = null;
-    disposables.dispose();
-    this._log = null;
+    this._isDisposed = true;
+    this._disposables.dispose();
+    this._log = undefined;
     Signal.clearData(this);
 
     super.dispose();
@@ -681,19 +680,20 @@ class Chatbox extends Widget {
     return { model, rendermime, contentFactory };
   }
 
-  private _rendermime: RenderMime = null;
-  private _content: Panel = null;
-  private _log: IObservableList<ChatEntry.IModel> = null;
-  private _start: number = null;
+  private _isDisposed = false;
+  private _rendermime: RenderMime;
+  private _content: Panel;
+  private _log: IObservableList<ChatEntry.IModel> | undefined;
+  private _start: number;
   private _scrollGuard: boolean = true;
-  private _monitor: ActivityMonitor<any, any> = null;
+  private _monitor: ActivityMonitor<any, any>;
   private _scrollSignal = new Signal<this, void>(this);
-  private _input: Panel = null;
+  private _input: Panel;
   private _mimetype = 'text/x-ipythongfm';
-  private _model: DocumentRegistry.IModel = null;
+  private _model: DocumentRegistry.IModel;
   private _disposables = new DisposableSet();
-  private _drag: Drag = null;
-  private _dragData: { pressX: number, pressY: number, index: number } = null;
+  private _drag: Drag | null;
+  private _dragData: { pressX: number, pressY: number, index: number };
 }
 
 

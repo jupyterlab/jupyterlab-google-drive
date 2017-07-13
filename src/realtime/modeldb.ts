@@ -130,7 +130,7 @@ class GoogleObservableValue implements IObservableValue {
    * Whether the value has been disposed.
    */
   get isDisposed(): boolean {
-    return this._model === null;
+    return this._isDisposed;
   }
 
   /**
@@ -143,7 +143,7 @@ class GoogleObservableValue implements IObservableValue {
   /**
    * Get the current value.
    */
-  get(): JSONValue {
+  get(): JSONValue | undefined {
     return Private.resolveValue(this._model.getRoot().get(this._path));
   }
 
@@ -171,16 +171,16 @@ class GoogleObservableValue implements IObservableValue {
     if (this.isDisposed) {
       return;
     }
-    let model = this._model;
-    this._model = null;
-    model.getRoot().removeEventListener(
+    this._isDisposed = true;
+    this._model.getRoot().removeEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED,
       this._onValueChanged);
     Signal.clearData(this);
   }
 
   private _path: string;
-  private _model: gapi.drive.realtime.Model = null;
+  private _isDisposed = false;
+  private _model: gapi.drive.realtime.Model;
   private _changed = new Signal<this, ObservableValue.IChangedArgs>(this);
   private _onValueChanged: (evt: any) => void;
 }
@@ -270,6 +270,9 @@ class GoogleModelDB implements IModelDB {
                   (newVal as gapi.drive.realtime.CollaborativeMap<JSONValue>)
                   .set(item, val.get(item));
                 }
+              } else {
+                // Should not get here.
+                throw Error('Unexpected collaborative object received');
               }
               val.googleObject = newVal;
               this._db.set(key, newVal);
@@ -372,7 +375,7 @@ class GoogleModelDB implements IModelDB {
    * Whether the database is disposed.
    */
   get isDisposed(): boolean {
-    return this._disposables === null;
+    return this._isDisposed;
   }
 
   /**
@@ -396,7 +399,7 @@ class GoogleModelDB implements IModelDB {
    *
    * @param path: the path for the object.
    */
-  getGoogleObject(path: string): GoogleSynchronizable {
+  getGoogleObject(path: string): GoogleSynchronizable | undefined {
     if(this._baseDB) {
       return this._baseDB.getGoogleObject(this._basePath+'.'+path);
     } else {
@@ -538,12 +541,12 @@ class GoogleModelDB implements IModelDB {
    *
    * @param path: the path for the value.
    */
-  getValue(path: string): JSONValue {
+  getValue(path: string): JSONValue | undefined {
     let val = this.get(path);
     if (val.type !== 'Value') {
         throw Error('Can only call getValue for an IObservableValue');
     }
-    return (val as ObservableValue).get();
+    return (val as GoogleObservableValue).get();
   }
 
   /**
@@ -583,24 +586,18 @@ class GoogleModelDB implements IModelDB {
     if (this.isDisposed) {
       return;
     }
-    let disposables = this._disposables;
-    this._disposables = null;
-    this._model = null;
-    this._baseDB = null;
-    disposables.dispose();
+    this._isDisposed = true;
+    this._disposables.dispose();
 
     // Possibly dispose of the doc if this is a root DB.
     if (this._doc) {
       this._doc.removeAllEventListeners();
       this._doc.close();
-      this._doc = null;
     }
 
     // Possibly dispose of the db if this is a root DB.
     if (this._db) {
       this._db.dispose();
-      this._localDB = null;
-      this._db = null;
     }
   }
 
@@ -620,16 +617,17 @@ class GoogleModelDB implements IModelDB {
   }
 
   private _filePath: string;
-  private _db: GoogleMap<GoogleSynchronizable> = null;
-  private _localDB: Map<string, any> = null;
+  private _isDisposed = false;
+  private _db: GoogleMap<GoogleSynchronizable>;
+  private _localDB: Map<string, any>;
   private _disposables = new DisposableSet();
-  private _model: gapi.drive.realtime.Model = null;
-  private _doc: gapi.drive.realtime.Document = null;
+  private _model: gapi.drive.realtime.Model;
+  private _doc: gapi.drive.realtime.Document;
   private _basePath: string;
-  private _baseDB: GoogleModelDB = null;
-  private _connected: PromiseDelegate<void> = null;
+  private _baseDB: GoogleModelDB;
+  private _connected: PromiseDelegate<void>;
   private _isPrepopulated = false;
-  private _collaborators: CollaboratorMap = null;
+  private _collaborators: CollaboratorMap;
 }
 
 /**
@@ -689,7 +687,7 @@ namespace Private {
    * return `null`.
    */
   export
-  function resolveValue(value: JSONObject) {
+  function resolveValue(value: JSONValue): JSONValue | undefined {
     if (value === undefined || value === null) {
       return undefined;
     } else if (JSONExt.deepEqual(value, NULL_WRAPPER)) {

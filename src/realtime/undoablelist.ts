@@ -45,14 +45,6 @@ class GoogleUndoableList<T extends JSONValue> extends GoogleList<T> implements I
   }
 
   /**
-   * Dispose of the resources held by the model.
-   */
-  dispose(): void {
-    this._stack = null;
-    super.dispose();
-  }
-
-  /**
    * Begin a compound operation.
    *
    * @param isUndoAble - Whether the operation is undoable.

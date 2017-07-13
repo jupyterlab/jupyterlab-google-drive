@@ -114,10 +114,10 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * @returns the old value for the key, or undefined
    *   if that did not exist.
    */
-  set(key: string, value: T): T {
+  set(key: string, value: T): T | undefined {
     let oldVal = this.get(key);
     if (oldVal !== undefined && this._itemCmp(oldVal, value)) {
-      return;
+      return oldVal;
     }
     this._map.set(key, value);
     this._changed.emit({
@@ -137,7 +137,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    *
    * @returns the value for that key.
    */
-  get(key: string): T {
+  get(key: string): T | undefined {
     let val = this._map.get(key);
     return val === null ? undefined : val;
   }
@@ -179,7 +179,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * @returns the value of the given key,
    *   or undefined if that does not exist. 
    */
-  delete(key: string): T {
+  delete(key: string): T | undefined {
     let oldVal = this.get(key);
     this._map.delete(key);
     this._changed.emit({
@@ -210,15 +210,14 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
     if(this._isDisposed) {
       return;
     }
-    Signal.clearData(this);
-    this._map.removeAllEventListeners();
-    this._map = null;
     this._isDisposed = true;
+    this._map.removeAllEventListeners();
+    Signal.clearData(this);
   }
 
   private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
-  private _map: gapi.drive.realtime.CollaborativeMap<T> = null;
-  private _itemCmp: (first: T, second: T) => boolean = null;
+  private _map: gapi.drive.realtime.CollaborativeMap<T>;
+  private _itemCmp: (first: T, second: T) => boolean;
   private _isDisposed: boolean = false;
 }
 

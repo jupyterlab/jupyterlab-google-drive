@@ -53,7 +53,7 @@ class GoogleDrive implements Contents.IDrive {
     }
   }
 
-  readonly serverSettings: ServerConnection.ISettings = null;
+  readonly serverSettings: ServerConnection.ISettings;
 
   /**
    * A signal emitted when a file operation takes place.
@@ -145,10 +145,13 @@ class GoogleDrive implements Contents.IDrive {
     if (contentType === 'notebook') {
       ext = '.ipynb';
       baseName = 'Untitled'
+      let modelFactory = this._docRegistry.getModelFactory('Notebook');
+      if (!modelFactory) {
+        throw Error('No model factory is registered with the DocRegistry');
+      }
       model = {
         type: 'notebook',
-        content: this._docRegistry.getModelFactory('Notebook')
-                 .createNew().toJSON(),
+        content: modelFactory.createNew().toJSON(),
         mimetype: NOTEBOOK_MIMETYPE,
         format: 'json'
       };
@@ -248,14 +251,13 @@ class GoogleDrive implements Contents.IDrive {
         return drive.uploadFile(path, options, true);
       } else {
         // File exists, but we are not saving anything
-        // to it? TODO: figure out the appropriate
-        // way to handle this case.
-        return void 0;
+        // to it? Just return the contents.
+        return contents;
       }
     }, () => {
       //The file does not exist already, create a new one.
       return drive.uploadFile(path, options, false)
-    }).then((contents) => {
+    }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'save',
         oldValue: null,
@@ -373,11 +375,13 @@ class GoogleDrive implements Contents.IDrive {
           return filename;
         }
       }
+      // Should not get here.
+      throw Error('Could not find a valid filename');
     });
   }
 
   private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
-  private _docRegistry: DocumentRegistry = null;
+  private _docRegistry: DocumentRegistry;
   private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }

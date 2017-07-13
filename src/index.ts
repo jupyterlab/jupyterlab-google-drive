@@ -113,7 +113,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   // associated with this filebrowser are currently open.
   let hasOpenDocuments = () => {
     let iterator = app.shell.widgets('main');
-    let widget: Widget;
+    let widget: Widget | undefined;
     while (widget = iterator.next()) {
       let context = manager.contextForWidget(widget);
       if (context && context.path.split(':')[0] === drive.name) {

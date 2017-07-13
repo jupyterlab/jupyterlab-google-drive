@@ -99,19 +99,22 @@ class GoogleDriveFileBrowser extends Widget {
   }
 
   /**
+   * Whether the widget has been disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
    * Dispose of the resource held by the widget.
    */
   dispose(): void {
-    let login = this._loginScreen;
-    this._loginScreen = null;
-    login.dispose();
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    this._loginScreen.dispose();
     this._browser.dispose();
-    this._browser = null;
-    this._registry = null;
-    this._commands = null;
-    this._manager = null;
-    this._factory = null;
-    this._hasOpenDocuments = null;
     super.dispose();
   }
 
@@ -171,15 +174,16 @@ class GoogleDriveFileBrowser extends Widget {
     });
   }
 
-  private _browser: FileBrowser = null;
-  private _loginScreen: GoogleDriveLogin = null;
-  private _logoutButton: ToolbarButton = null;
-  private _registry: DocumentRegistry = null;
-  private _commands: CommandRegistry = null;
-  private _manager: IDocumentManager = null;
-  private _factory: IFileBrowserFactory = null;
-  private _driveName: string = null;
-  private _hasOpenDocuments: () => boolean = null;
+  private _isDisposed = false;
+  private _browser: FileBrowser;
+  private _loginScreen: GoogleDriveLogin;
+  private _logoutButton: ToolbarButton;
+  private _registry: DocumentRegistry;
+  private _commands: CommandRegistry;
+  private _manager: IDocumentManager;
+  private _factory: IFileBrowserFactory;
+  private _driveName: string;
+  private _hasOpenDocuments: () => boolean;
 }
 
 export
@@ -216,7 +220,7 @@ class GoogleDriveLogin extends Widget {
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
     settingsPromise.then( settings => {
-      this._clientId = settings.get('clientId').composite as string || null;
+      this._clientId = settings.get('clientId').composite as string;
       initializeGapi(this._clientId).then(loggedIn => {
         if (!loggedIn) {
           this._button.style.visibility = 'visible';
@@ -238,6 +242,6 @@ class GoogleDriveLogin extends Widget {
     signIn();
   }
 
-  private _button: HTMLElement = null;
+  private _button: HTMLElement;
   private _clientId: string;
 }
