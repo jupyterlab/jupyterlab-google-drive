@@ -56,6 +56,8 @@
   },
   "devDependencies": {
     "@types/expect.js": "^0.3.29",
+    "@types/gapi": "^0.0.33",
+    "@types/gapi.auth2": "^0.0.40",
     "@types/google-drive-realtime-api": "^0.0.33",
     "@types/jquery": "^2.0.32",
     "@types/mime-types": "^2.1.0",

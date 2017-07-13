@@ -46,10 +46,6 @@ import {
   getResourceForPath, loadRealtimeDocument
 } from '../drive/drive';
 
-/**
- * Google API client module.
- */
-declare let gapi: any;
 
 /**
  * Wrapper for bare null values, which do not
@@ -486,7 +482,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       vec = this.model.createList<T>();
     }
-    let newVec = new GoogleUndoableList(vec);
+    let newVec = new GoogleUndoableList<T>(vec);
     this._disposables.add(newVec);
     this.set(path, newVec);
     return newVec;
