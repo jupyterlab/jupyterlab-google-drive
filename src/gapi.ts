@@ -12,9 +12,6 @@ import {
   ServerConnection
 } from '@jupyterlab/services';
 
-// TODO: Complete gapi typings and commit upstream.
-declare let gapi: any;
-
 /**
  * Default Client ID to let the Google Servers know who
  * we are. These can be changed to ones linked to a particular
@@ -68,7 +65,7 @@ function loadGapi(): Promise<void> {
     $.getScript('https://apis.google.com/js/api.js')
     .done((script, textStatus) => {
       // Load overall API.
-      (window as any).gapi.load('client:auth2,drive-realtime,drive-share', () => {
+      gapi.load('client:auth2,drive-realtime,drive-share', () => {
         // Load the specific client libraries we need.
         console.log("gapi: loaded onto page");
         gapiLoaded.resolve(void 0);
