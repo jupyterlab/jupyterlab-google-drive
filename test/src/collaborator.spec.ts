@@ -23,14 +23,16 @@ const collaborator: ICollaborator = {
   userId: '1234',
   sessionId: '5678',
   displayName: 'User One',
-  color: 'green'
+  color: 'green',
+  shortName: '1'
 }
 
 const adversary: ICollaborator = {
   userId: 'onetwo',
   sessionId: 'threefour',
   displayName: 'Horselover Fat',
-  color: 'blue'
+  color: 'blue',
+  shortName: 'o'
 }
 
 describe('CollaboratorMap', () => {

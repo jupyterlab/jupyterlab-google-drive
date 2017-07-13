@@ -38,7 +38,7 @@ import {
 /**
  * The common file model.
  */
-const FILE: Contents.IModel = {
+const FILE: Partial<Contents.IModel> = {
   path: uuid() + '.txt',
   type: 'file',
   mimetype: 'text/plain',

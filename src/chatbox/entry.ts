@@ -61,9 +61,7 @@ class ChatEntry extends Widget {
 
     this._badge = new Widget();
     this._badge.addClass(CHAT_BADGE_CLASS);
-    let badgeName = this.model.author.shortName ||
-                    this.model.author.displayName.split(' ')
-                    .filter(s => s).map(s => s[0]).join('');
+    let badgeName = this.model.author.shortName;
     this._badge.node.textContent = badgeName;
 
     this.cell = options.cell;

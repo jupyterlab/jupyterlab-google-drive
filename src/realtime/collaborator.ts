@@ -50,7 +50,9 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
         sessionId: initialCollaborators[i].sessionId,
         displayName: initialCollaborators[i].displayName,
         color: initialCollaborators[i].color,
-        shortName: undefined
+        shortName: (initialCollaborators[i].displayName as string).split(' ')
+                   .filter(s => s).map(s => s[0]).join('')
+
       }
       if(!this._map.has(collaborator.sessionId)) {
         this._map.set(collaborator.sessionId, collaborator);
@@ -69,7 +71,8 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
           sessionId: evt.collaborator.sessionId,
           displayName: evt.collaborator.displayName,
           color: evt.collaborator.color,
-          shortName: undefined
+          shortName: (evt.collaborator.displayName as string).split(' ')
+                     .filter(s => s).map(s => s[0]).join('')
         }
         this.set(collaborator.sessionId, collaborator);
         if(evt.collaborator.isMe) {
