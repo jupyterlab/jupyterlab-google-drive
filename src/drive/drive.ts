@@ -117,7 +117,7 @@ function urlForFile(path: string): Promise<string> {
  *   or throws an Error if it fails.
  */
 export
-function uploadFile(path: string, model: Contents.IModel, existing: boolean = false): Promise<Contents.IModel> {
+function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boolean = false): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(path)) && !existing) {
     return Promise.reject(
       `Google Drive: "${path}" is not a valid target directory`);
@@ -857,7 +857,7 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
  * This does not include any of the binary/text/json content of the
  * `contents`, just some metadata (`name` and `mimeType`).
  */
-function fileResourceFromContentsModel(contents: Contents.IModel): FilesResource {
+function fileResourceFromContentsModel(contents: Partial<Contents.IModel>): FilesResource {
   let mimeType = '';
   switch (contents.type) {
     case 'directory':

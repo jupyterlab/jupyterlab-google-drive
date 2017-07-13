@@ -240,7 +240,7 @@ class GoogleDrive implements Contents.IDrive {
    * @returns A promise which resolves with the file content model when the
    *   file is saved.
    */
-  save(path: string, options: Contents.IModel = {}): Promise<Contents.IModel> {
+  save(path: string, options: Partial<Contents.IModel>): Promise<Contents.IModel> {
     return this.get(path).then((contents) => {
       //The file exists
       if(options) {
@@ -261,7 +261,7 @@ class GoogleDrive implements Contents.IDrive {
         oldValue: null,
         newValue: contents
       });
-      return contents;
+      return contents as Contents.IModel;
     });
   }
 
