@@ -562,7 +562,7 @@ class GoogleModelDB implements IModelDB {
     if (val.type !== 'Value') {
         throw Error('Can only call setValue on an IObservableValue');
     }
-    (val as ObservableValue).set(value);
+    (val as GoogleObservableValue).set(value);
   }
 
   /**

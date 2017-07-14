@@ -137,7 +137,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   commands.addCommand(command, {
     execute: ()=> {
       const widget = app.shell.currentWidget;
-      const context = manager.contextForWidget(widget);
+      const context = widget ? manager.contextForWidget(widget) : undefined;
       if (context) {
         let path = context.path;
         let body = document.createElement('div');
@@ -172,7 +172,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
             // Get the file resource for the path and create
             // permissions for the valid email addresses.
             let localPath = path.split(':').pop();
-            getResourceForPath(localPath).then((resource: any) => {
+            getResourceForPath(localPath!).then((resource: any) => {
               for (let address of addresses) {
                 createPermissions(resource.id, address);
               }
@@ -266,7 +266,8 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
   });
 
   let updateDocumentContext = function (): void {
-    let context = docManager.contextForWidget(shell.currentWidget);
+    let widget = shell.currentWidget;
+    let context = widget ? docManager.contextForWidget(widget) : undefined;
     if (context && context.model.modelDB.isCollaborative) {
       if (!panel.isAttached) {
         shell.addToLeftArea(panel);
