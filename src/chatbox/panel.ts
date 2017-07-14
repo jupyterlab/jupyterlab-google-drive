@@ -156,12 +156,11 @@ class ChatboxDocumentInfo extends Widget {
     if (this._context) {
       this._context.pathChanged.disconnect(this._onPathChanged, this);
     }
-    if (!value) {
-      return;
-    }
     this._context = value;
-    this._context.pathChanged.connect(this._onPathChanged, this);
-    this.node.children[1].textContent = PathExt.basename(value.path);
+    if (this._context) {
+      this._context.pathChanged.connect(this._onPathChanged, this);
+      this.node.children[1].textContent = PathExt.basename(this._context.path);
+    }
   }
 
   /**
