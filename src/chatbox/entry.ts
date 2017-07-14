@@ -93,7 +93,7 @@ class ChatEntry extends Widget {
    */
   readonly cell: MarkdownCell;
 
-  private _badge: Widget = null;
+  private _badge: Widget;
 }
 
 

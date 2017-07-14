@@ -161,24 +161,24 @@ class Chatbox extends Widget {
    * Whether the chatbox has been disposed.
    */
   get isDisposed(): boolean {
-    return this._disposables === null;
+    return this._isDisposed;
   }
 
   /*
    * The chatbox input prompt.
    */
-  get prompt(): MarkdownCell | null {
+  get prompt(): MarkdownCell {
     let inputLayout = (this._input.layout as PanelLayout);
-    return inputLayout.widgets[0] as MarkdownCell || null;
+    return inputLayout.widgets[0] as MarkdownCell;
   }
 
   /**
    * The document model associated with the chatbox.
    */
-  get model(): DocumentRegistry.IModel {
+  get model(): DocumentRegistry.IModel | undefined {
     return this._model;
   }
-  set model(model: DocumentRegistry.IModel) {
+  set model(model: DocumentRegistry.IModel | undefined) {
     // Do nothing if it is the same model.
     if (model === this._model) {
       return;
@@ -191,8 +191,8 @@ class Chatbox extends Widget {
 
     // Set the new model.
     this._model = model;
-    if (!model) {
-      this._log = null;
+    if (!this._model) {
+      this._log = undefined;
       return;
     }
 
@@ -217,7 +217,7 @@ class Chatbox extends Widget {
   /**
    * The log of chat entries for the current document model.
    */
-  get log(): IObservableList<ChatEntry.IModel> {
+  get log(): IObservableList<ChatEntry.IModel> | undefined {
     return this._log;
   }
 
@@ -244,13 +244,12 @@ class Chatbox extends Widget {
    */
   dispose() {
     // Do nothing if already disposed.
-    if (this._disposables === null) {
+    if (this.isDisposed) {
       return;
     }
-    let disposables = this._disposables;
-    this._disposables = null;
-    disposables.dispose();
-    this._log = null;
+    this._isDisposed = true;
+    this._disposables.dispose();
+    this._log = undefined;
     Signal.clearData(this);
 
     super.dispose();
@@ -260,7 +259,7 @@ class Chatbox extends Widget {
    * Post the current text in the prompt to the chat.
    */
   post(): void {
-    if (!this._model) {
+    if (!this._model || !this._log) {
       return;
     }
     let prompt = this.prompt;
@@ -285,7 +284,8 @@ class Chatbox extends Widget {
     let offset = editor.getOffsetAt(pos);
     let text = model.value.text;
     model.value.text = text.substr(0, offset) + '\n' + text.substr(offset);
-    pos = editor.getPositionAt(offset + 1);
+    // pos should be well defined, since we have inserted a character.
+    pos = editor.getPositionAt(offset + 1)!;
     editor.setCursorPosition(pos);
   }
 
@@ -406,11 +406,16 @@ class Chatbox extends Widget {
    * Add another page of entries.
    */
   private _addPage(count: number): void {
+    // Do nothing if there is no log, or if we
+    // are already rendering the whole log.
+    if (!this._log || this._start === 0) {
+      return;
+    }
     // Add `count` widgets to the panel.
     let index = this._start - 1;
     let numAdded = 0;
     while (index >= 0 && numAdded < count) {
-      let entryWidget = this._entryWidgetFromModel(this._log.get(index--));
+      let entryWidget = this._entryWidgetFromModel(this._log.get(index--)!);
       this._content.insertWidget(0, entryWidget);
       numAdded++;
     }
@@ -467,7 +472,9 @@ class Chatbox extends Widget {
         }
         break;
       }
-      node = node.parentElement;
+      // Do a safe cast since we are checking for null
+      // in the loop above.
+      node = node.parentElement!;
     }
     return -1;
   }
@@ -638,12 +645,13 @@ class Chatbox extends Widget {
     let prompt = this.prompt;
     (this._input.layout as PanelLayout).widgets[0].parent = null;
 
-    // Add the chat entry to the log.
-    let collaborators = this._model.modelDB.collaborators;
+    // Add the chat entry to the log. It is safe to check for
+    // this._model and this._log , as that has been done in this.post().
+    let collaborators = this._model!.modelDB.collaborators;
     if (!collaborators) {
       throw Error('Cannot post chat entry to non-collaborative document.');
     }
-    this._log.push({
+    this._log!.push({
       text: prompt.model.value.text,
       author: collaborators.localCollaborator
     });
@@ -660,11 +668,14 @@ class Chatbox extends Widget {
     this._disposables.add(cellWidget);
     cellWidget.readOnly = true;
     cellWidget.rendered = true;
+    let isMe = this._model ?
+      this._model.modelDB.collaborators!.localCollaborator.userId
+      === entry.author.userId
+      : false;
     let entryWidget = new ChatEntry({
       model: entry,
       cell: cellWidget,
-      isMe: entry.author.userId ===
-            this._model.modelDB.collaborators.localCollaborator.userId
+      isMe
     });
     return entryWidget;
   }
@@ -681,19 +692,20 @@ class Chatbox extends Widget {
     return { model, rendermime, contentFactory };
   }
 
-  private _rendermime: RenderMime = null;
-  private _content: Panel = null;
-  private _log: IObservableList<ChatEntry.IModel> = null;
-  private _start: number = null;
+  private _isDisposed = false;
+  private _rendermime: RenderMime;
+  private _content: Panel;
+  private _log: IObservableList<ChatEntry.IModel> | undefined;
+  private _start: number;
   private _scrollGuard: boolean = true;
-  private _monitor: ActivityMonitor<any, any> = null;
+  private _monitor: ActivityMonitor<any, any>;
   private _scrollSignal = new Signal<this, void>(this);
-  private _input: Panel = null;
+  private _input: Panel;
   private _mimetype = 'text/x-ipythongfm';
-  private _model: DocumentRegistry.IModel = null;
+  private _model: DocumentRegistry.IModel | undefined;
   private _disposables = new DisposableSet();
-  private _drag: Drag = null;
-  private _dragData: { pressX: number, pressY: number, index: number } = null;
+  private _drag: Drag | null;
+  private _dragData: { pressX: number, pressY: number, index: number };
 }
 
 

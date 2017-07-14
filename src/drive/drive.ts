@@ -273,14 +273,14 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
   } else {
     // Handle the case of getting the contents of a file.
     let contentType: Contents.ContentType;
-    let mimeType: string;
+    let mimeType: string | undefined;
     let format: Contents.FileFormat;
     if(resource.mimeType === 'application/ipynb' ||
        resource.mimeType === 'application/json' ||
        resource.name.indexOf('.ipynb') !== -1) {
       contentType = 'notebook';
       format = 'json';
-      mimeType = null;
+      mimeType = undefined;
     } else if(resource.mimeType === 'text/plain') {
       contentType = 'file';
       format = 'text';
@@ -806,13 +806,13 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
   }).then((result: any) => {
 
     let contentType: Contents.ContentType;
-    let mimeType: string;
+    let mimeType: string | undefined;
     let format: Contents.FileFormat;
     if(revisionResource.mimeType === 'application/ipynb' ||
        revisionResource.mimeType === 'application/json') {
       contentType = 'notebook';
       format = 'json';
-      mimeType = null;
+      mimeType = undefined;
     } else if(revisionResource.mimeType === 'text/plain') {
       contentType = 'file';
       format = 'text';
@@ -823,7 +823,7 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
       mimeType = lookup(path) || 'application/octet-stream';
     }
     // Reconstruct the Contents.IModel from the retrieved contents.
-    let contents: Contents.IModel = {
+    let contents: Partial<Contents.IModel> = {
       name: revisionResource.name,
       path: path,
       type: contentType,
@@ -871,7 +871,11 @@ function fileResourceFromContentsModel(contents: Partial<Contents.IModel>): File
         if(contents.format === 'text')
           mimeType = 'text/plain';
         else if (contents.format === 'base64')
-          mimeType = lookup(contents.path) || 'application/octet-stream';
+          if (contents.path) {
+            mimeType = lookup(contents.path) || 'application/octet-stream';
+          } else {
+            mimeType = 'application/octet-stream';
+          }
       }
       break;
     default:

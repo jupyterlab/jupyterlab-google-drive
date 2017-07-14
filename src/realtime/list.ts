@@ -376,7 +376,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * #### Undefined Behavior
    * An `index` which is non-integral.
    */
-  remove(index: number): T {
+  remove(index: number): T | undefined {
     if (index < 0 || index >= this.length) {
       return undefined;
     }
@@ -573,12 +573,12 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     if(this._isDisposed) {
       return;
     }
+    this._isDisposed = true;
     Signal.clearData(this);
     this._vec.removeAllEventListeners();
-    this._isDisposed = true;
   }
 
-  private _vec: gapi.drive.realtime.CollaborativeList<T> = null;
+  private _vec: gapi.drive.realtime.CollaborativeList<T>;
   private _changed = new Signal<this, IObservableList.IChangedArgs<T>>(this);
   private _itemCmp: (first: T, second: T) => boolean;
   private _isDisposed: boolean = false;

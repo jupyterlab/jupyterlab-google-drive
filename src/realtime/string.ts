@@ -187,6 +187,6 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
   }
 
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
-  private _str: gapi.drive.realtime.CollaborativeString = null;
+  private _str: gapi.drive.realtime.CollaborativeString;
   private _isDisposed: boolean = false;
 }

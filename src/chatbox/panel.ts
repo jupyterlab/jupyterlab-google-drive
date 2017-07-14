@@ -89,15 +89,15 @@ class ChatboxPanel extends Panel {
   /**
    * The current document context for the chat.
    */
-  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> {
+  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined {
     return this._context;
   }
-  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel>) {
+  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined) {
     if (this._context === value) {
       return;
     }
     this._context = value;
-    this.chatbox.model = value.model;
+    this.chatbox.model = value ? value.model: undefined;
     this._documentInfo.context = value;
   }
 
@@ -126,7 +126,7 @@ class ChatboxPanel extends Panel {
   }
 
   private _documentInfo: ChatboxDocumentInfo;
-  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> = null;
+  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
 }
 
 /**
@@ -149,16 +149,18 @@ class ChatboxDocumentInfo extends Widget {
   /**
    * The current document context for the chat.
    */
-  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> {
+  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined {
     return this._context;
   }
-  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel>) {
+  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined) {
     if (this._context) {
       this._context.pathChanged.disconnect(this._onPathChanged, this);
     }
     this._context = value;
-    this._context.pathChanged.connect(this._onPathChanged, this);
-    this.node.children[1].textContent = PathExt.basename(value.path);
+    if (this._context) {
+      this._context.pathChanged.connect(this._onPathChanged, this);
+      this.node.children[1].textContent = PathExt.basename(this._context.path);
+    }
   }
 
   /**
@@ -168,7 +170,7 @@ class ChatboxDocumentInfo extends Widget {
     this.node.children[1].textContent = PathExt.basename(path);
   }
 
-  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> = null;
+  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
 }
 
 

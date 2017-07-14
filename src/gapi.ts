@@ -237,7 +237,6 @@ export
 function signOut(): Promise<void> {
   let googleAuth = gapi.auth2.getAuthInstance();
   // Invalidate the gapiAuthorized promise and set up a new one.
-  gapiAuthorized = null;
   gapiAuthorized = new PromiseDelegate<void>();
   return googleAuth.signOut();
 }

@@ -152,7 +152,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    * @returns the old value for the key, or undefined
    *   if that did not exist.
    */
-  set(key: string, value: ICollaborator): ICollaborator {
+  set(key: string, value: ICollaborator): ICollaborator | undefined {
     let oldVal = this.get(key);
     this._map.set(key, value);
     this._changed.emit({
@@ -162,7 +162,6 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
       newValue: value
     });
     return oldVal;
-      
   }
 
   /**
@@ -172,7 +171,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    *
    * @returns the value for that key.
    */
-  get(key: string): ICollaborator {
+  get(key: string): ICollaborator | undefined {
     let val = this._map.get(key);
     return val === null ? undefined : val;
   }
@@ -214,7 +213,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    * @returns the value of the given key,
    *   or undefined if that does not exist. 
    */
-  delete(key: string): ICollaborator {
+  delete(key: string): ICollaborator | undefined {
     let oldVal = this.get(key);
     this._map.delete(key);
     this._changed.emit({
@@ -244,16 +243,14 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     if(this._isDisposed) {
       return;
     }
+    this._isDisposed = true;
     Signal.clearData(this);
     this._map.removeAllEventListeners();
-    this._map.clear();
-    this._map = null;
-    this._isDisposed = true;
   }
 
-  private _localCollaborator: ICollaborator = null;
-  private _doc: gapi.drive.realtime.Document = null;
-  private _map: gapi.drive.realtime.CollaborativeMap<ICollaborator> = null;
+  private _localCollaborator: ICollaborator;
+  private _doc: gapi.drive.realtime.Document;
+  private _map: gapi.drive.realtime.CollaborativeMap<ICollaborator>;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableMap.IChangedArgs<ICollaborator>>(this);
 }
