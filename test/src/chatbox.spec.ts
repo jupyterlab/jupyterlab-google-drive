@@ -179,9 +179,9 @@ describe('chatbox/chatbox', () => {
 
       it('should clear the chatbox if given an invalid model', () => {
         Widget.attach(chatbox, document.body);
-        chatbox.model = null;
-        expect(chatbox.model).to.be(null);
-        expect(chatbox.log).to.be(null);
+        chatbox.model = undefined;
+        expect(chatbox.model).to.be(undefined);
+        expect(chatbox.log).to.be(undefined);
         expect(chatbox.widgets.length).to.be(0);
       });
 
