@@ -65,26 +65,9 @@ namespace CommandIDs {
   const linebreak = 'chatbox:linebreak';
 };
 
-
-/* tslint:disable */
 /**
- * The plugin setting schema.
- *
- * #### Notes
- * This will eventually reside in its own settings file.
+ * The JupyterLab plugin for the Google Drive Filebrowser.
  */
-const schema = {
-  "jupyter.lab.setting-icon-class": "jp-GoogleDrive-logo",
-  "jupyter.lab.setting-icon-label": "Google Drive",
-  "title": "Google Drive",
-  "description": "Settings for the Google Drive plugin.",
-  "properties": {
-    "clientId": {"type": "string", "title": "Client ID", "default": ''}
-  },
-  "type": "object"
-};
-/* tslint:enable */
-
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: 'jupyter.extensions.google-drive',
   requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
@@ -105,9 +88,6 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   // Add the Google Drive backend to the contents manager.
   let drive = new GoogleDrive(app.docRegistry);
   manager.services.contents.addDrive(drive);
-
-  // Preload the settings schema into the registry. This is deprecated.
-  settingRegistry.preload(id, schema);
 
   // Construct a function that determines whether any documents
   // associated with this filebrowser are currently open.
