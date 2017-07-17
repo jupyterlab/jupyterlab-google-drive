@@ -10,6 +10,7 @@
     "lib/*/*.js",
     "lib/*.d.ts",
     "lib/*.js",
+    "schema/*.json",
     "style/*.*"
   ],
   "directories": {
@@ -21,7 +22,10 @@
     "google drive"
   ],
   "jupyterlab": {
-    "extension": true
+    "extension": true,
+    "schemas": [
+      "schema/jupyter.extensions.google-drive.json"
+    ]
   },
   "scripts": {
     "build": "tsc",

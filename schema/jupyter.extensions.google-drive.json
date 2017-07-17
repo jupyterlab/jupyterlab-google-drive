@@ -1,0 +1,12 @@
+{
+  "jupyter.lab.setting-icon-class": "jp-GoogleDrive-logo",
+  "jupyter.lab.setting-icon-label": "Google Drive",
+  "title": "Google Drive",
+  "description": "Settings for the Google Drive plugin.",
+  "properties": {
+    "clientId": {
+      "type": "string", "title": "Client ID", "default": ""
+    }
+  },
+  "type": "object"
+}
