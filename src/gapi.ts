@@ -115,8 +115,9 @@ function initializeGapi(clientId: string): Promise<boolean> {
           resolve(false);
         }
       }, (err: any) => {
-        gapiInitialized.reject(void 0);
-        reject(void 0);
+        gapiInitialized.reject(err);
+        // A useful error message is in err.details.
+        reject(err.details);
       });
     });
   });
