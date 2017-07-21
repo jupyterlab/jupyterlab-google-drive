@@ -197,7 +197,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boo
     });
 
     return driveApiRequest(request);
-  }).then( (result: FilesResource) => {
+  }).then((result: FilesResource) => {
     console.log("gapi: uploaded document to "+result.id);
     // Update the cache.
     Private.resourceCache.set(path, result);
@@ -244,7 +244,7 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
     // Get directory listing if applicable.
     if (includeContents) {
       let fileList: FilesResource[] = [];
-      return searchDirectory(path).then( (resources: FilesResource[]) => {
+      return searchDirectory(path).then((resources: FilesResource[]) => {
         //Update the cache.
         Private.clearCacheForDirectory(path);
         Private.populateCacheForDirectory(path, resources);
@@ -412,28 +412,37 @@ function contentsModelForPath(path: string, includeContents: boolean = false): P
 /**
  * Give edit permissions to a Google drive user.
  *
- * @param fileId - the ID of the file.
+ * @param resource: the FilesResource to share.
  *
- * @param emailAddress - the email address of the user for which
+ * @param emailAddresses - the email addresses of the users for which
  *   to create the permissions.
  *
  * @returns a promise fulfilled when the permissions are created.
  */
 export
-function createPermissions (fileId: string, emailAddress: string ): Promise<void> {
-  let permissionRequest = {
-    'type': 'user',
-    'role': 'writer',
-    'emailAddress': emailAddress
+function createPermissions (resource: FilesResource, emailAddresses: string[] ): Promise<void> {
+  // Do nothing for an empty list.
+  if (emailAddresses.length === 0) {
+    return Promise.resolve(void 0);
   }
-  let request = gapi.client.drive.permissions.create({
-    'fileId': fileId,
-    'emailMessage': fileId,
-    'sendNotificationEmail': true,
-    'resource': permissionRequest
-  });
-  return driveApiRequest(request).then( (result: any) => {
-    console.log("gapi: created permissions for "+emailAddress);
+  // Create a batch request for permissions.
+  let batch = gapi.client.newBatch();
+  for (let address of emailAddresses) {
+    let permissionRequest = {
+      'type': 'user',
+      'role': 'writer',
+      'emailAddress': address
+    }
+    let request = gapi.client.drive.permissions.create({
+      'fileId': resource.id,
+      'emailMessage': `${resource.name} has been shared with you`,
+      'sendNotificationEmail': true,
+      'resource': permissionRequest
+      });
+    batch.add(request);
+  }
+  // Submit the batch request.
+  return driveApiRequest(batch).then((result: any) => {
     return void 0;
   });
 }
@@ -455,7 +464,7 @@ function createRealtimeDocument(): Promise<string> {
         name: 'jupyterlab_realtime_file'
         }
   });
-  return driveApiRequest(request).then( (result: FilesResource) => {
+  return driveApiRequest(request).then((result: FilesResource) => {
     console.log("gapi: created realtime document "+result.id);
     return result.id;
   });

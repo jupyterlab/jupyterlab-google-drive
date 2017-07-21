@@ -120,42 +120,25 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
       const context = widget ? manager.contextForWidget(widget) : undefined;
       if (context) {
         let path = context.path;
-        let body = document.createElement('div');
-        let text = document.createElement('p');
-        text.textContent = 'Enter collaborator Gmail address. '+
-                           'Multiple addresses may be separated by commas';
-        let input = document.createElement('input');
-        body.appendChild(text);
-        body.appendChild(input);
-        // Set 'multiple' and 'type=email' attributes,
-        // which strips leading and trailing whitespace from
-        // the email adresses.
-        input.setAttribute('type', 'email');
-        input.setAttribute('multiple', '');
+        // Do nothing if this file is not in the user's Google Drive.
+        if (path.split(':')[0] !== drive.name) {
+          console.warn('Cannot share a file outside of Google Drive');
+          return;
+        }
+        // Otherwise open the sharing dialog.
         showDialog({
           title: `Share "${PathExt.basename(path)}"`,
-          body,
-          primaryElement: input,
+          body: new Private.EmailAddressWidget(),
+          focusNodeSelector: 'input',
           buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'ADD'})]
-        }).then( result=> {
-          if (result.accept) {
-            // Pick out the valid email addresses
-            let candidateAddresses = input.value.split(',');
-            let addresses: string[] = [];
-            for (let address of candidateAddresses) {
-              if (Private.isEmail(address)) {
-               addresses.push(address);
-              } else {
-                console.warn(`${address} is not a valid email address`);
-              }
-            }
+        }).then( result => {
+          if (result.button.accept) {
             // Get the file resource for the path and create
             // permissions for the valid email addresses.
+            let addresses: string[] = result.value;
             let localPath = path.split(':').pop();
             getResourceForPath(localPath!).then((resource: any) => {
-              for (let address of addresses) {
-                createPermissions(resource.id, address);
-              }
+              createPermissions(resource, addresses);
             });
           }
         });
@@ -278,6 +261,49 @@ export default plugins;
  */
 namespace Private {
   /**
+   * A widget the reads and parses email addresses.
+   */
+  export
+  class EmailAddressWidget extends Widget {
+    /**
+     * Construct a new EmailAddressWidget.
+     */
+    constructor() {
+      super();
+      let text = document.createElement('p');
+      text.textContent = 'Enter collaborator Gmail address. '+
+                         'Multiple addresses may be separated by commas';
+      this._inputNode = document.createElement('input');
+      this.node.appendChild(text);
+      this.node.appendChild(this._inputNode);
+      // Set 'multiple' and 'type=email' attributes,
+      // which strips leading and trailing whitespace from
+      // the email adresses.
+      this._inputNode.setAttribute('type', 'email');
+      this._inputNode.setAttribute('multiple', '');
+    }
+
+    /**
+     * Get the value for the widget.
+     */
+    getValue(): string[] {
+      // Pick out the valid email addresses
+      let candidateAddresses = this._inputNode.value.split(',');
+      let addresses: string[] = [];
+      for (let address of candidateAddresses) {
+        if (isEmail(address)) {
+         addresses.push(address);
+        } else {
+          console.warn(`"${address}" is not a valid email address`);
+        }
+      }
+      return addresses;
+    }
+
+    private _inputNode: HTMLInputElement;
+  }
+
+  /**
    * Return whether an email address is valid.
    * Uses a regexp given in the html spec here:
    * https://html.spec.whatwg.org/multipage/input.html#e-mail-state-(type=email)
@@ -289,7 +315,7 @@ namespace Private {
    *
    * @returns a boolean for whether it is a valid email.
    */
-  export function isEmail(email: string): boolean {
+  function isEmail(email: string): boolean {
     let re = RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
     return re.test(email);
   }
