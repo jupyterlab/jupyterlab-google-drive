@@ -998,54 +998,60 @@ function getResourceForPath(path: string): Promise<FilesResource> {
   let components = splitPath(path);
 
   if (components.length === 0) {
-    // Handle the case for the pseudo-root folder
+    // Handle the case for the pseudo folders
     // (i.e., the view onto the "My Drive" and "Shared
-    // with me" directories).
+    // with me" directories, as well as the pseudo-root).
     return Promise.resolve(COLLECTIONS_DIRECTORY_RESOURCE);
-  } else if (components.length === 1) {
-    // Handle the case of either of the folders in the
-    // pseudo-root.
-    if (components[0] === SHARED_DIRECTORY) {
-      // Return the "Shared with me" dummy resource".
-      return Promise.resolve(SHARED_DIRECTORY_RESOURCE);
-    } else if (components[0] === DRIVE_DIRECTORY) {
-      return resourceFromFileId('root');
+  } else if (components.length === 1 && components[0] === DRIVE_DIRECTORY) {
+    return resourceFromFileId('root');
+  } else if (components.length === 1 && components[0] === SHARED_DIRECTORY) {
+    return Promise.resolve(SHARED_DIRECTORY_RESOURCE);
+  } else {
+    // Create a Promise of a FilesResource to walk the path until
+    // we find the right file.
+    let currentResource: Promise<FilesResource>;
+    let idx = 0; // Current path component index.
+
+    if (components[0] === DRIVE_DIRECTORY) {
+      // Handle the case of the `My Drive` directory.
+      currentResource = Promise.resolve({ id: 'root' });
+      idx = 1; // Set the component index to the second component
+    } else if (components[0] === SHARED_DIRECTORY) {
+      // Handle the case of the `Shared With Me` directory.
+      currentResource = searchSharedFiles('name = \''+components[1]+'\'')
+      .then(files => {
+        if (!files || files.length === 0) {
+          return Promise.reject(
+            "Google Drive: cannot find the specified file/folder: "
+            +components[1]);
+        } else if (files.length > 1) {
+          return Promise.reject(
+            "Google Drive: multiple files/folders match: "
+            +components[1]);
+        }
+        return files[0];
+      });
+      idx = 2; // Set the component index to the third component.
     } else {
       return Promise.reject('Unexpected file/folder in root directory');
     }
-  } else if (components.length === 2 && components[0] === SHARED_DIRECTORY) {
-    return searchSharedFiles('name = \''+components[1]+'\'').then( files => {
-      if (!files || files.length === 0) {
-        return Promise.reject(
-          "Google Drive: cannot find the specified file/folder: "
-          +components[1]);
-      } else if (files.length > 1) {
-        return Promise.reject(
-          "Google Drive: multiple files/folders match: "
-          +components[1]);
-      }
-      return files[0];
-    });
-  } else {
-    // Loop through the path components and get the resource for each
+
+    // Loop through the remaining path components and get the resource for each
     // one, verifying that the path corresponds to a valid drive object.
 
     // Utility function that gets the file resource object given its name,
     // whether it is a file or a folder, and a promise for the resource 
     // object of its containing folder.
-    let getResource = function(pathComponent: string, parentResource: Promise<FilesResource>): Promise<FilesResource> {
+    let getResource = (pathComponent: string, parentResource: Promise<FilesResource>) => {
       return parentResource.then((resource: FilesResource) => {
         return getResourceForRelativePath(pathComponent, resource['id']);
       });
     }
 
-    // We start with the root directory:
-    let currentResource: Promise<FilesResource> = Promise.resolve({id: 'root'});
-
     // Loop over the components, updating the current resource.
     // Start the loop at one to skip the pseudo-root.
-    for (let i = 1; i < components.length; i++) {
-      let component = components[i];
+    for (; idx < components.length; idx++) {
+      let component = components[idx];
       currentResource = getResource(component, currentResource);
     }
 
