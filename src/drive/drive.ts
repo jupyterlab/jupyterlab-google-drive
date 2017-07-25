@@ -182,8 +182,10 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     // filebrowser/src/model.ts, anything that is not a
     // notebook is a base64 encoded string.
     if (model.format === 'base64') {
-      body += 'Content-Transfer-Encoding: base64\r\n';
-      body +='\r\n' + model.content + closeDelim;
+      // Google drive has some trouble parsing base64 encoded things
+      // in such a way that they will continue being useful. Just
+      // decode them client-side for now.
+      body +='\r\n' + atob(model.content) + closeDelim;
     } else {
       // Notebook case.
       body +='\r\n' + JSON.stringify(model.content) + closeDelim;
@@ -308,7 +310,7 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, fi
         if (contents.format === 'base64') {
           content = btoa(result);
         } else if (resource.mimeType === 'application/json') {
-          content = JSON.stringify(result);
+          content = JSON.stringify(result, null, 2);
         }
         return { ...contents, content };
       });
@@ -826,7 +828,12 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
     // Make the request.
     return driveApiRequest(downloadRequest);
   }).then((result: any) => {
-
+    let content: any = result;
+    if (fileType.fileFormat === 'base64') {
+      content = btoa(result);
+    } else if (revisionResource.mimeType === 'application/json') {
+      content = JSON.stringify(result, null, 2);
+    }
     let contents: Contents.IModel = {
       name: revisionResource.name,
       path: path,
@@ -836,7 +843,7 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
       // TODO What is the appropriate modified time?
       last_modified: String(revisionResource.modifiedTime),
       mimetype: fileType.mimeTypes[0],
-      content: result,
+      content,
       format: fileType.fileFormat
     };
 

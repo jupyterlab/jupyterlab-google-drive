@@ -179,7 +179,7 @@ class GoogleDrive implements Contents.IDrive {
         format: fileType.fileFormat
       };
     } else if (contentType === 'directory') {
-      fileType = DocumentRegistry.defaultTextFileType;
+      fileType = DocumentRegistry.defaultDirectoryFileType;
       ext = '';
       baseName = 'Untitled Folder';
       model = {
