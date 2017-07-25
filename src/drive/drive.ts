@@ -153,9 +153,20 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
 
     let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
     let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
-    let mime = fileType.contentType === 'directory' ?
-               FOLDER_MIMETYPE :
-               fileType.mimeTypes[0];
+    let mime: string;
+    switch(model.type) {
+      case 'notebook':
+        // The Contents API does not specify a notebook mimetype,
+        // but the Google Drive API requires one.
+        mime = 'application/x-ipynb+json';
+        break;
+      case 'directory':
+        mime = FOLDER_MIMETYPE;
+        break;
+      default:
+        mime = fileType.mimeTypes[0];
+        break;
+    }
 
     // Metatdata part.
     let body = delimiter+'Content-Type: application/json\r\n\r\n';
@@ -167,10 +178,14 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
 
     // Content of the file.
     body += 'Content-Type: ' + mime + '\r\n';
-    if (fileType.fileFormat === 'base64') {
+    // It is not well documented, but as can be seen in
+    // filebrowser/src/model.ts, anything that is not a
+    // notebook is a base64 encoded string.
+    if (model.format === 'base64') {
       body += 'Content-Transfer-Encoding: base64\r\n';
       body +='\r\n' + model.content + closeDelim;
     } else {
+      // Notebook case.
       body +='\r\n' + JSON.stringify(model.content) + closeDelim;
     }
 
@@ -289,7 +304,12 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, fi
     // Download the contents from the server if necessary.
     if(includeContents) {
       return downloadResource(resource).then((result: any) => {
-        let content: any = contents.format === 'base64' ? btoa(result) : result;
+        let content: any = result;
+        if (contents.format === 'base64') {
+          content = btoa(result);
+        } else if (resource.mimeType === 'application/json') {
+          content = JSON.stringify(result);
+        }
         return { ...contents, content };
       });
     } else {

@@ -23,8 +23,6 @@ import {
 
 import * as drive from './drive';
 
-const NOTEBOOK_MIMETYPE = 'application/ipynb';
-
 /**
  * A contents manager that passes file operations to the server.
  *
@@ -167,7 +165,7 @@ class GoogleDrive implements Contents.IDrive {
       model = {
         type: fileType.contentType,
         content: modelFactory.createNew().toJSON(),
-        mimetype: NOTEBOOK_MIMETYPE,
+        mimetype: null, // No mimeType for notebooks, apparently.
         format: fileType.fileFormat
       };
     } else if (contentType === 'file') {
@@ -404,7 +402,7 @@ class GoogleDrive implements Contents.IDrive {
   private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
   private _docRegistry: DocumentRegistry;
-  private _fileTypeForPath: (path: string) => DocumentRegistry.IFileType; 
+  private _fileTypeForPath: (path: string) => DocumentRegistry.IFileType;
   private _fileTypeForContentsModel: (model: Partial<Contents.IModel>) => DocumentRegistry.IFileType;
   private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }
