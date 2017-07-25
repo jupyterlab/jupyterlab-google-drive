@@ -153,20 +153,6 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
 
     let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
     let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
-    let mime: string;
-    switch(model.type) {
-      case 'notebook':
-        // The Contents API does not specify a notebook mimetype,
-        // but the Google Drive API requires one.
-        mime = 'application/x-ipynb+json';
-        break;
-      case 'directory':
-        mime = FOLDER_MIMETYPE;
-        break;
-      default:
-        mime = fileType.mimeTypes[0];
-        break;
-    }
 
     // Metatdata part.
     let body = delimiter+'Content-Type: application/json\r\n\r\n';
@@ -177,7 +163,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     body += delimiter;
 
     // Content of the file.
-    body += 'Content-Type: ' + mime + '\r\n';
+    body += 'Content-Type: ' + resource.mime + '\r\n';
     // It is not well documented, but as can be seen in
     // filebrowser/src/model.ts, anything that is not a
     // notebook is a base64 encoded string.
@@ -869,12 +855,23 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
  * `contents`, just some metadata (`name` and `mimeType`).
  */
 function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType): FilesResource {
-  let mimeType = fileType.contentType === 'directory' ?
-                 FOLDER_MIMETYPE :
-                 fileType.mimeTypes[0];
+  let mimeType: string;
+  switch(contents.type) {
+    case 'notebook':
+      // The Contents API does not specify a notebook mimetype,
+      // but the Google Drive API requires one.
+      mimeType = 'application/x-ipynb+json';
+      break;
+    case 'directory':
+      mimeType = FOLDER_MIMETYPE;
+      break;
+    default:
+      mimeType = fileType.mimeTypes[0];
+      break;
+  }
   return {
     name: contents.name,
-    mimeType: mimeType
+    mimeType
   };
 }
 
