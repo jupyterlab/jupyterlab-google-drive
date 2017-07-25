@@ -165,7 +165,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     body += delimiter;
 
     // Content of the file.
-    body += 'Content-Type: ' + resource.mime + '\r\n';
+    body += 'Content-Type: ' + resource.mimeType + '\r\n';
     // It is not well documented, but as can be seen in
     // filebrowser/src/model.ts, anything that is not a
     // notebook is a base64 encoded string.
