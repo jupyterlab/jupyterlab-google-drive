@@ -117,6 +117,8 @@ function urlForFile(path: string): Promise<string> {
  *
  * @param model - the `Contents.IModel` to upload.
  *
+ * @param fileType - a candidate DocumentRegistry.IFileType for the given file.
+ *
  * @param exisiting - whether the file exists.
  *
  * @returns a promise fulfulled with the `Contents.IModel` that has been uploaded,
@@ -217,9 +219,14 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
  * @param path - the path at which the resource exists in the filesystem.
  *   This should include the name of the file itself.
  *
+ * @param fileType - a candidate DocumentRegistry.IFileType for the given file.
+ *
  * @param includeContents - whether to download the actual text/json/binary
  *   content from the server. This takes much more bandwidth, so should only
  *   be used when required.
+ *
+ * @param fileTypeForPath - A function that, given a path argument, returns
+ *   and DocumentRegistry.IFileType that is consistent with the path.
  *
  * @returns a promise fulfilled with the Contents.IModel for the resource.
  */
@@ -320,6 +327,9 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, fi
  * @param includeContents: whether to include the directory listing
  *   for the dummy directory.
  *
+ * @param fileTypeForPath - A function that, given a path argument, returns
+ *   and DocumentRegistry.IFileType that is consistent with the path.
+ *
  * @returns a promise fulfilled with the a Contents.IModel for the resource.
  */
 function contentsModelFromDummyFileResource(resource: FilesResource, path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
@@ -395,6 +405,9 @@ function contentsModelFromDummyFileResource(resource: FilesResource, path: strin
  *
  * @param includeContents - whether to include the binary/text/contents of the file.
  *   If false, just get the metadata.
+ *
+ * @param fileTypeForPath - A function that, given a path argument, returns
+ *   and DocumentRegistry.IFileType that is consistent with the path.
  *
  * @returns a promise fulfilled with the `Contents.IModel` of the appropriate file.
  *   Otherwise, throws an error.
@@ -590,6 +603,9 @@ function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
  * @param newPath - The new location of the file (where the path
  *   includes the filename).
  *
+ * @param fileTypeForPath - A function that, given a path argument, returns
+ *   and DocumentRegistry.IFileType that is consistent with the path.
+ *
  * @returns a promise fulfilled with the `Contents.IModel` of the moved file.
  *   Otherwise, throws an error.
  */
@@ -658,6 +674,9 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
  *
  * @param newPath - The location of the copy (where the path
  *   includes the filename). This cannot be the same as `oldPath`.
+ *
+ * @param fileTypeForPath - A function that, given a path argument, returns
+ *   and DocumentRegistry.IFileType that is consistent with the path.
  *
  * @returns a promise fulfilled with the `Contents.IModel` of the copy.
  *   Otherwise, throws an error.
@@ -797,6 +816,8 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
  *
  * @param revisionId - the id of the revision to revert.
  *
+ * @param fileType - a candidate DocumentRegistry.IFileType for the given file.
+ *
  * @returns a promise fulfilled when the file is reverted.
  */
 export
@@ -847,6 +868,8 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
  * contents model.
  *
  * @param contents - The contents model.
+ *
+ * @param fileType - a candidate DocumentRegistry.IFileType for the given file.
  *
  * @returns a files resource object for the Google Drive API.
  *
