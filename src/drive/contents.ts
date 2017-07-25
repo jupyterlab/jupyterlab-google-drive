@@ -39,6 +39,19 @@ class GoogleDrive implements Contents.IDrive {
    */
   constructor(registry: DocumentRegistry) {
     this._docRegistry = registry;
+    // Construct a function to make a best-guess IFileType
+    // for a given path.
+    this._fileTypeForPath = (path: string) => {
+      let fileTypes = registry.getFileTypesForPath(path);
+      return fileTypes.length === 0 ?
+             registry.getFileType('text') :
+             fileTypes[0];
+    }
+    // Construct a function to return a best-guess IFileType
+    // for a given contents model.
+    this._fileTypeForContentsModel = (model: Partial<Contents.IModel>) => {
+      return registry.getFileTypeForModel(model);
+    }
   }
 
   get name(): 'GDrive' {
@@ -100,7 +113,7 @@ class GoogleDrive implements Contents.IDrive {
     let getContent = options ? !!options.content : true;
     // TODO: the contents manager probably should not be passing in '.'.
     path = path === '.' ? '' : path;
-    return drive.contentsModelForPath(path, getContent)
+    return drive.contentsModelForPath(path, getContent, this._fileTypeForPath);
   }
 
   /**
@@ -131,6 +144,7 @@ class GoogleDrive implements Contents.IDrive {
     let baseName = 'Untitled'
     let path = '';
     let contentType: Contents.ContentType = 'notebook';
+    let fileType: DocumentRegistry.IFileType;
 
     if(options) {
       // Add leading `.` to extension if necessary.
@@ -141,45 +155,48 @@ class GoogleDrive implements Contents.IDrive {
       contentType = options.type || 'notebook';
     }
 
-    let model: any = null;
+    let model: Partial<Contents.IModel>;
     if (contentType === 'notebook') {
-      ext = '.ipynb';
+      fileType = DocumentRegistry.defaultNotebookFileType;
+      ext = fileType.extensions[0];
       baseName = 'Untitled'
       let modelFactory = this._docRegistry.getModelFactory('Notebook');
       if (!modelFactory) {
         throw Error('No model factory is registered with the DocRegistry');
       }
       model = {
-        type: 'notebook',
+        type: fileType.contentType,
         content: modelFactory.createNew().toJSON(),
         mimetype: NOTEBOOK_MIMETYPE,
-        format: 'json'
+        format: fileType.fileFormat
       };
     } else if (contentType === 'file') {
-      ext = ext || '.txt';
+      fileType = DocumentRegistry.defaultTextFileType;
+      ext = fileType.extensions[0];
       baseName = 'untitled';
       model = {
-        type: 'file',
+        type: fileType.contentType,
         content: '',
-        mimetype: 'text/plain',
-        format: 'text'
+        mimetype: fileType.mimeTypes[0],
+        format: fileType.fileFormat
       };
     } else if (contentType === 'directory') {
+      fileType = DocumentRegistry.defaultTextFileType;
       ext = '';
       baseName = 'Untitled Folder';
       model = {
-        type: 'directory',
+        type: fileType.contentType,
         content: [],
-        format: 'json'
+        format: fileType.fileFormat
       }
     } else {
       throw new Error("Unrecognized type " + contentType);
     }
 
     return this._getNewFilename(path, ext, baseName).then((name: string) => {
-      model['name'] = name;
+      let m = { ...model, name };
       path = PathExt.join(path, name);
-      return drive.uploadFile(path, model as Contents.IModel, false);
+      return drive.uploadFile(path, m, fileType, false);
     }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'new',
@@ -222,7 +239,8 @@ class GoogleDrive implements Contents.IDrive {
     if(path === newPath) {
       return this.get(path);
     } else {
-      return drive.moveFile(path, newPath).then((contents: Contents.IModel) => {
+      return drive.moveFile(path, newPath, this._fileTypeForPath)
+      .then((contents: Contents.IModel) => {
         this._fileChanged.emit({
           type: 'rename',
           oldValue: { path },
@@ -244,11 +262,12 @@ class GoogleDrive implements Contents.IDrive {
    *   file is saved.
    */
   save(path: string, options: Partial<Contents.IModel>): Promise<Contents.IModel> {
+    let fileType = this._fileTypeForContentsModel(options);
     return this.get(path).then((contents) => {
       //The file exists
       if(options) {
         //Overwrite the existing file
-        return drive.uploadFile(path, options, true);
+        return drive.uploadFile(path, options, fileType, true);
       } else {
         // File exists, but we are not saving anything
         // to it? Just return the contents.
@@ -256,7 +275,7 @@ class GoogleDrive implements Contents.IDrive {
       }
     }, () => {
       //The file does not exist already, create a new one.
-      return drive.uploadFile(path, options, false)
+      return drive.uploadFile(path, options, fileType, false);
     }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'save',
@@ -283,7 +302,8 @@ class GoogleDrive implements Contents.IDrive {
     const ext = PathExt.extname(fromFile);
 
     return this._getNewFilename(toDir, ext, fileBasename).then((name) => {
-      return drive.copyFile(fromFile, PathExt.join(toDir, name));
+      return drive.copyFile(fromFile, PathExt.join(toDir, name),
+                            this._fileTypeForPath);
     });
   }
 
@@ -322,7 +342,8 @@ class GoogleDrive implements Contents.IDrive {
    */
   restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
     // TODO: should this emit a signal?
-    return drive.revertToRevision(path, checkpointID);
+    let fileType = this._fileTypeForPath(path);
+    return drive.revertToRevision(path, checkpointID, fileType);
   }
 
   /**
@@ -383,5 +404,7 @@ class GoogleDrive implements Contents.IDrive {
   private _baseUrl = 'https://www.googleapis.com/drive/v3';
   private _isDisposed = false;
   private _docRegistry: DocumentRegistry;
+  private _fileTypeForPath: (path: string) => DocumentRegistry.IFileType; 
+  private _fileTypeForContentsModel: (model: Partial<Contents.IModel>) => DocumentRegistry.IFileType;
   private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }

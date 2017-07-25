@@ -2,10 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  lookup
-} from 'mime-types';
-
-import {
   map, filter, toArray
 } from '@phosphor/algorithm';
 
@@ -16,6 +12,10 @@ import {
 import {
   PathExt
 } from '@jupyterlab/coreutils';
+
+import {
+  DocumentRegistry
+} from '@jupyterlab/docregistry';
 
 import {
   driveApiRequest, gapiAuthorized, gapiInitialized
@@ -55,6 +55,12 @@ type DriveApiRequest = any;
  */
 export
 type RevisionResource = any;
+
+
+/**
+ * Alias for directory IFileType.
+ */
+const directoryFileType = DocumentRegistry.defaultDirectoryFileType;
 
 /**
  * The name of the dummy "Shared with me" folder.
@@ -117,7 +123,7 @@ function urlForFile(path: string): Promise<string> {
  *   or throws an Error if it fails.
  */
 export
-function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boolean = false): Promise<Contents.IModel> {
+function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType, existing: boolean = false): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(path)) && !existing) {
     return Promise.reject(
       `Google Drive: "${path}" is not a valid target directory`);
@@ -130,7 +136,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boo
       let enclosingFolderPath = PathExt.dirname(path);
       enclosingFolderPath =
         enclosingFolderPath === '.' ? '' : enclosingFolderPath;
-      let resource: FilesResource = fileResourceFromContentsModel(model);
+      let resource: FilesResource = fileResourceFromContentsModel(model, fileType);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FilesResource) => {
         if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
@@ -147,15 +153,9 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boo
 
     let delimiter = '\r\n--' + MULTIPART_BOUNDARY + '\r\n';
     let closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
-    let mime = resource.mimeType;
-    switch(model.type) {
-      case 'notebook':
-        mime = 'application/ipynb';
-        break;
-      case 'directory':
-        mime = FOLDER_MIMETYPE;
-        break;
-    }
+    let mime = fileType.contentType === 'directory' ?
+               FOLDER_MIMETYPE :
+               fileType.mimeTypes[0];
 
     // Metatdata part.
     let body = delimiter+'Content-Type: application/json\r\n\r\n';
@@ -167,7 +167,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boo
 
     // Content of the file.
     body += 'Content-Type: ' + mime + '\r\n';
-    if (model.format === 'base64') {
+    if (fileType.fileFormat === 'base64') {
       body += 'Content-Transfer-Encoding: base64\r\n';
       body +='\r\n' + model.content + closeDelim;
     } else {
@@ -202,7 +202,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boo
     // Update the cache.
     Private.resourceCache.set(path, result);
 
-    return contentsModelFromFileResource(result, path, true);
+    return contentsModelFromFileResource(result, path, fileType, true, undefined);
   });
 }
 
@@ -221,28 +221,31 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, existing: boo
  * @returns a promise fulfilled with the Contents.IModel for the resource.
  */
 export
-function contentsModelFromFileResource(resource: FilesResource, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+function contentsModelFromFileResource(resource: FilesResource, path: string, fileType: DocumentRegistry.IFileType, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType | undefined = undefined): Promise<Contents.IModel> {
   // Handle the exception of the dummy directories
   if (resource.kind === 'dummy') {
-    return contentsModelFromDummyFileResource(resource, path, includeContents);
+    return contentsModelFromDummyFileResource(resource, path, includeContents, fileTypeForPath);
   }
   // Handle the case of getting the contents of a directory.
   if(resource.mimeType === FOLDER_MIMETYPE) {
     // Enter contents metadata.
-    let contents: any = {
+    let contents: Contents.IModel = {
       name: resource.name,
       path: path,
       type: 'directory',
       writable: resource.capabilities.canEdit,
       created: String(resource.createdTime),
       last_modified: String(resource.modifiedTime),
-      mimetype: null,
+      mimetype: fileType.mimeTypes[0],
       content: null,
       format: 'json'
     };
 
     // Get directory listing if applicable.
     if (includeContents) {
+      if (!fileTypeForPath) {
+        throw Error('Must include fileTypeForPath argument to get directory listing');
+      }
       let fileList: FilesResource[] = [];
       return searchDirectory(path).then((resources: FilesResource[]) => {
         //Update the cache.
@@ -256,59 +259,41 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
           let resourcePath = path ?
                              path+'/'+currentResource.name :
                              currentResource.name;
+          let resourceFileType = fileTypeForPath(resourcePath);
           currentContents = contentsModelFromFileResource(
-            currentResource, resourcePath, false);
+            currentResource, resourcePath, resourceFileType, false);
           currentContents.then((contents: Contents.IModel) => {
             fileList.push(contents);
           });
         }
         return currentContents;
       }).then(() => {
-        contents.content = fileList;
-        return contents as Contents.IModel;
+        return {...contents, content: fileList};
       });
     } else {
-      return Promise.resolve(contents as Contents.IModel);
+      return Promise.resolve(contents);
     }
   } else {
     // Handle the case of getting the contents of a file.
-    let contentType: Contents.ContentType;
-    let mimeType: string | undefined;
-    let format: Contents.FileFormat;
-    if(resource.mimeType === 'application/ipynb' ||
-       resource.mimeType === 'application/json' ||
-       resource.name.indexOf('.ipynb') !== -1) {
-      contentType = 'notebook';
-      format = 'json';
-      mimeType = undefined;
-    } else if(resource.mimeType === 'text/plain') {
-      contentType = 'file';
-      format = 'text';
-      mimeType = 'text/plain';
-    } else {
-      contentType = 'file';
-      format = 'base64';
-      mimeType = lookup(resource.name) || 'application/octet-stream';
-    }
-    let contents: any = {
+    let contents: Contents.IModel = {
       name: resource.name,
       path: path,
-      type: contentType,
+      type: fileType.contentType,
       writable: resource.capabilities.canEdit,
       created: String(resource.createdTime),
       last_modified: String(resource.modifiedTime),
-      mimetype: mimeType,
+      mimetype: fileType.mimeTypes[0],
       content: null,
-      format: format
+      format: fileType.fileFormat
     };
     // Download the contents from the server if necessary.
     if(includeContents) {
       return downloadResource(resource).then((result: any) => {
-        contents.content = contents.format === 'base64' ? btoa(result) : result;
-        return contents as Contents.IModel;
+        let content: any = contents.format === 'base64' ? btoa(result) : result;
+        return { ...contents, content };
       });
     } else {
-      return Promise.resolve(contents as Contents.IModel);
+      return Promise.resolve(contents);
     }
   }
 }
@@ -329,16 +314,21 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, in
  *
  * @returns a promise fulfilled with the a Contents.IModel for the resource.
  */
-function contentsModelFromDummyFileResource(resource: FilesResource, path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+function contentsModelFromDummyFileResource(resource: FilesResource, path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   // Construct the empty Contents.IModel.
-  let contents: any = {
+  let contents: Contents.IModel = {
     name: resource.name,
     path: path,
     type: 'directory',
     writable: false,
+    created: '',
+    last_modified: '',
     content: null,
     mimetype: null,
     format: 'json'
+  }
+  if (includeContents && !fileTypeForPath) {
+    throw Error('Must include fileTypeForPath argument to get directory listing');
   }
   if (resource.name === SHARED_DIRECTORY && includeContents) {
     // If `resource` is the SHARED_DIRECTORY_RESOURCE, and we
@@ -356,31 +346,33 @@ function contentsModelFromDummyFileResource(resource: FilesResource, path: strin
         let resourcePath = path ?
                            path+'/'+currentResource.name :
                            currentResource.name;
-        currentContents = contentsModelFromFileResource(
-          currentResource, resourcePath, false);
+        let resourceFileType = fileTypeForPath(resourcePath);
+        currentContents = contentsModelFromFileResource(currentResource,
+          resourcePath, resourceFileType, false, fileTypeForPath);
         currentContents.then((contents: Contents.IModel) => {
           fileList.push(contents);
         });
       }
       return currentContents;
     }).then(() => {
-      contents.content = fileList;
-      return contents as Contents.IModel;
+      let content = fileList;
+      return { ...contents, content };
     });
   } else if (resource.name === '' && includeContents) {
     // If `resource` is the pseudo-root directory, construct
     // a contents model for it.
     let sharedContentsPromise = contentsModelFromFileResource(
-      SHARED_DIRECTORY_RESOURCE, SHARED_DIRECTORY, false);
+      SHARED_DIRECTORY_RESOURCE, SHARED_DIRECTORY, directoryFileType,
+      false, fileTypeForPath);
     let rootContentsPromise = resourceFromFileId('root').then(
       (rootResource) => {
         return contentsModelFromFileResource(rootResource,
                                              DRIVE_DIRECTORY,
-                                             false);
+                                             directoryFileType,
+                                             false, fileTypeForPath);
       });
     return Promise.all([rootContentsPromise, sharedContentsPromise]).then(c => {
-      contents.content = c;
-      return contents as Contents.IModel;
+      return { ...contents, content: c };
     });
   } else {
     // Otherwise return the (mostly) empty contents model.
@@ -400,9 +392,10 @@ function contentsModelFromDummyFileResource(resource: FilesResource, path: strin
  *   Otherwise, throws an error.
  */
 export
-function contentsModelForPath(path: string, includeContents: boolean = false): Promise<Contents.IModel> {
+function contentsModelForPath(path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
+  let fileType = fileTypeForPath(path);
   return getResourceForPath(path).then((resource: FilesResource) => {
-    return contentsModelFromFileResource(resource, path, includeContents)
+    return contentsModelFromFileResource(resource, path, fileType, includeContents, fileTypeForPath)
   });
 }
 
@@ -593,13 +586,13 @@ function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
  *   Otherwise, throws an error.
  */
 export
-function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(newPath))) {
     return Promise.reject(
       `GoogleDrive: "${newPath}" is not a valid target`);
   }
   if( oldPath === newPath ) {
-    return contentsModelForPath(oldPath);
+    return contentsModelForPath(oldPath, false, fileTypeForPath);
   } else {
     let newFolderPath = PathExt.dirname(newPath);
     newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
@@ -642,7 +635,7 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
       Private.resourceCache.delete(oldPath);
       Private.resourceCache.set(newPath, response);
 
-      return contentsModelForPath(newPath);
+      return contentsModelForPath(newPath, false, fileTypeForPath);
     });
   }
 }
@@ -662,7 +655,7 @@ function moveFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
  *   Otherwise, throws an error.
  */
 export
-function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
+function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(newPath))) {
     return Promise.reject(
       `GoogleDrive: "${newPath}" is not a valid target location`);
@@ -708,7 +701,7 @@ function copyFile(oldPath: string, newPath: string): Promise<Contents.IModel> {
     }).then((response: FilesResource) => {
       // Update the cache.
       Private.resourceCache.set(newPath, response);
-      return contentsModelForPath(newPath);
+      return contentsModelForPath(newPath, false, fileTypeForPath);
     });
   }
 }
@@ -799,7 +792,7 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
  * @returns a promise fulfilled when the file is reverted.
  */
 export
-function revertToRevision(path: string, revisionId: string): Promise<void> {
+function revertToRevision(path: string, revisionId: string, fileType: DocumentRegistry.IFileType): Promise<void> {
   let revisionResource: RevisionResource;
   // Get the correct file resource.
   return getResourceForPath(path).then((resource: FilesResource) => {
@@ -814,39 +807,21 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
     return driveApiRequest(downloadRequest);
   }).then((result: any) => {
 
-    let contentType: Contents.ContentType;
-    let mimeType: string | undefined;
-    let format: Contents.FileFormat;
-    if(revisionResource.mimeType === 'application/ipynb' ||
-       revisionResource.mimeType === 'application/json') {
-      contentType = 'notebook';
-      format = 'json';
-      mimeType = undefined;
-    } else if(revisionResource.mimeType === 'text/plain') {
-      contentType = 'file';
-      format = 'text';
-      mimeType = 'text/plain';
-    } else {
-      contentType = 'file';
-      format = 'base64';
-      mimeType = lookup(path) || 'application/octet-stream';
-    }
-    // Reconstruct the Contents.IModel from the retrieved contents.
-    let contents: Partial<Contents.IModel> = {
+    let contents: Contents.IModel = {
       name: revisionResource.name,
       path: path,
-      type: contentType,
+      type: fileType.contentType,
       writable: revisionResource.capabilities.canEdit,
       created: String(revisionResource.createdTime),
       // TODO What is the appropriate modified time?
       last_modified: String(revisionResource.modifiedTime),
-      mimetype: mimeType,
+      mimetype: fileType.mimeTypes[0],
       content: result,
-      format: format
+      format: fileType.fileFormat
     };
 
     // Reupload the reverted file to the head revision.
-    return uploadFile(path, contents, true);
+    return uploadFile(path, contents, fileType, true);
   }).then(() => {
     return void 0;
   });
@@ -866,30 +841,10 @@ function revertToRevision(path: string, revisionId: string): Promise<void> {
  * This does not include any of the binary/text/json content of the
  * `contents`, just some metadata (`name` and `mimeType`).
  */
-function fileResourceFromContentsModel(contents: Partial<Contents.IModel>): FilesResource {
-  let mimeType = '';
-  switch (contents.type) {
-    case 'directory':
-      mimeType = FOLDER_MIMETYPE;
-      break;
-    case 'notebook':
-      mimeType = 'application/ipynb';
-      break;
-    case 'file':
-      if(contents.format) {
-        if(contents.format === 'text')
-          mimeType = 'text/plain';
-        else if (contents.format === 'base64')
-          if (contents.path) {
-            mimeType = lookup(contents.path) || 'application/octet-stream';
-          } else {
-            mimeType = 'application/octet-stream';
-          }
-      }
-      break;
-    default:
-      throw new Error('Invalid contents type');
-  }
+function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType): FilesResource {
+  let mimeType = fileType.contentType === 'directory' ?
+                 FOLDER_MIMETYPE :
+                 fileType.mimeTypes[0];
   return {
     name: contents.name,
     mimeType: mimeType
