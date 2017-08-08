@@ -23,9 +23,7 @@
   ],
   "jupyterlab": {
     "extension": true,
-    "schemas": [
-      "schema/jupyter.extensions.google-drive.json"
-    ]
+    "schemaDir": "schema"
   },
   "scripts": {
     "build": "tsc",
