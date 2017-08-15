@@ -145,6 +145,11 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
         if(!isDirectory(parentFolderResource)) {
            throw new Error("Google Drive: expected a folder: "+path);
         }
+        if(parentFolderResource.kind === 'drive#teamDrive') {
+          resource.teamDriveId = parentFolderResource.id;
+        } else if (parentFolderResource.teamDriveId) {
+          resource.teamDriveId = parentFolderResource.teamDriveId;
+        }
         resource.parents = [parentFolderResource.id];
         resolve(resource);
       });
@@ -194,6 +199,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
       method: method,
       params: {
         uploadType: 'multipart',
+        supportsTeamDrives: !!(resource.teamDriveId),
         fields: RESOURCE_FIELDS
         },
       headers: {
