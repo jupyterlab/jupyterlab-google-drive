@@ -707,6 +707,8 @@ declare module gapi.client.drive {
             supportsTeamDrives?: boolean,
             // The Team Drive from which changes will be returned. If specified the change IDs will be reflective of the Team Drive; use the combined Team Drive ID and change ID as an identifier.
             teamDriveId?: string,
+            // Request body data.
+            resource?: Partial<Channel>,
         }) : gapi.client.HttpRequest<Channel>;        
         
     }
@@ -729,6 +731,8 @@ declare module gapi.client.drive {
             quotaUser?: string,
             // IP address of the site where the request originates. Use this if you want to enforce per-user limits.
             userIp?: string,
+            // Request body data.
+            resource?: Partial<Channel>,
         }) : gapi.client.HttpRequest<void>;        
         
     }
@@ -753,6 +757,8 @@ declare module gapi.client.drive {
             userIp?: string,
             // The ID of the file.
             fileId: string,
+            // Request body data.
+            resource?: Partial<Comment>,
         }) : gapi.client.HttpRequest<Comment>;        
         
         // Deletes a comment.
@@ -849,6 +855,8 @@ declare module gapi.client.drive {
             commentId: string,
             // The ID of the file.
             fileId: string,
+            // Request body data.
+            resource?: Partial<Comment>,
         }) : gapi.client.HttpRequest<Comment>;        
         
     }
@@ -881,6 +889,8 @@ declare module gapi.client.drive {
             ocrLanguage?: string,
             // Whether the requesting application supports Team Drives.
             supportsTeamDrives?: boolean,
+            // Request body data.
+            resource?: Partial<File>,
         }) : gapi.client.HttpRequest<File>;        
         
         // Creates a new file.
@@ -909,6 +919,8 @@ declare module gapi.client.drive {
             supportsTeamDrives?: boolean,
             // Whether to use the uploaded content as indexable text.
             useContentAsIndexableText?: boolean,
+            // Media resource metadata.
+            resource?: Partial<File>,
         }) : gapi.client.HttpRequest<File>;        
         
         // Permanently deletes a file owned by the user without moving it to the trash. If the file belongs to a Team Drive the user must be an organizer on the parent. If the target is a folder, all descendants owned by the user are also deleted.
@@ -1087,6 +1099,8 @@ declare module gapi.client.drive {
             supportsTeamDrives?: boolean,
             // Whether to use the uploaded content as indexable text.
             useContentAsIndexableText?: boolean,
+            // Media resource metadata.
+            resource?: Partial<File>,
         }) : gapi.client.HttpRequest<File>;        
         
         // Subscribes to changes to a file
@@ -1111,6 +1125,8 @@ declare module gapi.client.drive {
             fileId: string,
             // Whether the requesting application supports Team Drives.
             supportsTeamDrives?: boolean,
+            // Request body data.
+            resource?: Partial<Channel>,
         }) : gapi.client.HttpRequest<Channel>;        
         
     }
@@ -1143,6 +1159,8 @@ declare module gapi.client.drive {
             supportsTeamDrives?: boolean,
             // Whether to transfer ownership to the specified user and downgrade the current owner to a writer. This parameter is required as an acknowledgement of the side effect.
             transferOwnership?: boolean,
+            // Request body data.
+            resource?: Partial<Permission>,
         }) : gapi.client.HttpRequest<Permission>;        
         
         // Deletes a permission.
@@ -1245,6 +1263,8 @@ declare module gapi.client.drive {
             supportsTeamDrives?: boolean,
             // Whether to transfer ownership to the specified user and downgrade the current owner to a writer. This parameter is required as an acknowledgement of the side effect.
             transferOwnership?: boolean,
+            // Request body data.
+            resource?: Partial<Permission>,
         }) : gapi.client.HttpRequest<Permission>;        
         
     }
@@ -1271,6 +1291,8 @@ declare module gapi.client.drive {
             commentId: string,
             // The ID of the file.
             fileId: string,
+            // Request body data.
+            resource?: Partial<Reply>,
         }) : gapi.client.HttpRequest<Reply>;        
         
         // Deletes a reply.
@@ -1373,6 +1395,8 @@ declare module gapi.client.drive {
             fileId: string,
             // The ID of the reply.
             replyId: string,
+            // Request body data.
+            resource?: Partial<Reply>,
         }) : gapi.client.HttpRequest<Reply>;        
         
     }
@@ -1469,6 +1493,8 @@ declare module gapi.client.drive {
             fileId: string,
             // The ID of the revision.
             revisionId: string,
+            // Request body data.
+            resource?: Partial<Revision>,
         }) : gapi.client.HttpRequest<Revision>;        
         
     }
@@ -1493,6 +1519,8 @@ declare module gapi.client.drive {
             userIp?: string,
             // An ID, such as a random UUID, which uniquely identifies this user's request for idempotent creation of a Team Drive. A repeated request by the same user and with the same request ID will avoid creating duplicates by attempting to create the same Team Drive. If the Team Drive already exists a 409 error will be returned.
             requestId: string,
+            // Request body data.
+            resource?: Partial<TeamDrive>,
         }) : gapi.client.HttpRequest<TeamDrive>;        
         
         // Permanently deletes a Team Drive for which the user is an organizer. The Team Drive cannot contain any untrashed items.
@@ -1575,6 +1603,8 @@ declare module gapi.client.drive {
             userIp?: string,
             // The ID of the Team Drive
             teamDriveId: string,
+            // Request body data.
+            resource?: Partial<TeamDrive>,
         }) : gapi.client.HttpRequest<TeamDrive>;        
         
     }
