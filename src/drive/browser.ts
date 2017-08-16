@@ -231,7 +231,7 @@ class GoogleDriveLogin extends Widget {
             this._button.style.visibility = 'visible';
           });
         }
-      }).catch( (err: any) => {
+      }).catch((err: any) => {
         showDialog({
           title: 'Google API Error',
           body: err,
