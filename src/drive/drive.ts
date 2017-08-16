@@ -1009,7 +1009,7 @@ function getResourceForRelativePath(pathComponent: string, folderId: string, tea
     if (teamDriveId) {
       requestParams = {
         supportsTeamDrives: true,
-        includeTeamDrives: true,
+        includeTeamDriveItems: true,
         corpora: 'teamDrive',
         teamDriveId: teamDriveId,
         ...requestParams
