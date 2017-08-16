@@ -1,6 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+/// <reference path="./gapi.client.drive.d.ts" />
+
 import {
   map, filter, toArray
 } from '@phosphor/algorithm';
@@ -21,8 +23,6 @@ import {
   driveApiRequest, gapiAuthorized, gapiInitialized
 } from '../gapi';
 
-//TODO: Complete gapi typings and commit upstream
-declare let gapi: any;
 
 const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,headRevisionId,'+
                       'parents,modifiedTime,createdTime,capabilities,'+
@@ -440,7 +440,7 @@ function createPermissions (resource: FilesResource, emailAddresses: string[] ):
     return Promise.resolve(void 0);
   }
   // Create a batch request for permissions.
-  let batch = gapi.client.newBatch();
+  let batch = (gapi as any).client.newBatch();
   for (let address of emailAddresses) {
     let permissionRequest = {
       'type': 'user',
@@ -649,8 +649,10 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
           fileId: resource.id,
           addParents: newFolder.id,
           removeParents: resource.parents[0],
-          name: newName,
-          fields: RESOURCE_FIELDS
+          fields: RESOURCE_FIELDS,
+          resource: {
+            name: newName
+          }
         });
         return driveApiRequest(request);
       }
@@ -719,9 +721,11 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       } else {
         let request: DriveApiRequest = gapi.client.drive.files.copy({
           fileId: resource.id,
-          parents: [newFolder.id],
-          name: newName,
-          fields: RESOURCE_FIELDS
+          fields: RESOURCE_FIELDS,
+          resource: {
+            parents: [newFolder.id],
+            name: newName
+          }
         });
         return driveApiRequest(request);
       }
@@ -777,7 +781,9 @@ function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
     let request: DriveApiRequest = gapi.client.drive.revisions.update({
       fileId: resource.id,
       revisionId: resource.headRevisionId,
-      keepForever: true
+      resource: {
+        keepForever: true
+      }
     });
     return driveApiRequest(request);
   }).then((revision: RevisionResource) => {
@@ -801,7 +807,9 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
     let request: DriveApiRequest = gapi.client.drive.revisions.update({
       fileId: resource.id,
       revisionId: revisionId,
-      keepForever: false
+      resource: {
+        keepForever: false
+      }
     });
     return driveApiRequest(request);
   }).then(() => {
@@ -920,7 +928,7 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
     let query = 'name = \'' + pathComponent + '\' and trashed = false '
                 + 'and \'' + folderId + '\' in parents';
     // Construct a request for the files matching the query.
-    let request: string = gapi.client.drive.files.list({
+    let request = gapi.client.drive.files.list({
       q: query,
       fields: 'files('+RESOURCE_FIELDS+')'
     });
