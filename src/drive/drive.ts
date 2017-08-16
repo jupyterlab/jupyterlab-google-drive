@@ -164,10 +164,8 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     // filebrowser/src/model.ts, anything that is not a
     // notebook is a base64 encoded string.
     if (model.format === 'base64') {
-      // Google drive has some trouble parsing base64 encoded things
-      // in such a way that they will continue being useful. Just
-      // decode them client-side for now.
-      body +='\r\n' + atob(model.content) + closeDelim;
+      body += 'Content-Transfer-Encoding: base64\r\n';
+      body +='\r\n' + model.content + closeDelim;
     } else if (model.format === 'text') {
       // If it is already a text string, just send that.
       body +='\r\n' + model.content + closeDelim;
