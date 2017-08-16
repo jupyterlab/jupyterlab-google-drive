@@ -135,7 +135,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
           if (result.button.accept) {
             // Get the file resource for the path and create
             // permissions for the valid email addresses.
-            let addresses: string[] = result.value;
+            let addresses = result.value!;
             let localPath = path.split(':').pop();
             getResourceForPath(localPath!).then((resource) => {
               createPermissions(resource, addresses);
