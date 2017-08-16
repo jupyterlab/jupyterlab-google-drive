@@ -378,8 +378,8 @@ class GoogleDrive implements Contents.IDrive {
     // Get the file listing for the directory.
     let query = 'name contains \''+baseName+
                 '\' and name contains \''+ext+'\'';
-    return drive.searchDirectory(path, query).then((resourceList: any[]) => {
-      let existingNames: any= {};
+    return drive.searchDirectory(path, query).then((resourceList) => {
+      let existingNames: any = {};
       for( let i = 0; i < resourceList.length; i++) {
         existingNames[resourceList[i].name] = true;
       }

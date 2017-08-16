@@ -1,6 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+/// <reference path="./gapi.client.drive.d.ts" />
+
 import {
   map, filter, toArray
 } from '@phosphor/algorithm';
@@ -21,8 +23,6 @@ import {
   driveApiRequest, gapiAuthorized, gapiInitialized
 } from '../gapi';
 
-//TODO: Complete gapi typings and commit upstream
-declare let gapi: any;
 
 const RESOURCE_FIELDS='kind,id,name,mimeType,trashed,headRevisionId,'+
                       'parents,modifiedTime,createdTime,capabilities,'+
@@ -38,23 +38,17 @@ const FILE_MIMETYPE = 'application/vnd.google-apps.file';
 const MULTIPART_BOUNDARY = '-------314159265358979323846';
 
 /**
- * Type stub for a files resource returned by
+ * Type alias for a files resource returned by
  * the Google Drive API.
  */
 export
-type FilesResource = any;
+type FileResource = gapi.client.drive.File;
 
 /**
- * Type stub for a Google Drive API request
+ * Type alias for a Google Drive revision resource.
  */
 export
-type DriveApiRequest = any;
-
-/**
- * Type stub for a Google Drive revision resource.
- */
-export
-type RevisionResource = any;
+type RevisionResource = gapi.client.drive.Revision;
 
 
 /**
@@ -80,7 +74,7 @@ const COLLECTIONS_DIRECTORY = '';
 /**
  * A dummy files resource for the "Shared with me" folder.
  */
-const SHARED_DIRECTORY_RESOURCE: FilesResource = {
+const SHARED_DIRECTORY_RESOURCE: FileResource = {
   kind: 'dummy',
   name: SHARED_DIRECTORY,
 }
@@ -88,7 +82,7 @@ const SHARED_DIRECTORY_RESOURCE: FilesResource = {
 /**
  * A dummy files resource for the pseudo-root folder.
  */
-const COLLECTIONS_DIRECTORY_RESOURCE: FilesResource = {
+const COLLECTIONS_DIRECTORY_RESOURCE: FileResource = {
   kind: 'dummy',
   name: '',
 }
@@ -105,7 +99,7 @@ const COLLECTIONS_DIRECTORY_RESOURCE: FilesResource = {
  */
 export
 function urlForFile(path: string): Promise<string> {
-  return getResourceForPath(path).then((resource: FilesResource) => {
+  return getResourceForPath(path).then((resource: FileResource) => {
     return resource.webContentLink;
   });
 }
@@ -134,22 +128,22 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
   if(existing) {
     resourceReadyPromise = getResourceForPath(path)
   } else {
-    resourceReadyPromise = new Promise<FilesResource>((resolve, reject) => {
+    resourceReadyPromise = new Promise<FileResource>((resolve, reject) => {
       let enclosingFolderPath = PathExt.dirname(path);
       enclosingFolderPath =
         enclosingFolderPath === '.' ? '' : enclosingFolderPath;
-      let resource: FilesResource = fileResourceFromContentsModel(model, fileType);
+      let resource: FileResource = fileResourceFromContentsModel(model, fileType);
       getResourceForPath(enclosingFolderPath)
-      .then((parentFolderResource: FilesResource) => {
+      .then((parentFolderResource: FileResource) => {
         if(parentFolderResource.mimeType !== FOLDER_MIMETYPE) {
            throw new Error("Google Drive: expected a folder: "+path);
         }
-        resource['parents'] = [parentFolderResource.id];
+        resource.parents = [parentFolderResource.id];
         resolve(resource);
       });
     });
   }
-  return resourceReadyPromise.then((resource: FilesResource) => {
+  return resourceReadyPromise.then((resource: FileResource) => {
     // Construct the HTTP request: first the metadata,
     // then the content of the uploaded file.
 
@@ -201,8 +195,8 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
       body: body
     });
 
-    return driveApiRequest(request);
-  }).then((result: FilesResource) => {
+    return driveApiRequest<FileResource>(request);
+  }).then((result) => {
     console.log("gapi: uploaded document to "+result.id);
     // Update the cache.
     Private.resourceCache.set(path, result);
@@ -231,7 +225,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
  * @returns a promise fulfilled with the Contents.IModel for the resource.
  */
 export
-function contentsModelFromFileResource(resource: FilesResource, path: string, fileType: DocumentRegistry.IFileType, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType | undefined = undefined): Promise<Contents.IModel> {
+function contentsModelFromFileResource(resource: FileResource, path: string, fileType: DocumentRegistry.IFileType, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType | undefined = undefined): Promise<Contents.IModel> {
   // Handle the exception of the dummy directories
   if (resource.kind === 'dummy') {
     return contentsModelFromDummyFileResource(resource, path, includeContents, fileTypeForPath);
@@ -256,8 +250,8 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, fi
       if (!fileTypeForPath) {
         throw Error('Must include fileTypeForPath argument to get directory listing');
       }
-      let fileList: FilesResource[] = [];
-      return searchDirectory(path).then((resources: FilesResource[]) => {
+      let fileList: FileResource[] = [];
+      return searchDirectory(path).then((resources: FileResource[]) => {
         //Update the cache.
         Private.clearCacheForDirectory(path);
         Private.populateCacheForDirectory(path, resources);
@@ -332,7 +326,7 @@ function contentsModelFromFileResource(resource: FilesResource, path: string, fi
  *
  * @returns a promise fulfilled with the a Contents.IModel for the resource.
  */
-function contentsModelFromDummyFileResource(resource: FilesResource, path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
+function contentsModelFromDummyFileResource(resource: FileResource, path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   // Construct the empty Contents.IModel.
   let contents: Contents.IModel = {
     name: resource.name,
@@ -352,7 +346,7 @@ function contentsModelFromDummyFileResource(resource: FilesResource, path: strin
     // If `resource` is the SHARED_DIRECTORY_RESOURCE, and we
     // need the file listing for it, then get them.
     let fileList: Contents.IModel[] = [];
-    return searchSharedFiles().then((resources: FilesResource[]) => {
+    return searchSharedFiles().then((resources: FileResource[]) => {
       //Update the cache.
       Private.clearCacheForDirectory(path);
       Private.populateCacheForDirectory(path, resources);
@@ -415,7 +409,7 @@ function contentsModelFromDummyFileResource(resource: FilesResource, path: strin
 export
 function contentsModelForPath(path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   let fileType = fileTypeForPath(path);
-  return getResourceForPath(path).then((resource: FilesResource) => {
+  return getResourceForPath(path).then((resource: FileResource) => {
     return contentsModelFromFileResource(resource, path, fileType, includeContents, fileTypeForPath)
   });
 }
@@ -426,7 +420,7 @@ function contentsModelForPath(path: string, includeContents: boolean, fileTypeFo
 /**
  * Give edit permissions to a Google drive user.
  *
- * @param resource: the FilesResource to share.
+ * @param resource: the FileResource to share.
  *
  * @param emailAddresses - the email addresses of the users for which
  *   to create the permissions.
@@ -434,13 +428,15 @@ function contentsModelForPath(path: string, includeContents: boolean, fileTypeFo
  * @returns a promise fulfilled when the permissions are created.
  */
 export
-function createPermissions (resource: FilesResource, emailAddresses: string[] ): Promise<void> {
+function createPermissions (resource: FileResource, emailAddresses: string[] ): Promise<void> {
   // Do nothing for an empty list.
   if (emailAddresses.length === 0) {
     return Promise.resolve(void 0);
   }
   // Create a batch request for permissions.
-  let batch = gapi.client.newBatch();
+  // Note: the typings for gapi.client are missing
+  // the newBatch() function, which creates an HttpBatchRequest
+  let batch: any = (gapi as any).client.newBatch();
   for (let address of emailAddresses) {
     let permissionRequest = {
       'type': 'user',
@@ -456,7 +452,7 @@ function createPermissions (resource: FilesResource, emailAddresses: string[] ):
     batch.add(request);
   }
   // Submit the batch request.
-  return driveApiRequest(batch).then((result: any) => {
+  return driveApiRequest<any>(batch).then(() => {
     return void 0;
   });
 }
@@ -478,7 +474,7 @@ function createRealtimeDocument(): Promise<string> {
         name: 'jupyterlab_realtime_file'
         }
   });
-  return driveApiRequest(request).then((result: FilesResource) => {
+  return driveApiRequest<FileResource>(request).then((result) => {
     console.log("gapi: created realtime document "+result.id);
     return result.id;
   });
@@ -492,13 +488,13 @@ function createRealtimeDocument(): Promise<string> {
  * @returns a promise fulfilled with the realtime document model.
  */
 export
-function loadRealtimeDocument(resource: FilesResource, picked: boolean = false): Promise<gapi.drive.realtime.Document> {
+function loadRealtimeDocument(resource: FileResource, picked: boolean = false): Promise<gapi.drive.realtime.Document> {
   return new Promise((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
       console.log("gapi: attempting to load realtime file " + resource.id);
-      gapi.drive.realtime.load(resource.id, (doc: gapi.drive.realtime.Document ): any => {
+      gapi.drive.realtime.load(resource.id, (doc: gapi.drive.realtime.Document ) => {
         resolve(doc);
-      }, (model: any) => {
+      }, (model: gapi.drive.realtime.Model) => {
         /* no-op initializer */
       }, (err: any) => {
         // If there is a not found error, we may need to invoke
@@ -517,9 +513,9 @@ function loadRealtimeDocument(resource: FilesResource, picked: boolean = false):
  */
 export
 function deleteFile(path: string): Promise<void> {
-  return getResourceForPath(path).then((resource: FilesResource) => {
-    let request: DriveApiRequest = gapi.client.drive.files.delete({fileId: resource.id});
-    return driveApiRequest(request, 204);
+  return getResourceForPath(path).then((resource: FileResource) => {
+    let request = gapi.client.drive.files.delete({ fileId: resource.id });
+    return driveApiRequest<void>(request, 204);
   }).then(() => {
     //Update the cache
     Private.resourceCache.delete(path);
@@ -545,8 +541,8 @@ function deleteFile(path: string): Promise<void> {
  *   match the query string.
  */
 export
-function searchDirectory(path: string, query: string = ''): Promise<FilesResource[]> {
-  return getResourceForPath(path).then((resource: FilesResource) => {
+function searchDirectory(path: string, query: string = ''): Promise<FileResource[]> {
+  return getResourceForPath(path).then((resource: FileResource) => {
     // Check to make sure this is a folder.
     if(resource.mimeType !== FOLDER_MIMETYPE) {
       throw new Error("Google Drive: expected a folder: "+path);
@@ -561,7 +557,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FilesResourc
       fields: 'files('+RESOURCE_FIELDS+')'
     });
     return driveApiRequest(request);
-  }).then((result: any) => {
+  }).then((result: gapi.client.drive.FileList) => {
     return result.files;
   });
 }
@@ -578,7 +574,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FilesResourc
  * shared with the user.
  */
 export
-function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
+function searchSharedFiles(query: string = ''): Promise<FileResource[]> {
   return gapiInitialized.promise.then(() => {
     // Construct the query.
     let fullQuery = 'sharedWithMe = true';
@@ -589,7 +585,7 @@ function searchSharedFiles(query: string = ''): Promise<FilesResource[]> {
       fields: 'files('+RESOURCE_FIELDS+')'
     });
     return driveApiRequest(request);
-  }).then((result: any) => {
+  }).then((result: gapi.client.drive.FileList) => {
     return result.files;
   });
 }
@@ -645,16 +641,18 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
         throw new Error("Google Drive: File with the same name "+
                         "already exists in the destination directory");
       } else {
-        let request: DriveApiRequest = gapi.client.drive.files.update({
+        let request = gapi.client.drive.files.update({
           fileId: resource.id,
           addParents: newFolder.id,
           removeParents: resource.parents[0],
-          name: newName,
-          fields: RESOURCE_FIELDS
+          fields: RESOURCE_FIELDS,
+          resource: {
+            name: newName
+          }
         });
         return driveApiRequest(request);
       }
-    }).then((response: FilesResource) => {
+    }).then((response: FileResource) => {
       // Update the cache.
       Private.resourceCache.delete(oldPath);
       Private.resourceCache.set(newPath, response);
@@ -717,15 +715,17 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
         throw new Error("Google Drive: File with the same name "+
                         "already exists in the destination directory");
       } else {
-        let request: DriveApiRequest = gapi.client.drive.files.copy({
+        let request = gapi.client.drive.files.copy({
           fileId: resource.id,
-          parents: [newFolder.id],
-          name: newName,
-          fields: RESOURCE_FIELDS
+          fields: RESOURCE_FIELDS,
+          resource: {
+            parents: [newFolder.id],
+            name: newName
+          }
         });
-        return driveApiRequest(request);
+        return driveApiRequest<FileResource>(request);
       }
-    }).then((response: FilesResource) => {
+    }).then((response) => {
       // Update the cache.
       Private.resourceCache.set(newPath, response);
       return contentsModelForPath(newPath, false, fileTypeForPath);
@@ -746,13 +746,13 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
  */
 export
 function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
-  return getResourceForPath(path).then((resource: FilesResource) => {
-    let request: DriveApiRequest = gapi.client.drive.revisions.list({
+  return getResourceForPath(path).then((resource: FileResource) => {
+    let request = gapi.client.drive.revisions.list({
       fileId: resource.id,
       fields: 'revisions(id, modifiedTime, keepForever)' //NOT DOCUMENTED
     });
-    return driveApiRequest(request);
-  }).then((result: any) => {
+    return driveApiRequest<gapi.client.drive.RevisionList>(request);
+  }).then((result) => {
     let revisions = map(filter(result.revisions, (revision: RevisionResource) => {
       return revision.keepForever;
     }), (revision: RevisionResource) => {
@@ -773,14 +773,16 @@ function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
  */
 export
 function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
-  return getResourceForPath(path).then((resource: FilesResource) => {
-    let request: DriveApiRequest = gapi.client.drive.revisions.update({
+  return getResourceForPath(path).then((resource: FileResource) => {
+    let request = gapi.client.drive.revisions.update({
       fileId: resource.id,
       revisionId: resource.headRevisionId,
-      keepForever: true
+      resource: {
+        keepForever: true
+      }
     });
-    return driveApiRequest(request);
-  }).then((revision: RevisionResource) => {
+    return driveApiRequest<RevisionResource>(request);
+  }).then((revision) => {
     return { id: revision.id, last_modified: revision.modifiedTime };
   });
 }
@@ -797,13 +799,15 @@ function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
  */
 export
 function unpinRevision(path: string, revisionId: string): Promise<void> {
-  return getResourceForPath(path).then((resource: FilesResource) => {
-    let request: DriveApiRequest = gapi.client.drive.revisions.update({
+  return getResourceForPath(path).then((resource: FileResource) => {
+    let request = gapi.client.drive.revisions.update({
       fileId: resource.id,
       revisionId: revisionId,
-      keepForever: false
+      resource: {
+        keepForever: false
+      }
     });
-    return driveApiRequest(request);
+    return driveApiRequest<RevisionResource>(request);
   }).then(() => {
     return void 0;
   });
@@ -822,18 +826,18 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
  */
 export
 function revertToRevision(path: string, revisionId: string, fileType: DocumentRegistry.IFileType): Promise<void> {
-  let revisionResource: RevisionResource;
+  let revisionResource: FileResource;
   // Get the correct file resource.
-  return getResourceForPath(path).then((resource: FilesResource) => {
+  return getResourceForPath(path).then((resource: FileResource) => {
     revisionResource = resource;
     // Construct the request for a specific revision to the file.
-    let downloadRequest: DriveApiRequest = gapi.client.drive.revisions.get({
+    let downloadRequest = gapi.client.drive.revisions.get({
      fileId: revisionResource.id,
      revisionId: revisionId,
      alt: 'media'
     });
     // Make the request.
-    return driveApiRequest(downloadRequest);
+    return driveApiRequest<any>(downloadRequest);
   }).then((result: any) => {
     let content: any = result;
     if (fileType.fileFormat === 'base64') {
@@ -877,7 +881,7 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
  * This does not include any of the binary/text/json content of the
  * `contents`, just some metadata (`name` and `mimeType`).
  */
-function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType): FilesResource {
+function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType): FileResource {
   let mimeType: string;
   switch(contents.type) {
     case 'notebook':
@@ -914,25 +918,26 @@ function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileT
  * @returns A promise fulfilled by either the files resource for the given
  *   file/folder, or rejected with an Error object.
  */
-function getResourceForRelativePath(pathComponent: string, folderId: string): Promise<FilesResource> {
+function getResourceForRelativePath(pathComponent: string, folderId: string): Promise<FileResource> {
   return gapiInitialized.promise.then(() => {
     // Construct a search query for the file at hand.
     let query = 'name = \'' + pathComponent + '\' and trashed = false '
                 + 'and \'' + folderId + '\' in parents';
     // Construct a request for the files matching the query.
-    let request: string = gapi.client.drive.files.list({
+    let request = gapi.client.drive.files.list({
       q: query,
       fields: 'files('+RESOURCE_FIELDS+')'
     });
     // Make the request.
-    return driveApiRequest(request).then((result: any) => {
-      let files: FilesResource[] = result.files;
+    return driveApiRequest<gapi.client.drive.FileList>(request)
+    .then((result) => {
+      let files: FileResource[] = result.files;
       if (!files || files.length === 0) {
-        return Promise.reject(
+        throw Error(
           "Google Drive: cannot find the specified file/folder: "
           +pathComponent);
       } else if (files.length > 1) {
-        return Promise.reject(
+        throw Error(
           "Google Drive: multiple files/folders match: "
           +pathComponent);
       }
@@ -950,13 +955,13 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
  * @returns A promise that resolves with the files resource
  *   corresponding to `id`.
  */
-function resourceFromFileId(id: string): Promise<FilesResource> {
+function resourceFromFileId(id: string): Promise<FileResource> {
   return gapiInitialized.promise.then(() => {
-    let request: DriveApiRequest = gapi.client.drive.files.get({
+    let request = gapi.client.drive.files.get({
      fileId: id,
      fields: RESOURCE_FIELDS
     });
-    return driveApiRequest(request).then((result: FilesResource) => {
+    return driveApiRequest<FileResource>(request).then((result) => {
       return result;
     });
   });
@@ -991,7 +996,7 @@ function isDummy(path: string): boolean {
  *   or an Error object on error.
  */
 export
-function getResourceForPath(path: string): Promise<FilesResource> {
+function getResourceForPath(path: string): Promise<FileResource> {
   // First check the cache.
   if( Private.resourceCache.has(path)) {
     return Promise.resolve(Private.resourceCache.get(path));
@@ -1009,9 +1014,9 @@ function getResourceForPath(path: string): Promise<FilesResource> {
   } else if (components.length === 1 && components[0] === SHARED_DIRECTORY) {
     return Promise.resolve(SHARED_DIRECTORY_RESOURCE);
   } else {
-    // Create a Promise of a FilesResource to walk the path until
+    // Create a Promise of a FileResource to walk the path until
     // we find the right file.
-    let currentResource: Promise<FilesResource>;
+    let currentResource: Promise<FileResource>;
     let idx = 0; // Current path component index.
 
     if (components[0] === DRIVE_DIRECTORY) {
@@ -1023,11 +1028,11 @@ function getResourceForPath(path: string): Promise<FilesResource> {
       currentResource = searchSharedFiles('name = \''+components[1]+'\'')
       .then(files => {
         if (!files || files.length === 0) {
-          return Promise.reject(
+          throw Error(
             "Google Drive: cannot find the specified file/folder: "
             +components[1]);
         } else if (files.length > 1) {
-          return Promise.reject(
+          throw Error(
             "Google Drive: multiple files/folders match: "
             +components[1]);
         }
@@ -1044,9 +1049,9 @@ function getResourceForPath(path: string): Promise<FilesResource> {
     // Utility function that gets the file resource object given its name,
     // whether it is a file or a folder, and a promise for the resource 
     // object of its containing folder.
-    let getResource = (pathComponent: string, parentResource: Promise<FilesResource>) => {
-      return parentResource.then((resource: FilesResource) => {
-        return getResourceForRelativePath(pathComponent, resource['id']);
+    let getResource = (pathComponent: string, parentResource: Promise<FileResource>) => {
+      return parentResource.then((resource: FileResource) => {
+        return getResourceForRelativePath(pathComponent, resource.id);
       });
     }
 
@@ -1073,13 +1078,13 @@ function getResourceForPath(path: string): Promise<FilesResource> {
  *
  * @returns a promise fulfilled with the contents of the file.
  */
-function downloadResource(resource: FilesResource, picked: boolean = false): Promise<any> {
+function downloadResource(resource: FileResource, picked: boolean = false): Promise<any> {
   return gapiInitialized.promise.then(() => {
-    let request: DriveApiRequest = gapi.client.drive.files.get({
+    let request = gapi.client.drive.files.get({
      fileId: resource.id,
      alt: 'media'
     });
-    return driveApiRequest(request).then((result: any) => {
+    return driveApiRequest<any>(request).then((result) => {
       return result;
     }).catch((error: any) => {
       throw error;
@@ -1094,7 +1099,7 @@ namespace Private {
    * API requests.
    */
   export
-  let resourceCache = new Map<string, FilesResource>();
+  let resourceCache = new Map<string, FileResource>();
 
   /**
    * When we list the contents of a directory we can
@@ -1122,7 +1127,7 @@ namespace Private {
    * the path-based contents manager can't handle those correctly.
    */
   export
-  function populateCacheForDirectory(path: string, resourceList: any[]) {
+  function populateCacheForDirectory(path: string, resourceList: FileResource[]) {
     // Identify duplicates in the list: we can't handle those
     // correctly, so don't insert them.
     let duplicatePaths: string[] = [];

@@ -144,14 +144,14 @@ const INITIAL_DELAY = 250; //250 ms
  * @returns a promse that resolves with the result of the request.
  */
 export
-function driveApiRequest( request: any, successCode: number = 200, attemptNumber: number = 0): Promise<any> {
+function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: number = 200, attemptNumber: number = 0): Promise<T> {
   if(attemptNumber === MAX_API_REQUESTS) {
     console.log(request);
-    return Promise.reject(new Error('Maximum number of API retries reached.'));
+    return Promise.reject('Maximum number of API retries reached.');
   }
-  return new Promise<any>((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
-      request.then( (response: any)=> {
+      request.then( (response) => {
         if(response.status !== successCode) {
           // Handle an HTTP error.
           console.log("gapi: Drive API error: ", response.status);
@@ -163,22 +163,18 @@ function driveApiRequest( request: any, successCode: number = 200, attemptNumber
           // result is in response.body. This is
           // not really documented anywhere I can
           // find, but this seems to fix it.
-          if(response.result === false) {
-            resolve(response.body);
-          } else {
-            resolve(response.result);
-          }
+          resolve(response.result);
         }
-      }, (response: any) => {
+      }, (response) => {
         // Some other error happened. If we are being rate limited,
         // attempt exponential backoff. If that fails, bail.
-        if(response.status === FORBIDDEN_ERROR &&
-           response.result.error.errors[0].reason === RATE_LIMIT_REASON) {
+        if(response.status === FORBIDDEN_ERROR && (response.result.error as any)
+           .errors[0].reason === RATE_LIMIT_REASON) {
           console.log("gapi: Throttling...");
           window.setTimeout( () => {
             // Try again after a delay.
-            driveApiRequest(request, successCode, attemptNumber+1)
-            .then((result: any) => {
+            driveApiRequest<T>(request, successCode, attemptNumber+1)
+            .then((result) => {
               resolve(result);
             });
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
@@ -248,7 +244,7 @@ function signOut(): Promise<void> {
  * @returns a `gapi.auth2.BasicProfile instance.
  */
 export
-function getCurrentUserProfile(): any {
+function getCurrentUserProfile(): gapi.auth2.BasicProfile {
   let user = gapi.auth2.getAuthInstance().currentUser.get();
   return user.getBasicProfile();
 }
@@ -265,7 +261,7 @@ function getCurrentUserProfile(): any {
  * authorization API.
  */
 function refreshAuthToken(): Promise<void> {
-  return new Promise<any>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     let googleAuth = gapi.auth2.getAuthInstance();
     let user = googleAuth.currentUser.get();
     user.reloadAuthResponse().then((authResponse: any) => {
