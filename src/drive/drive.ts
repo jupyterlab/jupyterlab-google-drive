@@ -195,8 +195,8 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
       body: body
     });
 
-    return driveApiRequest(request);
-  }).then((result: FileResource) => {
+    return driveApiRequest<FileResource>(request);
+  }).then((result) => {
     console.log("gapi: uploaded document to "+result.id);
     // Update the cache.
     Private.resourceCache.set(path, result);
@@ -436,7 +436,7 @@ function createPermissions (resource: FileResource, emailAddresses: string[] ): 
   // Create a batch request for permissions.
   // Note: the typings for gapi.client are missing
   // the newBatch() function, which creates an HttpBatchRequest
-  let batch: gapi.client.HttpBatch = (gapi as any).client.newBatch();
+  let batch: any = (gapi as any).client.newBatch();
   for (let address of emailAddresses) {
     let permissionRequest = {
       'type': 'user',
@@ -452,7 +452,7 @@ function createPermissions (resource: FileResource, emailAddresses: string[] ): 
     batch.add(request);
   }
   // Submit the batch request.
-  return driveApiRequest(batch).then(() => {
+  return driveApiRequest<any>(batch).then(() => {
     return void 0;
   });
 }
@@ -474,7 +474,7 @@ function createRealtimeDocument(): Promise<string> {
         name: 'jupyterlab_realtime_file'
         }
   });
-  return driveApiRequest(request).then((result: FileResource) => {
+  return driveApiRequest<FileResource>(request).then((result) => {
     console.log("gapi: created realtime document "+result.id);
     return result.id;
   });
@@ -514,8 +514,8 @@ function loadRealtimeDocument(resource: FileResource, picked: boolean = false): 
 export
 function deleteFile(path: string): Promise<void> {
   return getResourceForPath(path).then((resource: FileResource) => {
-    let request = gapi.client.drive.files.delete({fileId: resource.id});
-    return driveApiRequest(request, 204);
+    let request = gapi.client.drive.files.delete({ fileId: resource.id });
+    return driveApiRequest<void>(request, 204);
   }).then(() => {
     //Update the cache
     Private.resourceCache.delete(path);
@@ -723,9 +723,9 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
             name: newName
           }
         });
-        return driveApiRequest(request);
+        return driveApiRequest<FileResource>(request);
       }
-    }).then((response: FileResource) => {
+    }).then((response) => {
       // Update the cache.
       Private.resourceCache.set(newPath, response);
       return contentsModelForPath(newPath, false, fileTypeForPath);
@@ -751,8 +751,8 @@ function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
       fileId: resource.id,
       fields: 'revisions(id, modifiedTime, keepForever)' //NOT DOCUMENTED
     });
-    return driveApiRequest(request);
-  }).then((result: gapi.client.drive.RevisionList) => {
+    return driveApiRequest<gapi.client.drive.RevisionList>(request);
+  }).then((result) => {
     let revisions = map(filter(result.revisions, (revision: RevisionResource) => {
       return revision.keepForever;
     }), (revision: RevisionResource) => {
@@ -781,8 +781,8 @@ function pinCurrentRevision(path: string): Promise<Contents.ICheckpointModel> {
         keepForever: true
       }
     });
-    return driveApiRequest(request);
-  }).then((revision: RevisionResource) => {
+    return driveApiRequest<RevisionResource>(request);
+  }).then((revision) => {
     return { id: revision.id, last_modified: revision.modifiedTime };
   });
 }
@@ -807,7 +807,7 @@ function unpinRevision(path: string, revisionId: string): Promise<void> {
         keepForever: false
       }
     });
-    return driveApiRequest(request);
+    return driveApiRequest<RevisionResource>(request);
   }).then(() => {
     return void 0;
   });
@@ -837,7 +837,7 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
      alt: 'media'
     });
     // Make the request.
-    return driveApiRequest(downloadRequest);
+    return driveApiRequest<any>(downloadRequest);
   }).then((result: any) => {
     let content: any = result;
     if (fileType.fileFormat === 'base64') {
@@ -929,7 +929,8 @@ function getResourceForRelativePath(pathComponent: string, folderId: string): Pr
       fields: 'files('+RESOURCE_FIELDS+')'
     });
     // Make the request.
-    return driveApiRequest(request).then((result: gapi.client.drive.FileList) => {
+    return driveApiRequest<gapi.client.drive.FileList>(request)
+    .then((result) => {
       let files: FileResource[] = result.files;
       if (!files || files.length === 0) {
         throw Error(
@@ -960,7 +961,7 @@ function resourceFromFileId(id: string): Promise<FileResource> {
      fileId: id,
      fields: RESOURCE_FIELDS
     });
-    return driveApiRequest(request).then((result: FileResource) => {
+    return driveApiRequest<FileResource>(request).then((result) => {
       return result;
     });
   });
@@ -1083,7 +1084,7 @@ function downloadResource(resource: FileResource, picked: boolean = false): Prom
      fileId: resource.id,
      alt: 'media'
     });
-    return driveApiRequest(request).then((result: any) => {
+    return driveApiRequest<any>(request).then((result) => {
       return result;
     }).catch((error: any) => {
       throw error;
