@@ -168,6 +168,9 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
       // in such a way that they will continue being useful. Just
       // decode them client-side for now.
       body +='\r\n' + atob(model.content) + closeDelim;
+    } else if (model.format === 'text') {
+      // If it is already a text string, just send that.
+      body +='\r\n' + model.content + closeDelim;
     } else {
       // Notebook case.
       body +='\r\n' + JSON.stringify(model.content) + closeDelim;
