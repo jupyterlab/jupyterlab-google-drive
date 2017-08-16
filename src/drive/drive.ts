@@ -591,7 +591,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
       throw new Error("Google Drive: expected a folder: "+path);
     }
     // Construct the query.
-    let fullQuery: string = '\''+resource.id+'\' in parents '+
+    let fullQuery: string = `\'${resource.id}\' in parents `+
                             'and trashed = false';
     if(query) fullQuery += ' and '+query;
 
@@ -999,8 +999,8 @@ function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileT
 function getResourceForRelativePath(pathComponent: string, folderId: string, teamDriveId: string = ''): Promise<FileResource> {
   return gapiInitialized.promise.then(() => {
     // Construct a search query for the file at hand.
-    let query = `name = \''${pathComponent}'\' and trashed = false `
-                + `and \''${folderId}'\' in parents`;
+    let query = `name = \'${pathComponent}\' and trashed = false `
+                + `and \'${folderId}\' in parents`;
     // Construct a request for the files matching the query.
     let requestParams: any = {
         q: query,
