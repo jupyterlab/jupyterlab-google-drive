@@ -151,19 +151,22 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
   }
   return new Promise<T>((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
-      request.then( (response) => {
+      request.then((response) => {
         if(response.status !== successCode) {
           // Handle an HTTP error.
           console.log("gapi: Drive API error: ", response.status);
           console.log(response, request);
           reject(makeError(response.result));
         } else {
-          // For some reason, response.result is 
-          // sometimes empty, but the required
-          // result is in response.body. This is
-          // not really documented anywhere I can
-          // find, but this seems to fix it.
-          resolve(response.result);
+          // If the response is note JSON-able, then `response.result`
+          // will be `false`, and the raw data will be in `response.body`.
+          // This happens, e.g., in the case of downloading raw image
+          // data. This fix is a bit of a hack, but seems to work.
+          if(response.result as any !== false) {
+            resolve(response.result);
+          } else {
+            resolve(response.body as any);
+          }
         }
       }, (response) => {
         // Some other error happened. If we are being rate limited,
