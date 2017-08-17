@@ -42,7 +42,7 @@ class GoogleDrive implements Contents.IDrive {
     this._fileTypeForPath = (path: string) => {
       let fileTypes = registry.getFileTypesForPath(path);
       return fileTypes.length === 0 ?
-             registry.getFileType('text') :
+             registry.getFileType('text')! :
              fileTypes[0];
     }
     // Construct a function to return a best-guess IFileType
@@ -165,7 +165,7 @@ class GoogleDrive implements Contents.IDrive {
       model = {
         type: fileType.contentType,
         content: modelFactory.createNew().toJSON(),
-        mimetype: null, // No mimeType for notebooks, apparently.
+        mimetype: fileType.mimeTypes[0],
         format: fileType.fileFormat
       };
     } else if (contentType === 'file') {
@@ -381,7 +381,7 @@ class GoogleDrive implements Contents.IDrive {
     return drive.searchDirectory(path, query).then((resourceList) => {
       let existingNames: any = {};
       for( let i = 0; i < resourceList.length; i++) {
-        existingNames[resourceList[i].name] = true;
+        existingNames[resourceList[i].name!] = true;
       }
 
       // Loop over the list and select the first name that
