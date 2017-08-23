@@ -31,6 +31,7 @@
 
 .jp-GoogleDrive-text {
   font-size: var(--jp-ui-font-size3);
+  color: var(--jp-ui-font-color1);
   padding: 12px;
 }
 
