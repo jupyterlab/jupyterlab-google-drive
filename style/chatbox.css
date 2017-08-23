@@ -77,6 +77,7 @@
   padding: 4px 8px;
 }
 
+
 .jp-Chatbox .jp-ChatEntry-badge {
   color: var(--jp-ui-font-color1);
   background-color: var(--jp-layout-color1);
@@ -90,20 +91,30 @@
 
 .p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved {
   background-color: var(--jp-layout-color2);
-  overflow: visible;
-}
-
-.p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved {
-  background-color: var(--jp-layout-color2);
+  border-radius: 10px 10px 10px 0px;
   overflow: visible;
 }
 
 .p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved::before {
-  content: url(receive-chat-tail.png);
+  content: ' ';
   position: absolute;
-  transform: scale(.04);
-  left: -203px;
-  bottom: -146px;
+  width: 0;
+  height: 0;
+  border: 7px solid;
+  border-color: transparent var(--jp-border-color1) var(--jp-border-color1) transparent;
+  left: -15px;
+  bottom: -1px;
+}
+
+.p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved::after {
+  content: ' ';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 7px solid;
+  border-color: transparent var(--jp-layout-color2) var(--jp-layout-color2) transparent;
+  left: -13px;
+  bottom: 0px;
 }
 
 .p-Widget.jp-ChatEntry-badge.jp-ChatEntry-received-badge {
