@@ -1,6 +1,6 @@
 {
   "name": "@jupyterlab/google-drive",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Realtime collaboration with JupyterLab through Google Drive",
   "author": "Ian Rose",
   "main": "lib/index.js",
