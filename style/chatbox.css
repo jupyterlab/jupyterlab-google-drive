@@ -61,7 +61,7 @@
 .jp-Chatbox-content .jp-Cell {
   margin: 5px;
   background-color: var(--jp-layout-color1);
-  border: 1px solid var(--jp-border-color1);
+  border: 1px solid var(--jp-border-color0);
   border-radius: 10px;
   flex-grow: 1;
 }
@@ -79,20 +79,47 @@
 
 
 .jp-Chatbox .jp-ChatEntry-badge {
-  color: var(--jp-ui-font-color1);
-  background-color: var(--jp-layout-color1);
+  color: white;
   border-radius: 16px;
+  flex: 0 0 28px;
   height: 28px;
-  width: 28px;
   text-align: center;
   line-height: 1.8;
-  margin-left: 4px;
 }
 
+.p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-self {
+  background-color: var(--jp-layout-color1);
+  border-radius: 10px 10px 0px 10px;
+  overflow: visible;
+  margin-right: 18px;
+}
+
+.p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-self::before {
+  content: ' ';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 7px solid;
+  border-color: transparent transparent var(--jp-border-color0) var(--jp-border-color0);
+  left: 100%;
+  bottom: -1px;
+}
+
+.p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-self::after {
+  content: ' ';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 7px solid;
+  border-color: transparent transparent var(--jp-layout-color1) var(--jp-layout-color1);
+  left: calc(100% - 2px);
+  bottom: 0px;
+}
 .p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved {
   background-color: var(--jp-layout-color2);
   border-radius: 10px 10px 10px 0px;
   overflow: visible;
+  margin-left: 18px;
 }
 
 .p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved::before {
@@ -101,7 +128,7 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent var(--jp-border-color1) var(--jp-border-color1) transparent;
+  border-color: transparent var(--jp-border-color0) var(--jp-border-color0) transparent;
   left: -15px;
   bottom: -1px;
 }
@@ -115,11 +142,6 @@
   border-color: transparent var(--jp-layout-color2) var(--jp-layout-color2) transparent;
   left: -13px;
   bottom: 0px;
-}
-
-.p-Widget.jp-ChatEntry-badge.jp-ChatEntry-received-badge {
-  margin-right: 12px;
-  margin-left: 0px;
 }
 
 .jp-Chatbox-content .jp-InputArea {
