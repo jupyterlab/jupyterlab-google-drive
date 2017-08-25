@@ -29,14 +29,14 @@ const CHAT_ENTRY_CLASS = 'jp-ChatEntry';
 const CHAT_BADGE_CLASS = 'jp-ChatEntry-badge';
 
 /**
+ * The class name added to other user's own entries
+ */
+const CHAT_ENTRY_SELF_CLASS = 'jp-ChatEntry-self';
+
+/**
  * The class name added to other user's chatbox entries
  */
 const CHAT_ENTRY_RECEIVED_CLASS = 'jp-ChatEntry-receieved';
-
-/**
- * The class name added to other user's chatbox badges
- */
-const CHAT_BADGE_RECEIVED_CLASS = 'jp-ChatEntry-received-badge';
 
 
 /**
@@ -69,8 +69,9 @@ class ChatEntry extends Widget {
     this._badge.node.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 1)`;
 
     if (!options.isMe) {
-      this._badge.addClass(CHAT_BADGE_RECEIVED_CLASS);
       this.cell.addClass(CHAT_ENTRY_RECEIVED_CLASS);
+    } else {
+      this.cell.addClass(CHAT_ENTRY_SELF_CLASS);
     }
 
     let layout = this.layout as PanelLayout;
