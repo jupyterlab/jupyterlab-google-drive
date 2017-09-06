@@ -30,6 +30,7 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
  * Aliases for common API errors.
  */
 const FORBIDDEN_ERROR = 403;
+const BACKEND_ERROR = 500;
 const RATE_LIMIT_REASON = 'rateLimitExceeded';
 
 /**
@@ -171,9 +172,12 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
       }, (response) => {
         // Some other error happened. If we are being rate limited,
         // attempt exponential backoff. If that fails, bail.
-        if(response.status === FORBIDDEN_ERROR && (response.result.error as any)
-           .errors[0].reason === RATE_LIMIT_REASON) {
-          console.log("gapi: Throttling...");
+        if (response.status === BACKEND_ERROR ||
+           (response.status === FORBIDDEN_ERROR &&
+            (<any>response.result.error).errors[0].reason
+             === RATE_LIMIT_REASON)) {
+          console.warn(`gapi: ${response.status} error,` +
+                       `attempting exponential backoff...`);
           window.setTimeout( () => {
             // Try again after a delay.
             driveApiRequest<T>(request, successCode, attemptNumber+1)
