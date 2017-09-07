@@ -959,7 +959,7 @@ function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileT
       break;
   }
   return {
-    name: contents.name,
+    name: contents.name || PathExt.basename(contents.path),
     mimeType
   };
 }
