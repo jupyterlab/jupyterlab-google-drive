@@ -139,6 +139,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
       let enclosingFolderPath = PathExt.dirname(path);
       enclosingFolderPath =
         enclosingFolderPath === '.' ? '' : enclosingFolderPath;
+      model.name = model.name || PathExt.basename(path);
       let resource: FileResource = fileResourceFromContentsModel(model, fileType);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FileResource) => {
