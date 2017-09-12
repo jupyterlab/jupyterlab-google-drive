@@ -18,7 +18,9 @@ code execution, and the outputs from running cells will reflect that.
 
 Google's servers expect traffic from computers using `http://localhost` on ports`8888` through `8899`,
 and other origins will be rejected, so drive integration will not work.
-See [advanced.md](advanced.md) for instructions on how to set up your own credentials with Google's servers.
+See [advanced.md](docs/advanced.md) for instructions on how to set up your own credentials with Google's servers.
+
+If you run into troubles, see if the [troubleshooting guide](docs/troubleshooting.md) has a solution for you.
 
 ## Prerequisites
 
