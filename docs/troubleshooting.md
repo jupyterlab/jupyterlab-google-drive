@@ -28,8 +28,13 @@ Try looking through [advanced.md](./advanced.md) for a solution.
 
 ### `Failed to read the 'localStorage' property from 'Window'` error.
 
-You may have your browser configured to block third-party cookies which is blocking Google Login.
+You may have your browser configured to block third-party cookies which is preventing Google Login.
 Either allow third-party cookies, or add an exception to the whitelist for `accounts.google.com`.
+
+### I am unable to load images from Google Drive into my notebooks or markdown files
+
+You may have your browser configured to block third-party cookies which is preventing embedded images.
+Either allow third-party cookies, or add an exception to the whitelist for `drive.google.com`.
 
 ### I have shared a document with another person, but they don't seem to by synchronizing!
 
