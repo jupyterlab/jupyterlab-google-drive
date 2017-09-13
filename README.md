@@ -4,6 +4,8 @@
 
 Realtime collaboration and cloud storage for JupyterLab through Google Drive.
 
+[![PyData Seattle Talk](http://img.youtube.com/vi/dSjvK-Z3o3U/0.jpg)](https://youtu.be/dSjvK-Z3o3U?t=13m17s)
+
 Note that this is alpha software and is rapidly changing.
 Files stored on Google Drive using this plugin should still be backed-up elsewhere.
 
