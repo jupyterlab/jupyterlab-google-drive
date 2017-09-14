@@ -1,9 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-// TODO: Remove jquery dependency.
-import $ = require('jquery');
-
 import {
   PromiseDelegate
 } from '@phosphor/coreutils';
@@ -63,20 +60,25 @@ export
 function loadGapi(): Promise<void> {
   return new Promise<void>( (resolve, reject) => {
     // Get the gapi script from Google.
-    $.getScript('https://apis.google.com/js/api.js')
-    .done((script, textStatus) => {
-      // Load overall API.
+    let gapiScript = document.createElement('script');
+    gapiScript.src = 'https://apis.google.com/js/api.js';
+    gapiScript.type = 'text/javascript';
+    gapiScript.async = true;
+
+    // Load overall API scripts onto the page.
+    gapiScript.onload = () => {
+      // Load the specific client libraries we need.
       gapi.load('client:auth2,drive-realtime,drive-share', () => {
-        // Load the specific client libraries we need.
-        console.log("gapi: loaded onto page");
         gapiLoaded.resolve(void 0);
         resolve(void 0);
       });
-    }).fail( () => {
-      console.log("gapi: unable to load onto page");
+    };
+    gapiScript.onerror = () => {
+      console.error("Unable to load Google APIs");
       gapiLoaded.reject(void 0);
       reject(void 0);
-    });
+    };
+    document.head.appendChild(gapiScript);
   });
 }
 
