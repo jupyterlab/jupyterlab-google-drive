@@ -126,17 +126,17 @@ class GoogleDriveFileBrowser extends Widget {
     });
 
     // Create the logout button.
-    let userProfile = getCurrentUserProfile();
-    let initial = userProfile.getGivenName()[0];
+    const userProfile = getCurrentUserProfile();
+    const initial = userProfile.getGivenName()[0];
     this._logoutButton = new ToolbarButton({
       onClick: () => {
         this._onLogoutClicked();
       },
       tooltip: `Sign Out (${userProfile.getEmail()})`
     });
-    let badgeContainer = document.createElement('div');
+    const badgeContainer = document.createElement('div');
     badgeContainer.className = USER_BADGE_CONTAINER;
-    let badge = document.createElement('div');
+    const badge = document.createElement('div');
     badge.className = USER_BADGE;
     badge.textContent = initial;
     badgeContainer.appendChild(badge);
@@ -196,12 +196,12 @@ class GoogleDriveLogin extends Widget {
     this.addClass(LOGIN_SCREEN);
 
     // Add the logo.
-    let logo = document.createElement('div');
+    const logo = document.createElement('div');
     logo.className = 'jp-GoogleDrive-logo';
     this.node.appendChild(logo);
 
     // Add the text.
-    let text = document.createElement('div');
+    const text = document.createElement('div');
     text.className = 'jp-GoogleDrive-text';
     text.textContent = 'Google Drive';
     this.node.appendChild(text);

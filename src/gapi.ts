@@ -35,18 +35,21 @@ const RATE_LIMIT_REASON = 'rateLimitExceeded';
  * libraries are loaded onto the page.
  */
 export
-let gapiLoaded = new PromiseDelegate<void>();
+const gapiLoaded = new PromiseDelegate<void>();
 
 /**
  * A promise delegate that is resolved when the gapi client
  * libraries are initialized.
  */
 export
-let gapiInitialized = new PromiseDelegate<void>();
+const gapiInitialized = new PromiseDelegate<void>();
 
 /**
  * A promise delegate that is resolved when the user authorizes
  * the app to access their Drive account.
+ *
+ * #### Notes
+ * This promise will be reassigned if the user logs out.
  */
 export
 let gapiAuthorized = new PromiseDelegate<void>();
@@ -60,7 +63,7 @@ export
 function loadGapi(): Promise<void> {
   return new Promise<void>( (resolve, reject) => {
     // Get the gapi script from Google.
-    let gapiScript = document.createElement('script');
+    const gapiScript = document.createElement('script');
     gapiScript.src = 'https://apis.google.com/js/api.js';
     gapiScript.type = 'text/javascript';
     gapiScript.async = true;
@@ -106,7 +109,7 @@ function initializeGapi(clientId: string): Promise<boolean> {
       }).then(() => {
         // Check if the user is logged in and we are
         // authomatically authorized.
-        let googleAuth = gapi.auth2.getAuthInstance();
+        const googleAuth = gapi.auth2.getAuthInstance();
         if (googleAuth.isSignedIn.get()) {
           refreshAuthToken().then(() => {
             gapiAuthorized.resolve(void 0);
@@ -215,7 +218,7 @@ export
 function signIn(): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     gapiInitialized.promise.then(() => {
-      let googleAuth = gapi.auth2.getAuthInstance();
+      const googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
         googleAuth.signIn({ prompt: 'select_account' }).then(() => {
           refreshAuthToken().then(() => {
@@ -241,7 +244,7 @@ function signIn(): Promise<boolean> {
  */
 export
 function signOut(): Promise<void> {
-  let googleAuth = gapi.auth2.getAuthInstance();
+  const googleAuth = gapi.auth2.getAuthInstance();
   // Invalidate the gapiAuthorized promise and set up a new one.
   gapiAuthorized = new PromiseDelegate<void>();
   return googleAuth.signOut();
@@ -254,7 +257,7 @@ function signOut(): Promise<void> {
  */
 export
 function getCurrentUserProfile(): gapi.auth2.BasicProfile {
-  let user = gapi.auth2.getAuthInstance().currentUser.get();
+  const user = gapi.auth2.getAuthInstance().currentUser.get();
   return user.getBasicProfile();
 }
 
@@ -271,8 +274,8 @@ function getCurrentUserProfile(): gapi.auth2.BasicProfile {
  */
 function refreshAuthToken(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    let googleAuth = gapi.auth2.getAuthInstance();
-    let user = googleAuth.currentUser.get();
+    const googleAuth = gapi.auth2.getAuthInstance();
+    const user = googleAuth.currentUser.get();
     user.reloadAuthResponse().then((authResponse: any) => {
       gapi.auth.setToken(authResponse);
       // Set a timer to refresh the authorization.
@@ -294,7 +297,7 @@ function refreshAuthToken(): Promise<void> {
  */
 export
 function makeError(result: any): ServerConnection.IError {
-  let xhr = {
+  const xhr = {
     status: result.error.code,
     responseText: result.error.message
   };

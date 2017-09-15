@@ -115,7 +115,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    *   if that did not exist.
    */
   set(key: string, value: T): T | undefined {
-    let oldVal = this.get(key);
+    const oldVal = this.get(key);
     if (oldVal !== undefined && this._itemCmp(oldVal, value)) {
       return oldVal;
     }
@@ -138,7 +138,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * @returns the value for that key.
    */
   get(key: string): T | undefined {
-    let val = this._map.get(key);
+    const val = this._map.get(key);
     return val === null ? undefined : val;
   }
 
@@ -180,7 +180,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    *   or undefined if that does not exist. 
    */
   delete(key: string): T | undefined {
-    let oldVal = this.get(key);
+    const oldVal = this.get(key);
     this._map.delete(key);
     this._changed.emit({
       type: 'remove',
@@ -197,7 +197,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
   clear(): void {
     //delete one by one so that we send
     //the appropriate signals.
-    let keyList = this.keys();
+    const keyList = this.keys();
     for(let i=0; i<keyList.length; i++) {
       this.delete(keyList[i]);
     }

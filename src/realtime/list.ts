@@ -133,7 +133,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt: any) => {
         if(!evt.isLocal) {
-          let vals: T[] = evt.values;
+          const vals: T[] = evt.values;
           this._changed.emit({
             type: 'add',
             oldIndex: -1,
@@ -148,7 +148,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
       gapi.drive.realtime.EventType.VALUES_REMOVED,
       (evt: any) => {
         if(!evt.isLocal) {
-          let vals: T[] = evt.values;
+          const vals: T[] = evt.values;
           this._changed.emit({
             type: 'remove',
             oldIndex: evt.index,
@@ -163,8 +163,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
       gapi.drive.realtime.EventType.VALUES_SET,
       (evt: any) => {
         if(!evt.isLocal) {
-          let oldVals: T[] = evt.oldValues;
-          let newVals: T[] = evt.newValues;
+          const oldVals: T[] = evt.oldValues;
+          const newVals: T[] = evt.newValues;
 
           this._changed.emit({
             type: 'set',
@@ -229,7 +229,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * An `index` which is non-integral or out of range.
    */
   set(index: number, value: T): void {
-    let oldVal: T = this._vec.get(index);
+    const oldVal: T = this._vec.get(index);
     // Bail if the value does not change.
     if (this._itemCmp(oldVal, value)) {
       return;
@@ -259,7 +259,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * No changes.
    */
   push(value: T): number {
-    let len = this._vec.push(value);
+    const len = this._vec.push(value);
 
     this._changed.emit({
       type: 'add',
@@ -284,8 +284,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * Iterators pointing at the removed value are invalidated.
    */
   popBack(): T {
-    let last = this.length-1;
-    let value = this.get(last);
+    const last = this.length-1;
+    const value = this.get(last);
     this._vec.remove(last);
 
     this._changed.emit({
@@ -351,7 +351,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * which defaults to strict `===` equality.
    */
   removeValue(value: T): number {
-    let index = this._vec.indexOf(value, this._itemCmp);
+    const index = this._vec.indexOf(value, this._itemCmp);
     if (index === -1) {
       return index;
     }
@@ -380,7 +380,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     if (index < 0 || index >= this.length) {
       return undefined;
     }
-    let value = this.get(index);
+    const value = this.get(index);
     this._vec.remove(index);
     this._changed.emit({
       type: 'remove',
@@ -405,7 +405,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     if (this.length === 0) {
       return;
     }
-    let oldValues = this._vec.asArray();
+    const oldValues = this._vec.asArray();
     this._vec.clear();
     this._changed.emit({
       type: 'remove',
@@ -437,7 +437,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     if (this.length === 1 || fromIndex === toIndex) {
       return;
     }
-    let value = this.get(fromIndex);
+    const value = this.get(fromIndex);
     // WARNING: the Google CollaborativeList object
     // has different move semantics than what we expect
     // here (see Google Realtime API docs). Hence we have
@@ -470,8 +470,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * No changes.
    */
   pushAll(values: IterableOrArrayLike<T>): number {
-    let newIndex = this.length;
-    let newValues = toArray(values);
+    const newIndex = this.length;
+    const newValues = toArray(values);
     each(newValues, value => {
       this._vec.push(value);
     });
@@ -507,8 +507,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * An `index` which is non-integral.
    */
   insertAll(index: number, values: IterableOrArrayLike<T>): number {
-    let newIndex = index;
-    let newValues = toArray(values);
+    const newIndex = index;
+    const newValues = toArray(values);
     let i = index;
     each(newValues, value => {
       this._vec.insert(i, value);
@@ -543,9 +543,9 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * A `startIndex` or `endIndex` which is non-integral.
    */
   removeRange(startIndex: number, endIndex: number): number {
-    let oldValues: T[] = [];
+    const oldValues: T[] = [];
     for (let i = startIndex; i < endIndex; i++) {
-      let val = this._vec.get(startIndex);
+      const val = this._vec.get(startIndex);
       this._vec.remove(startIndex);
       oldValues.push(val);
     }

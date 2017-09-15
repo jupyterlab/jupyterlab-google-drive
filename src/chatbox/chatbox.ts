@@ -129,7 +129,7 @@ class Chatbox extends Widget {
     this.addClass(CHATBOX_CLASS);
 
     // Create the panels that hold the content and input.
-    let layout = this.layout = new PanelLayout();
+    const layout = this.layout = new PanelLayout();
     this._content = new Panel();
     this._input = new Panel();
 
@@ -168,7 +168,7 @@ class Chatbox extends Widget {
    * The chatbox input prompt.
    */
   get prompt(): MarkdownCell {
-    let inputLayout = (this._input.layout as PanelLayout);
+    const inputLayout = (this._input.layout as PanelLayout);
     return inputLayout.widgets[0] as MarkdownCell;
   }
 
@@ -197,7 +197,7 @@ class Chatbox extends Widget {
     }
 
     // Populate with the new model values.
-    let modelDB = this._model.modelDB;
+    const modelDB = this._model.modelDB;
     modelDB.connected.then(() => {
       // Update the chatlog vector.
       modelDB.createList('internal:chat');
@@ -233,7 +233,7 @@ class Chatbox extends Widget {
    */
   clear(): void {
     // Dispose all the content cells.
-    let entries = this._content.widgets;
+    const entries = this._content.widgets;
     while (entries.length) {
       entries[0].dispose();
     }
@@ -262,7 +262,7 @@ class Chatbox extends Widget {
     if (!this._model || !this._log) {
       return;
     }
-    let prompt = this.prompt;
+    const prompt = this.prompt;
 
     if (prompt.model.value.text.trim() !== '') {
       this._post();
@@ -276,13 +276,13 @@ class Chatbox extends Widget {
    * Insert a line break in the prompt.
    */
   insertLinebreak(): void {
-    let prompt = this.prompt;
-    let model = prompt.model;
-    let editor = prompt.editor;
+    const prompt = this.prompt;
+    const model = prompt.model;
+    const editor = prompt.editor;
     // Insert the line break at the cursor position, and move cursor forward.
     let pos = editor.getCursorPosition();
-    let offset = editor.getOffsetAt(pos);
-    let text = model.value.text;
+    const offset = editor.getOffsetAt(pos);
+    const text = model.value.text;
     model.value.text = text.substr(0, offset) + '\n' + text.substr(offset);
     // pos should be well defined, since we have inserted a character.
     pos = editor.getPositionAt(offset + 1)!;
@@ -343,7 +343,7 @@ class Chatbox extends Widget {
    * Handle `after_attach` messages for the widget.
    */
   protected onAfterAttach(msg: Message): void {
-    let node = this.node;
+    const node = this.node;
     node.addEventListener('keydown', this, true);
     node.addEventListener('mousedown', this);
     this._content.node.addEventListener('scroll', this);
@@ -361,7 +361,7 @@ class Chatbox extends Widget {
    * Handle `before-detach` messages for the widget.
    */
   protected onBeforeDetach(msg: Message): void {
-    let node = this.node;
+    const node = this.node;
     node.removeEventListener('keydown', this, true);
     node.removeEventListener('mousedown', this);
     this._content.node.removeEventListener('scroll', this);
@@ -389,8 +389,8 @@ class Chatbox extends Widget {
     let prompt = this.prompt;
 
     // Create the new prompt.
-    let factory = this.contentFactory;
-    let options = this._createMarkdownCellOptions();
+    const factory = this.contentFactory;
+    const options = this._createMarkdownCellOptions();
     prompt = factory.createCell(options);
     prompt.model.mimeType = this._mimetype;
     prompt.addClass(PROMPT_CLASS);
@@ -415,7 +415,7 @@ class Chatbox extends Widget {
     let index = this._start - 1;
     let numAdded = 0;
     while (index >= 0 && numAdded < count) {
-      let entryWidget = this._entryWidgetFromModel(this._log.get(index--)!);
+      const entryWidget = this._entryWidgetFromModel(this._log.get(index--)!);
       this._content.insertWidget(0, entryWidget);
       numAdded++;
     }
@@ -434,8 +434,8 @@ class Chatbox extends Widget {
     }
     // Only page if we hit the top.
     if (this._content.node.scrollTop <= NEW_PAGE_POSITION && this._start > 0) {
-      let startingHeight = this._content.node.scrollHeight;
-      let startingPosition = this._content.node.scrollTop;
+      const startingHeight = this._content.node.scrollHeight;
+      const startingPosition = this._content.node.scrollTop;
       this._addPage(PAGE_LENGTH);
       // Attempt to place the scroll position at
       // same entry where we started.
@@ -448,7 +448,7 @@ class Chatbox extends Widget {
    * Handle the `'keydown'` event for the widget.
    */
   private _evtKeyDown(event: KeyboardEvent): void {
-    let editor = this.prompt.editor;
+    const editor = this.prompt.editor;
     if (event.keyCode === 13 && !editor.hasFocus()) {
       event.preventDefault();
       editor.focus();
@@ -483,8 +483,8 @@ class Chatbox extends Widget {
    * Handle `mousedown` events for the widget.
    */
   private _evtMouseDown(event: MouseEvent): void {
-    let target = event.target as HTMLElement;
-    let i = this._findEntry(target);
+    const target = event.target as HTMLElement;
+    const i = this._findEntry(target);
 
     // Left mouse press for drag start.
     if (event.button === 0 && i !== -1) {
@@ -521,9 +521,9 @@ class Chatbox extends Widget {
     }
 
     // Check for a drag initialization.
-    let data = this._dragData;
-    let dx = Math.abs(event.clientX - data.pressX);
-    let dy = Math.abs(event.clientY - data.pressY);
+    const data = this._dragData;
+    const dx = Math.abs(event.clientX - data.pressX);
+    const dy = Math.abs(event.clientY - data.pressY);
     if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
       return;
     }
@@ -535,11 +535,11 @@ class Chatbox extends Widget {
    * Start a drag event.
    */
   private _startDrag(index: number, clientX: number, clientY: number): void {
-    let toCopy = this._content.widgets[index] as ChatEntry;
-    let data = [toCopy.cell.model.toJSON()];
+    const toCopy = this._content.widgets[index] as ChatEntry;
+    const data = [toCopy.cell.model.toJSON()];
 
     // Create the drag image.
-    let dragImage = Private.createDragImage();
+    const dragImage = Private.createDragImage();
 
     // Set up the drag event.
     this._drag = new Drag({
@@ -567,7 +567,7 @@ class Chatbox extends Widget {
    */
   private _onLogChanged(log: IObservableList<ChatEntry.IModel>, args: IObservableList.IChangedArgs<ChatEntry.IModel>) {
     let index = 0;
-    let layout = this._content.layout as PanelLayout;
+    const layout = this._content.layout as PanelLayout;
     switch (args.type) {
       case 'add':
         index = args.newIndex;
@@ -578,7 +578,7 @@ class Chatbox extends Widget {
         } else {
           // Otherwise insert the widgets into the view.
           each(args.newValues, entry => {
-            let entryWidget = this._entryWidgetFromModel(entry);
+            const entryWidget = this._entryWidgetFromModel(entry);
             layout.insertWidget(index++, entryWidget);
           });
         }
@@ -592,7 +592,7 @@ class Chatbox extends Widget {
         } else {
           // Otherwise remove the widgets from the view.
           each(args.oldValues, entry => {
-            let widget = layout.widgets[args.oldIndex];
+            const widget = layout.widgets[args.oldIndex];
             widget.parent = null;
             widget.dispose();
           });
@@ -601,20 +601,20 @@ class Chatbox extends Widget {
       case 'move':
         if (args.newIndex >= this._start && args.oldIndex >= this._start) {
           // If both are in the view, it is a straightforward move.
-          let fromIndex = args.oldIndex - this._start;
-          let toIndex = args.newIndex - this._start;
+          const fromIndex = args.oldIndex - this._start;
+          const toIndex = args.newIndex - this._start;
           layout.insertWidget(toIndex, layout.widgets[fromIndex]);
         } else if (args.newIndex >= this._start) {
           // If it is moving into the view, create the widget and
           // update the `_start` index.
-          let entry = args.oldValues[0];
-          let entryWidget = this._entryWidgetFromModel(entry);
+          const entry = args.oldValues[0];
+          const entryWidget = this._entryWidgetFromModel(entry);
           layout.insertWidget(args.newIndex - this._start, entryWidget);
           this._start--;
         } else if (args.oldIndex >= this._start) {
           // If it is moving out of the view, remove the widget
           // and update the `_start index.`
-          let widget = layout.widgets[args.oldIndex - this._start];
+          const widget = layout.widgets[args.oldIndex - this._start];
           widget.parent = null;
           this._start++;
         }
@@ -625,9 +625,9 @@ class Chatbox extends Widget {
         if (index >= this._start) {
           // Only need to update the widgets if they are in the view.
           each(args.newValues, entry => {
-            let entryWidget = this._entryWidgetFromModel(entry);
+            const entryWidget = this._entryWidgetFromModel(entry);
             layout.insertWidget(index, entryWidget);
-            let toRemove = layout.widgets[index+1];
+            const toRemove = layout.widgets[index+1];
             toRemove.parent = null;
             index++;
           });
@@ -642,12 +642,12 @@ class Chatbox extends Widget {
    */
   private _post(): void {
     // Dispose of the current input widget.
-    let prompt = this.prompt;
+    const prompt = this.prompt;
     (this._input.layout as PanelLayout).widgets[0].parent = null;
 
     // Add the chat entry to the log. It is safe to check for
     // this._model and this._log , as that has been done in this.post().
-    let collaborators = this._model!.modelDB.collaborators;
+    const collaborators = this._model!.modelDB.collaborators;
     if (!collaborators) {
       throw Error('Cannot post chat entry to non-collaborative document.');
     }
@@ -663,16 +663,16 @@ class Chatbox extends Widget {
    * Given a chat entry model, create a new entry widget.
    */
   private _entryWidgetFromModel(entry: ChatEntry.IModel): ChatEntry {
-    let options = this._createMarkdownCellOptions(entry.text);
-    let cellWidget = this.contentFactory.createCell(options);
+    const options = this._createMarkdownCellOptions(entry.text);
+    const cellWidget = this.contentFactory.createCell(options);
     this._disposables.add(cellWidget);
     cellWidget.readOnly = true;
     cellWidget.rendered = true;
-    let isMe = this._model ?
+    const isMe = this._model ?
       this._model.modelDB.collaborators!.localCollaborator.userId
       === entry.author.userId
       : false;
-    let entryWidget = new ChatEntry({
+    const entryWidget = new ChatEntry({
       model: entry,
       cell: cellWidget,
       isMe
@@ -684,10 +684,10 @@ class Chatbox extends Widget {
    * Create the options used to initialize markdown cell widget.
    */
   private _createMarkdownCellOptions(text: string = ''): MarkdownCell.IOptions {
-    let contentFactory = this.contentFactory.markdownCellContentFactory;
-    let model = new MarkdownCellModel({ });
+    const contentFactory = this.contentFactory.markdownCellContentFactory;
+    const model = new MarkdownCellModel({ });
     this._disposables.add(model);
-    let rendermime = this._rendermime;
+    const rendermime = this._rendermime;
     model.value.text = text || '';
     return { model, rendermime, contentFactory };
   }
@@ -822,8 +822,8 @@ namespace Private {
    */
   export
   function createDragImage(): HTMLElement {
-    let node = document.createElement('div');
-    let span = document.createElement('span');
+    const node = document.createElement('div');
+    const span = document.createElement('span');
     span.textContent = '1';
     span.className = FILLED_CIRCLE_CLASS;
     node.appendChild(span);

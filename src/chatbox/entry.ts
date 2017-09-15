@@ -54,14 +54,14 @@ class ChatEntry extends Widget {
 
     this.layout = new PanelLayout();
 
-    let color = this.model.author.color;
-    let r = parseInt(color.slice(1,3), 16);
-    let g = parseInt(color.slice(3,5), 16);
-    let b = parseInt(color.slice(5,7), 16);
+    const color = this.model.author.color;
+    const r = parseInt(color.slice(1,3), 16);
+    const g = parseInt(color.slice(3,5), 16);
+    const b = parseInt(color.slice(5,7), 16);
 
     this._badge = new Widget();
     this._badge.addClass(CHAT_BADGE_CLASS);
-    let badgeName = this.model.author.shortName;
+    const badgeName = this.model.author.shortName;
     this._badge.node.textContent = badgeName;
 
     this.cell = options.cell;
@@ -74,7 +74,7 @@ class ChatEntry extends Widget {
       this.cell.addClass(CHAT_ENTRY_SELF_CLASS);
     }
 
-    let layout = this.layout as PanelLayout;
+    const layout = this.layout as PanelLayout;
     if (options.isMe) {
       layout.addWidget(this.cell);
       layout.addWidget(this._badge);

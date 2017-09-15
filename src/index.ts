@@ -79,23 +79,23 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
  * Activate the file browser.
  */
 function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, factory: IFileBrowserFactory, restorer: ILayoutRestorer, settingRegistry: ISettingRegistry): void {
-  let { commands } = app;
+  const { commands } = app;
   const id = fileBrowserPlugin.id;
 
   // Load the gapi libraries onto the page.
   loadGapi();
 
   // Add the Google Drive backend to the contents manager.
-  let drive = new GoogleDrive(app.docRegistry);
+  const drive = new GoogleDrive(app.docRegistry);
   manager.services.contents.addDrive(drive);
 
   // Construct a function that determines whether any documents
   // associated with this filebrowser are currently open.
-  let hasOpenDocuments = () => {
-    let iterator = app.shell.widgets('main');
+  const hasOpenDocuments = () => {
+    const iterator = app.shell.widgets('main');
     let widget: Widget | undefined;
     while (widget = iterator.next()) {
-      let context = manager.contextForWidget(widget);
+      const context = manager.contextForWidget(widget);
       if (context && context.path.split(':')[0] === drive.name) {
         return true;
       }
@@ -104,7 +104,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   }
 
   // Create the file browser.
-  let browser = new GoogleDriveFileBrowser(
+  const browser = new GoogleDriveFileBrowser(
     drive.name, app.docRegistry, commands, manager, factory,
     settingRegistry.load(id), hasOpenDocuments);
 
@@ -113,13 +113,13 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   app.shell.addToLeftArea(browser, { rank: 101 });
 
   // Add the share command to the command registry.
-  let command = `google-drive:share`;
+  const command = `google-drive:share`;
   commands.addCommand(command, {
     execute: ()=> {
       const widget = app.shell.currentWidget;
       const context = widget ? manager.contextForWidget(widget) : undefined;
       if (context) {
-        let path = context.path;
+        const path = context.path;
         // Do nothing if this file is not in the user's Google Drive.
         if (path.split(':')[0] !== drive.name) {
           console.warn('Cannot share a file outside of Google Drive');
@@ -135,8 +135,8 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
           if (result.button.accept) {
             // Get the file resource for the path and create
             // permissions for the valid email addresses.
-            let addresses = result.value!;
-            let localPath = path.split(':').pop();
+            const addresses = result.value!;
+            const localPath = path.split(':').pop();
             getResourceForPath(localPath!).then((resource) => {
               createPermissions(resource, addresses);
             });
@@ -168,17 +168,17 @@ const chatboxPlugin: JupyterLabPlugin<void> = {
  */
 function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer): void {
   const id = 'chatbox';
-  let { commands, shell } = app;
-  let category = 'Chatbox';
+  const { commands, shell } = app;
+  const category = 'Chatbox';
   let command: string;
 
   /**
    * Create a chatbox for a given path.
    */
-  let editorFactory = editorServices.factoryService.newInlineEditor.bind(
+  const editorFactory = editorServices.factoryService.newInlineEditor.bind(
     editorServices.factoryService);
-  let contentFactory = new ChatboxPanel.ContentFactory({ editorFactory });
-  let panel = new ChatboxPanel({
+  const contentFactory = new ChatboxPanel.ContentFactory({ editorFactory });
+  const panel = new ChatboxPanel({
     rendermime: app.rendermime.clone(),
     contentFactory
   });
@@ -228,9 +228,9 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
     keys: ['Ctrl Enter']
   });
 
-  let updateDocumentContext = function (): void {
-    let widget = shell.currentWidget;
-    let context = widget ? docManager.contextForWidget(widget) : undefined;
+  const updateDocumentContext = function (): void {
+    const widget = shell.currentWidget;
+    const context = widget ? docManager.contextForWidget(widget) : undefined;
     if (context && context.model.modelDB.isCollaborative) {
       if (!panel.isAttached) {
         shell.addToLeftArea(panel);
@@ -270,7 +270,7 @@ namespace Private {
      */
     constructor() {
       super();
-      let text = document.createElement('p');
+      const text = document.createElement('p');
       text.textContent = 'Enter collaborator Gmail address. '+
                          'Multiple addresses may be separated by commas';
       this._inputNode = document.createElement('input');
@@ -288,8 +288,8 @@ namespace Private {
      */
     getValue(): string[] {
       // Pick out the valid email addresses
-      let candidateAddresses = this._inputNode.value.split(',');
-      let addresses: string[] = [];
+      const candidateAddresses = this._inputNode.value.split(',');
+      const addresses: string[] = [];
       for (let address of candidateAddresses) {
         if (isEmail(address)) {
          addresses.push(address);
@@ -316,7 +316,7 @@ namespace Private {
    * @returns a boolean for whether it is a valid email.
    */
   function isEmail(email: string): boolean {
-    let re = RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
+    const re = RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
     return re.test(email);
   }
 }

@@ -111,7 +111,7 @@ class GoogleObservableValue implements IObservableValue {
     this._model.getRoot().set(this._path, model.getRoot().get(this._path));
 
     // Swap out the old model.
-    let oldModel = this._model;
+    const oldModel = this._model;
     this._model = model;
 
     // Hook up the right listeners.
@@ -153,7 +153,7 @@ class GoogleObservableValue implements IObservableValue {
    * @param value: the value to set.
    */
   set(value: JSONValue): void {
-    let oldVal = this.get();
+    const oldVal = this.get();
     if (oldVal !== undefined && JSONExt.deepEqual(value, oldVal)) {
       return;
     }
@@ -212,7 +212,7 @@ class GoogleModelDB implements IModelDB {
         new Map<string, GoogleRealtimeObject | GoogleObservableValue>();
 
       // If a testing documentLoader has been supplied, use that.
-      let documentLoader = options.documentLoader || Private.documentLoader;
+      const documentLoader = options.documentLoader || Private.documentLoader;
 
       // Wrap the model root in a `GoogleMap`.
       this._db = new GoogleMap(this._model.getRoot());
@@ -220,11 +220,11 @@ class GoogleModelDB implements IModelDB {
       // Load the document from Google Drive.
       documentLoader(options.filePath).then(doc => {
         // Update the references to the doc and model
-        let oldDoc = this._doc;
+        const oldDoc = this._doc;
         this._doc = doc;
         this._model = doc.getModel();
 
-        let oldDB = this._db;
+        const oldDB = this._db;
         this._db = new GoogleMap(this._model.getRoot());
 
         if (this._model.getRoot().size !== 0) {
@@ -237,9 +237,9 @@ class GoogleModelDB implements IModelDB {
           // with it. This takes care of updating the values
           // and sending the right signals.
           for (let key of oldDB.keys()) {
-            let oldVal = this._localDB.get(key);
+            const oldVal = this._localDB.get(key);
             if (this._db.has(key)) {
-              let dbVal = this._db.get(key);
+              const dbVal = this._db.get(key);
               if (oldVal.googleObject) {
                 oldVal.googleObject = dbVal;
               } else if (oldVal instanceof GoogleObservableValue) {
@@ -252,7 +252,7 @@ class GoogleModelDB implements IModelDB {
         } else {
           // Handle the case where we populate the model.
           for(let key of oldDB.keys()) {
-            let val = this._localDB.get(key);
+            const val = this._localDB.get(key);
             if(val.googleObject) {
               // If the value is a string, map, or list,
               // swap out the underlying Collaborative Object.
@@ -461,7 +461,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       str = this.model.createString();
     }
-    let newStr = new GoogleString(str);
+    const newStr = new GoogleString(str);
     this._disposables.add(newStr);
     this.set(path, newStr);
     return newStr;
@@ -485,7 +485,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       vec = this.model.createList<T>();
     }
-    let newVec = new GoogleUndoableList<T>(vec);
+    const newVec = new GoogleUndoableList<T>(vec);
     this._disposables.add(newVec);
     this.set(path, newVec);
     return newVec;
@@ -509,7 +509,7 @@ class GoogleModelDB implements IModelDB {
     } else {
       json = this.model.createMap<JSONValue>();
     }
-    let newJSON = new GoogleJSON(json);
+    const newJSON = new GoogleJSON(json);
     this._disposables.add(newJSON);
     this.set(path, newJSON);
     return newJSON;
@@ -527,8 +527,8 @@ class GoogleModelDB implements IModelDB {
     if(this.has(path)) {
       val = this.getGoogleObject(path) as JSONValue;
     }
-    let fullPath = this.fullPath(path);
-    let newVal = new GoogleObservableValue(fullPath,
+    const fullPath = this.fullPath(path);
+    const newVal = new GoogleObservableValue(fullPath,
                                            this.model, val);
     this.set(path, newVal);
     this._disposables.add(newVal);
@@ -542,7 +542,7 @@ class GoogleModelDB implements IModelDB {
    * @param path: the path for the value.
    */
   getValue(path: string): JSONValue | undefined {
-    let val = this.get(path);
+    const val = this.get(path);
     if (val.type !== 'Value') {
         throw Error('Can only call getValue for an IObservableValue');
     }
@@ -558,7 +558,7 @@ class GoogleModelDB implements IModelDB {
    * @param value: the new value.
    */
   setValue(path: string, value: JSONValue): void {
-    let val = this.get(path);
+    const val = this.get(path);
     if (val.type !== 'Value') {
         throw Error('Can only call setValue on an IObservableValue');
     }
@@ -574,7 +574,7 @@ class GoogleModelDB implements IModelDB {
    *   `GoogleModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): GoogleModelDB {
-    let view = new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
+    const view = new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
     this._disposables.add(view);
     return view;
   }

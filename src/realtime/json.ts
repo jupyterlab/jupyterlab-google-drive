@@ -30,9 +30,9 @@ class GoogleJSON extends GoogleMap<JSONValue> implements IObservableJSON {
    * Serialize the model to JSON.
    */
   toJSON(): JSONObject {
-    let out: JSONObject = Object.create(null);
+    const out: JSONObject = Object.create(null);
     for (let key of this.keys()) {
-      let value = this.get(key);
+      const value = this.get(key);
       if (!value) {
         continue;
       }

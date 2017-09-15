@@ -67,9 +67,9 @@ class ChatboxPanel extends Panel {
   constructor(options: ChatboxPanel.IOptions) {
     super();
     this.addClass(PANEL_CLASS);
-    let factory = options.contentFactory;
-    let rendermime = options.rendermime;
-    let contentFactory = factory.chatboxContentFactory;
+    const factory = options.contentFactory;
+    const rendermime = options.rendermime;
+    const contentFactory = factory.chatboxContentFactory;
 
     this._documentInfo = new ChatboxDocumentInfo();
     this.addWidget(this._documentInfo);
@@ -138,9 +138,9 @@ class ChatboxDocumentInfo extends Widget {
   constructor() {
     super();
     this.addClass(DOCUMENT_INFO_CLASS);
-    let chatIcon = document.createElement('div');
+    const chatIcon = document.createElement('div');
     chatIcon.className = ICON_CLASS + ' ' + MATERIAL_CLASS + ' ' + CHAT_ICON;
-    let fileName = document.createElement('div');
+    const fileName = document.createElement('div');
     fileName.className = 'jp-ChatboxDocumentInfo-name';
     this.node.appendChild(chatIcon);
     this.node.appendChild(fileName);

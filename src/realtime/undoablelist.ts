@@ -74,7 +74,7 @@ class GoogleUndoableList<T extends JSONValue> extends GoogleList<T> implements I
     if (!this.canUndo) {
       return;
     }
-    let changes = this._stack[this._index];
+    const changes = this._stack[this._index];
     this._isUndoable = false;
     for (let change of changes.reverse()) {
       this._undoChange(change);
@@ -91,7 +91,7 @@ class GoogleUndoableList<T extends JSONValue> extends GoogleList<T> implements I
       return;
     }
     this._index++;
-    let changes = this._stack[this._index];
+    const changes = this._stack[this._index];
     this._isUndoable = false;
     for (let change of changes) {
       this._redoChange(change);
@@ -119,7 +119,7 @@ class GoogleUndoableList<T extends JSONValue> extends GoogleList<T> implements I
       this._stack = this._stack.slice(0, this._index + 1);
     }
     // Copy the change.
-    let evt = this._copyChange(change);
+    const evt = this._copyChange(change);
     // Put the change in the stack.
     if (this._stack[this._index + 1]) {
       this._stack[this._index + 1].push(evt);
@@ -200,11 +200,11 @@ class GoogleUndoableList<T extends JSONValue> extends GoogleList<T> implements I
    * Copy a change as JSON.
    */
   private _copyChange(change: IObservableList.IChangedArgs<T>): IObservableList.IChangedArgs<T> {
-    let oldValues: T[] = [];
+    const oldValues: T[] = [];
     each(change.oldValues, value => {
       oldValues.push(value);
     });
-    let newValues: T[] = [];
+    const newValues: T[] = [];
     each(change.newValues, value => {
       newValues.push(value);
     });
