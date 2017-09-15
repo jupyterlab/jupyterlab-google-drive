@@ -2,16 +2,20 @@
 
 [![Build Status](https://travis-ci.org/jupyterlab/jupyterlab-google-drive.svg?branch=master)](https://travis-ci.org/jupyterlab/jupyterlab-google-drive)
 
-Realtime collaboration and cloud storage for JupyterLab through Google Drive.
+## Realtime collaboration and cloud storage for JupyterLab through Google Drive.
 
-Note that this is alpha software and is rapidly changing.
-Files stored on Google Drive using this plugin should still be backed-up elsewhere.
+**NOTE: this is alpha software and is rapidly changing.**
+**Files stored on Google Drive using this plugin should still be backed-up elsewhere.**
 
-This adds a Google Drive filebrowser to the left sidepanel of JupyterLab.
+This extension adds a Google Drive filebrowser to the left sidepanel of JupyterLab.
 When you are logged into your Google account, you will have the
 files stored in it available to JupyterLab.
 Notebooks and text files may be shared and edited with collaborators
 in real-time, and all users will see the same changes.
+
+To see the extension in action, click on our live demo from PyData Seattle:
+
+[![PyData Seattle Talk](http://img.youtube.com/vi/dSjvK-Z3o3U/0.jpg)](https://youtu.be/dSjvK-Z3o3U?t=13m17s)
 
 For the time-being, all users running a notebook have independent kernels for
 code execution, and the outputs from running cells will reflect that.
