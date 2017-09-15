@@ -11,8 +11,8 @@ before_install:
   - git clone --depth=50 --branch=master https://github.com/jupyterlab/jupyterlab.git
   - cd jupyterlab
 install:
-  - npm install fs fs-extra child-process path sort-package-json glob
-  - npm run addsibling $TRAVIS_BUILD_DIR && npm install
+  - npm install --no-optional
+  - npm run addsibling $TRAVIS_BUILD_DIR && npm install --no-optional
   - npm run build
 before_script:
   - cd packages && cd `basename $TRAVIS_BUILD_DIR`
