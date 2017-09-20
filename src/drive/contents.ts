@@ -40,7 +40,7 @@ class GoogleDrive implements Contents.IDrive {
     // Construct a function to make a best-guess IFileType
     // for a given path.
     this._fileTypeForPath = (path: string) => {
-      let fileTypes = registry.getFileTypesForPath(path);
+      const fileTypes = registry.getFileTypesForPath(path);
       return fileTypes.length === 0 ?
              registry.getFileType('text')! :
              fileTypes[0];
@@ -108,7 +108,7 @@ class GoogleDrive implements Contents.IDrive {
    * @returns A promise which resolves with the file content.
    */
   get(path: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
-    let getContent = options ? !!options.content : true;
+    const getContent = options ? !!options.content : true;
     // TODO: the contents manager probably should not be passing in '.'.
     path = path === '.' ? '' : path;
     return drive.contentsModelForPath(path, getContent, this._fileTypeForPath);
@@ -158,7 +158,7 @@ class GoogleDrive implements Contents.IDrive {
       fileType = DocumentRegistry.defaultNotebookFileType;
       ext = fileType.extensions[0];
       baseName = 'Untitled'
-      let modelFactory = this._docRegistry.getModelFactory('Notebook');
+      const modelFactory = this._docRegistry.getModelFactory('Notebook');
       if (!modelFactory) {
         throw Error('No model factory is registered with the DocRegistry');
       }
@@ -192,7 +192,7 @@ class GoogleDrive implements Contents.IDrive {
     }
 
     return this._getNewFilename(path, ext, baseName).then((name: string) => {
-      let m = { ...model, name };
+      const m = { ...model, name };
       path = PathExt.join(path, name);
       return drive.uploadFile(path, m, fileType, false);
     }).then((contents: Contents.IModel) => {
@@ -260,7 +260,7 @@ class GoogleDrive implements Contents.IDrive {
    *   file is saved.
    */
   save(path: string, options: Partial<Contents.IModel>): Promise<Contents.IModel> {
-    let fileType = this._fileTypeForContentsModel(options);
+    const fileType = this._fileTypeForContentsModel(options);
     return this.get(path).then((contents) => {
       //The file exists
       if(options) {
@@ -340,7 +340,7 @@ class GoogleDrive implements Contents.IDrive {
    */
   restoreCheckpoint(path: string, checkpointID: string): Promise<void> {
     // TODO: should this emit a signal?
-    let fileType = this._fileTypeForPath(path);
+    const fileType = this._fileTypeForPath(path);
     return drive.revertToRevision(path, checkpointID, fileType);
   }
 
@@ -376,10 +376,10 @@ class GoogleDrive implements Contents.IDrive {
         `Google Drive: "${path}" is not a valid target directory`);
     }
     // Get the file listing for the directory.
-    let query = 'name contains \''+baseName+
+    const query = 'name contains \''+baseName+
                 '\' and name contains \''+ext+'\'';
     return drive.searchDirectory(path, query).then((resourceList) => {
-      let existingNames: any = {};
+      const existingNames: any = {};
       for( let i = 0; i < resourceList.length; i++) {
         existingNames[resourceList[i].name!] = true;
       }
@@ -389,7 +389,7 @@ class GoogleDrive implements Contents.IDrive {
       // so is guaranteed to come up with a name that is not
       // in `existingNames`.
       for (let i = 0; i <= resourceList.length; i++) {
-        let filename = baseName + (i > 0 ? String(i) : '') + ext;
+        const filename = baseName + (i > 0 ? String(i) : '') + ext;
         if (!existingNames[filename]) {
           return filename;
         }

@@ -150,7 +150,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    let oldValue: string = this.text.slice(start, end);
+    const oldValue: string = this.text.slice(start, end);
     this._str.removeRange(start, end);
     this._changed.emit({
       type: 'remove',

@@ -16,7 +16,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   constructor(doc: gapi.drive.realtime.Document) {
     // Get the map with the collaborators, or
     // create it if it does not exist.
-    let id = 'internal:collaborators';
+    const id = 'internal:collaborators';
     this._doc = doc;
     this._map = doc.getModel().getRoot().get(id);
 
@@ -31,10 +31,10 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     // some collaborator events (if, for instance, the
     // realtime doc is not shut down properly).
     // This is an opportunity to refresh it.
-    let initialCollaborators: any[] = doc.getCollaborators();
+    const initialCollaborators: any[] = doc.getCollaborators();
 
     // Remove stale collaborators.
-    let initialSessions = new Set<string>();
+    const initialSessions = new Set<string>();
     for(let i=0; i<initialCollaborators.length; i++) {
       initialSessions.add(initialCollaborators[i].sessionId);
     }
@@ -45,7 +45,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     }
     // Now add the remaining collaborators.
     for(let i=0; i<initialCollaborators.length; i++) {
-      let collaborator: ICollaborator = {
+      const collaborator: ICollaborator = {
         userId: initialCollaborators[i].userId,
         sessionId: initialCollaborators[i].sessionId,
         displayName: initialCollaborators[i].displayName,
@@ -66,7 +66,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     this._doc.addEventListener(
       gapi.drive.realtime.EventType.COLLABORATOR_JOINED,
       (evt: any) => {
-        let collaborator: ICollaborator = {
+        const collaborator: ICollaborator = {
           userId: evt.collaborator.userId,
           sessionId: evt.collaborator.sessionId,
           displayName: evt.collaborator.displayName,
@@ -153,7 +153,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    *   if that did not exist.
    */
   set(key: string, value: ICollaborator): ICollaborator | undefined {
-    let oldVal = this.get(key);
+    const oldVal = this.get(key);
     this._map.set(key, value);
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -172,7 +172,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    * @returns the value for that key.
    */
   get(key: string): ICollaborator | undefined {
-    let val = this._map.get(key);
+    const val = this._map.get(key);
     return val === null ? undefined : val;
   }
 
@@ -214,7 +214,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    *   or undefined if that does not exist. 
    */
   delete(key: string): ICollaborator | undefined {
-    let oldVal = this.get(key);
+    const oldVal = this.get(key);
     this._map.delete(key);
     this._changed.emit({
       type: 'remove',
@@ -230,7 +230,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    */
   clear(): void {
     // Delete one by one to emit the correct signals.
-    let keyList = this.keys();
+    const keyList = this.keys();
     for (let i = 0; i < keyList.length; i++) {
       this.delete(keyList[i]);
     }
