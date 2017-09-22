@@ -704,7 +704,7 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
         const request = gapi.client.drive.files.update({
           fileId: resource.id!,
           addParents: newFolder.id!,
-          removeParents: resource.parents![0],
+          removeParents: resource.parents ? resource.parents[0] : undefined,
           resource: {
             name: newName
           },
