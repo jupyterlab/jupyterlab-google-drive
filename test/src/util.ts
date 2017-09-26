@@ -86,6 +86,30 @@ function documentLoader(path: string, connect: PromiseDelegate<void>) {
 
 
 /**
+ * Function to load and authorize gapi with a test account.
+ */
+export
+function authorizeGapiTesting(): Promise<void> {
+  const CLIENT_ID = '<TEST_CLIENT_ID>';
+  const ACCESS_TOKEN = '<TEST_ACCESS_TOKEN>';
+  const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
+  const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
+
+  return new Promise<void>(resolve => {
+    gapi.client.init({
+      discoveryDocs: DISCOVERY_DOCS,
+      clientId: CLIENT_ID,
+      scope: DRIVE_SCOPE
+    }).then(() => {
+      (gapi.client as any).setToken({
+        access_token: ACCESS_TOKEN
+      });
+      resolve();
+    });
+  });
+}
+
+/**
  * A namespace for private data.
  */
 namespace Private {
