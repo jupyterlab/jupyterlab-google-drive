@@ -21,6 +21,10 @@ import {
   PromiseDelegate
 } from '@phosphor/coreutils';
 
+import {
+  gapiAuthorized
+} from '../../lib/gapi';
+
 /**
  * Get a copy of the default rendermime instance.
  */
@@ -104,7 +108,10 @@ function authorizeGapiTesting(): Promise<void> {
       (gapi.client as any).setToken({
         access_token: ACCESS_TOKEN
       });
-      resolve();
+      gapiAuthorized.resolve(void 0);
+      resolve(void 0);
+    }).catch(err => {
+      console.error(err);
     });
   });
 }
