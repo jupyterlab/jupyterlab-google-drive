@@ -22,7 +22,7 @@ import {
 } from '@phosphor/coreutils';
 
 import {
-  gapiAuthorized
+  gapiAuthorized, gapiInitialized
 } from '../../lib/gapi';
 
 /**
@@ -108,6 +108,7 @@ function authorizeGapiTesting(): Promise<void> {
       (gapi.client as any).setToken({
         access_token: ACCESS_TOKEN
       });
+      gapiInitialized.resolve(void 0);
       gapiAuthorized.resolve(void 0);
       resolve(void 0);
     }).catch(err => {
