@@ -23,7 +23,6 @@
   background: var(--jp-layout-color2);
   border-bottom: var(--jp-border-width) solid var(--jp-border-color1);
   box-shadow: var(--jp-toolbar-box-shadow);
-  z-index: 1;
   align-items: center;
 }
 
@@ -65,8 +64,6 @@
 
 .jp-Chatbox-content .jp-Cell {
   margin: 5px;
-  background-color: var(--jp-layout-color1);
-  border: 1px solid var(--jp-border-color2);
   border-radius: 10px;
   flex-grow: 1;
 }
@@ -99,7 +96,8 @@
 }
 
 .p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-self {
-  background-color: var(--jp-layout-color1);
+  background-color: var(--jp-layout-color3);
+  border: 1px solid var(--jp-layout-color4);
   border-radius: 10px 10px 0px 10px;
   overflow: visible;
   margin-right: 18px;
@@ -111,7 +109,7 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent transparent var(--jp-border-color0) var(--jp-border-color0);
+  border-color: transparent transparent var(--jp-layout-color4) var(--jp-layout-color4);
   left: 100%;
   bottom: -1px;
 }
@@ -122,12 +120,13 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent transparent var(--jp-layout-color1) var(--jp-layout-color1);
+  border-color: transparent transparent var(--jp-layout-color3) var(--jp-layout-color3);
   left: calc(100% - 2px);
   bottom: 0px;
 }
 .p-Widget.jp-Cell.jp-MarkdownCell.jp-ChatEntry-receieved {
   background-color: var(--jp-layout-color2);
+  border: 1px solid var(--jp-border-color2);
   border-radius: 10px 10px 10px 0px;
   overflow: visible;
   margin-left: 18px;
@@ -139,7 +138,7 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent var(--jp-border-color0) var(--jp-border-color0) transparent;
+  border-color: transparent var(--jp-border-color2) var(--jp-border-color2) transparent;
   left: -15px;
   bottom: -1px;
 }
