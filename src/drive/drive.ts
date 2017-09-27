@@ -69,11 +69,6 @@ const directoryFileType = DocumentRegistry.defaultDirectoryFileType;
 const SHARED_DIRECTORY = 'Shared with me';
 
 /**
- * The name of the root "My Drive" folder.
- */
-const DRIVE_DIRECTORY = 'My Drive';
-
-/**
  * The path of the dummy pseudo-root folder.
  */
 const COLLECTIONS_DIRECTORY = '';
@@ -384,7 +379,7 @@ function contentsModelFromDummyFileResource(resource: FileResource, path: string
       const content = fileList;
       return { ...contents, content };
     });
-  } else if (resource.name === '' && includeContents) {
+  } else if (resource.name === COLLECTIONS_DIRECTORY && includeContents) {
     // If `resource` is the pseudo-root directory, construct
     // a contents model for it.
     const sharedContentsPromise = contentsModelFromFileResource(
@@ -393,7 +388,7 @@ function contentsModelFromDummyFileResource(resource: FileResource, path: string
     const rootContentsPromise = resourceFromFileId('root').then(
       (rootResource) => {
         return contentsModelFromFileResource(rootResource,
-                                             DRIVE_DIRECTORY,
+                                             rootResource.name,
                                              directoryFileType,
                                              false, undefined);
       });
@@ -1045,14 +1040,21 @@ function resourceFromFileId(id: string): Promise<FileResource> {
 }
 
 /**
- * Given a path component, find the Team Drive resource with
- * the same name.
+ * Given a name, find the user's root drive resource,
+ * or a Team Drive resource with the same name.
  *
  * @param name - The Team Drive name.
  */
-function teamDriveForName(name: string): Promise<TeamDriveResource> {
-  return listTeamDrives().then((drives: TeamDriveResource[]) => {
-    for (let drive of drives) {
+function driveForName(name: string): Promise<TeamDriveResource | FileResource> {
+  const rootResource = resourceFromFileId('root');
+  const teamDriveResources = listTeamDrives();
+  return Promise.all([rootResource, teamDriveResources]).then( result => {
+    const root = result[0];
+    const teamDrives = result[1];
+    if (root.name === name) {
+      return root;
+    }
+    for (let drive of teamDrives) {
       if (drive.name === name) {
         return drive;
       }
@@ -1130,8 +1132,6 @@ function getResourceForPath(path: string): Promise<FileResource> {
     // (i.e., the view onto the "My Drive" and "Shared
     // with me" directories, as well as the pseudo-root).
     return Promise.resolve(COLLECTIONS_DIRECTORY_RESOURCE);
-  } else if (components.length === 1 && components[0] === DRIVE_DIRECTORY) {
-    return resourceFromFileId('root');
   } else if (components.length === 1 && components[0] === SHARED_DIRECTORY) {
     return Promise.resolve(SHARED_DIRECTORY_RESOURCE);
   } else {
@@ -1146,11 +1146,7 @@ function getResourceForPath(path: string): Promise<FileResource> {
     // the path is not in a Team Drive.
     let teamDriveId = '';
 
-    if (components[0] === DRIVE_DIRECTORY) {
-      // Handle the case of the `My Drive` directory.
-      currentResource = Promise.resolve({ id: 'root' });
-      idx = 1; // Set the component index to the second component
-    } else if (components[0] === SHARED_DIRECTORY) {
+    if (components[0] === SHARED_DIRECTORY) {
       // Handle the case of the `Shared With Me` directory.
       currentResource = searchSharedFiles('name = \''+components[1]+'\'')
       .then(files => {
@@ -1167,9 +1163,11 @@ function getResourceForPath(path: string): Promise<FileResource> {
       });
       idx = 2; // Set the component index to the third component.
     } else {
-      // Handle the case of a Team Drive
-      currentResource = teamDriveForName(components[0]).then(drive => {
-        teamDriveId = drive.id!;
+      // Handle the case of a `My Drive` or a Team Drive
+      currentResource = driveForName(components[0]).then(drive => {
+        if (drive.kind === 'drive#teamDrive') {
+          teamDriveId = drive.id!;
+        }
         return drive;
       }).catch(() => {
         throw Error(`Unexpected file in root directory: ${components[0]}`);
