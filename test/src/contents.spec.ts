@@ -27,9 +27,8 @@ import {
   authorizeGapiTesting, expectFailure, expectAjaxError
 } from './util';
 
-let i = 0;
 
-let DEFAULT_DIR: Contents.IModel = {
+const DEFAULT_DIRECTORY: Contents.IModel = {
   name: 'jupyterlab_test_directory',
   path: 'My Drive/jupyterlab_test_directory',
   type: 'directory',
@@ -42,8 +41,8 @@ let DEFAULT_DIR: Contents.IModel = {
 };
 
 const DEFAULT_TEXT_FILE: Contents.IModel = {
-  name: 'jupyterlab_test_file',
-  path: 'My Drive/jupyterlab_test_directory/jupyterlab_test_file',
+  name: 'jupyterlab_test_file_',
+  path: 'My Drive/jupyterlab_test_directory/jupyterlab_test_file_',
   type: 'file',
   created: 'yesterday',
   last_modified: 'today',
@@ -95,7 +94,6 @@ describe('GoogleDrive', () => {
 
   describe('#get()', () => {
 
-
     it('should get the contents of the pseudo-root', (done) => {
       drive.get('').then(contents => {
         expect(contents.name).to.be('');
@@ -131,37 +129,36 @@ describe('GoogleDrive', () => {
   describe('#save()', () => {
 
     it('should save a file', (done) => {
-      i++;
+      let id = uuid();
       let contents = {
         ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name+String(i),
-        path: DEFAULT_TEXT_FILE.path+String(i),
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
       };
-      let save = drive.save(contents.path, contents);
-      save.then(model => {
+      drive.save(contents.path, contents).then(model => {
         expect(model.name).to.be(contents.name);
         expect(model.content).to.be(contents.content);
-        done();
-      });
+        return drive.delete(contents.path);
+      }).then(done);
     });
 
     it('should emit the fileChanged signal', (done) => {
-      i++;
+      let id = uuid();
       let contents = {
         ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name+String(i),
-        path: DEFAULT_TEXT_FILE.path+String(i),
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
       };
       drive.fileChanged.connect((sender, args) => {
         expect(args.type).to.be('save');
         expect(args.oldValue).to.be(null);
         expect(args.newValue.path).to.be(contents.path);
-        done();
+        drive.delete(contents.path).then(done);
       });
       drive.save(contents.path, contents).catch(done);
     });
 
-    it('should fail for an incorrect model', (done) => {
+    /*it('should fail for an incorrect model', (done) => {
       i++;
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -176,29 +173,29 @@ describe('GoogleDrive', () => {
     it('should fail for an incorrect response', (done) => {
       let save = drive.save('/foo', { type: 'file', name: 'test' });
       expectAjaxError(save, done, 'Invalid Status: 204');
-    });
+    });*/
 
   });
 
 
-  /*describe('#fileChanged', () => {
+  describe('#fileChanged', () => {
 
     it('should be emitted when a file changes', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_FILE);
-      });
       drive.fileChanged.connect((sender, args) => {
+        console.warn(args.newValue.path);
         expect(sender).to.be(drive);
         expect(args.type).to.be('new');
         expect(args.oldValue).to.be(null);
-        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
-        done();
+        expect(args.newValue.name.indexOf('untitled') === -1).to.be(false);
+        drive.delete(args.newValue.path).then(done);
       });
-      drive.newUntitled().catch(done);
+      drive.newUntitled({
+        path: DEFAULT_DIRECTORY.path,
+        type: 'file'
+      }).catch(done);
     });
 
-  });*/
+  });
 
   describe('#isDisposed', () => {
 
@@ -222,41 +219,41 @@ describe('GoogleDrive', () => {
 
   });
 
-    /*describe('#getDownloadUrl()', () => {
+  describe('#getDownloadUrl()', () => {
 
-    let settings = ServerConnection.makeSettings({
-      baseUrl: 'http://foo'
-    });
+    let contents: Contents.IModel;
 
-    it('should get the url of a file', () => {
-      let drive = new Drive({ serverSettings: settings });
-      let test1 = drive.getDownloadUrl('bar.txt');
-      let test2 = drive.getDownloadUrl('fizz/buzz/bar.txt');
-      let test3 = drive.getDownloadUrl('/bar.txt');
-      return Promise.all([test1, test2, test3]).then(urls => {
-        expect(urls[0]).to.be('http://foo/files/bar.txt');
-        expect(urls[1]).to.be('http://foo/files/fizz/buzz/bar.txt');
-        expect(urls[2]).to.be('http://foo/files/bar.txt');
+    before((done) => {
+      let id = uuid();
+      contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
+      };
+      drive.save(contents.path, contents).then(() => {
+        done();
       });
     });
 
-    it('should encode characters', () => {
-      let drive = new Drive({ serverSettings: settings });
-      return drive.getDownloadUrl('b ar?3.txt').then(url => {
-        expect(url).to.be('http://foo/files/b%20ar%3F3.txt');
+    after((done) => {
+      drive.delete(contents.path).then(done);
+    });
+
+    it('should get the url of a file', (done) => {
+      drive.getDownloadUrl(contents.path).then( url => {
+        expect(url.length > 0 ).to.be(true);
+        done();
       });
     });
 
-    it('should not handle relative paths', () => {
-      let drive = new Drive({ serverSettings: settings });
-      return drive.getDownloadUrl('fizz/../bar.txt').then(url => {
-        expect(url).to.be('http://foo/files/fizz/../bar.txt');
-      });
+    it('should not handle relative paths', (done) => {
+      let url = drive.getDownloadUrl('My Drive/../'+contents.path);
+      expectFailure(url, done);
     });
 
   });
 
-  describe('#newUntitled()', () => {
+  /*describe('#newUntitled()', () => {
 
     it('should create a file', (done) => {
       let drive = new Drive();
