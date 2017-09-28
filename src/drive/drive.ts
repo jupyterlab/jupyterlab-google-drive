@@ -126,7 +126,7 @@ function urlForFile(path: string): Promise<string> {
  *   or throws an Error if it fails.
  */
 export
-function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType, existing: boolean = false): Promise<Contents.IModel> {
+function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType, existing: boolean = false, fileTypeForPath: ((path: string) => DocumentRegistry.IFileType) | undefined = undefined): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(path)) && !existing) {
     return Promise.reject(
       `Google Drive: "${path}" is not a valid target directory`);
@@ -214,7 +214,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     // Update the cache.
     Private.resourceCache.set(path, result);
 
-    return contentsModelFromFileResource(result, path, fileType, false, undefined);
+    return contentsModelFromFileResource(result, path, fileType, true, fileTypeForPath);
   });
 }
 
@@ -918,7 +918,7 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
     };
 
     // Reupload the reverted file to the head revision.
-    return uploadFile(path, contents, fileType, true);
+    return uploadFile(path, contents, fileType, true, undefined);
   }).then(() => {
     return void 0;
   });

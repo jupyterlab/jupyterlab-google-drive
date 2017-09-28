@@ -194,7 +194,7 @@ class GoogleDrive implements Contents.IDrive {
     return this._getNewFilename(path, ext, baseName).then((name: string) => {
       const m = { ...model, name };
       path = PathExt.join(path, name);
-      return drive.uploadFile(path, m, fileType, false);
+      return drive.uploadFile(path, m, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'new',
@@ -265,7 +265,7 @@ class GoogleDrive implements Contents.IDrive {
       //The file exists
       if(options) {
         //Overwrite the existing file
-        return drive.uploadFile(path, options, fileType, true);
+        return drive.uploadFile(path, options, fileType, true, this._fileTypeForPath);
       } else {
         // File exists, but we are not saving anything
         // to it? Just return the contents.
@@ -273,7 +273,7 @@ class GoogleDrive implements Contents.IDrive {
       }
     }, () => {
       //The file does not exist already, create a new one.
-      return drive.uploadFile(path, options, fileType, false);
+      return drive.uploadFile(path, options, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'save',
