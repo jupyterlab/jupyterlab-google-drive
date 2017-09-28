@@ -211,11 +211,10 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
 
     return driveApiRequest<FileResource>(request);
   }).then((result) => {
-    console.log("gapi: uploaded document to "+result.id);
     // Update the cache.
     Private.resourceCache.set(path, result);
 
-    return contentsModelFromFileResource(result, path, fileType, true, undefined);
+    return contentsModelFromFileResource(result, path, fileType, false, undefined);
   });
 }
 
@@ -506,7 +505,6 @@ function createRealtimeDocument(): Promise<string> {
       }
   });
   return driveApiRequest<FileResource>(request).then((result) => {
-    console.log("gapi: created realtime document "+result.id);
     return result.id!;
   });
 }
@@ -522,7 +520,6 @@ export
 function loadRealtimeDocument(resource: FileResource, picked: boolean = false): Promise<gapi.drive.realtime.Document> {
   return new Promise((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
-      console.log("gapi: attempting to load realtime file " + resource.id);
       gapi.drive.realtime.load(resource.id!, (doc: gapi.drive.realtime.Document) => {
         resolve(doc);
       }, (model: gapi.drive.realtime.Model) => {
