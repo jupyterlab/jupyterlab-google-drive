@@ -138,8 +138,8 @@ describe('GoogleDrive', () => {
       drive.save(contents.path, contents).then(model => {
         expect(model.name).to.be(contents.name);
         expect(model.content).to.be(contents.content);
-        return drive.delete(contents.path);
-      }).then(done);
+        drive.delete(model.path).then(done);
+      });
     });
 
     it('should emit the fileChanged signal', (done) => {
@@ -153,7 +153,7 @@ describe('GoogleDrive', () => {
         expect(args.type).to.be('save');
         expect(args.oldValue).to.be(null);
         expect(args.newValue.path).to.be(contents.path);
-        drive.delete(contents.path).then(done);
+        drive.delete(args.newValue.path).then(done);
       });
       drive.save(contents.path, contents).catch(done);
     });
@@ -182,7 +182,6 @@ describe('GoogleDrive', () => {
 
     it('should be emitted when a file changes', (done) => {
       drive.fileChanged.connect((sender, args) => {
-        console.warn(args.newValue.path);
         expect(sender).to.be(drive);
         expect(args.type).to.be('new');
         expect(args.oldValue).to.be(null);
@@ -253,50 +252,51 @@ describe('GoogleDrive', () => {
 
   });
 
-  /*describe('#newUntitled()', () => {
+  describe('#newUntitled()', () => {
 
     it('should create a file', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_FILE);
-      });
-      drive.newUntitled({ path: '/foo' }).then(model => {
-        expect(model.path).to.be(DEFAULT_FILE.path);
-        done();
+      drive.newUntitled({
+        path: DEFAULT_DIRECTORY.path,
+        type: 'file',
+        ext: 'test'
+      }).then(model => {
+        expect(model.path).to.be(DEFAULT_DIRECTORY.path+'/'+model.name);
+        expect(model.name.indexOf('untitled') === -1).to.be(false);
+        expect(model.name.indexOf('test') === -1).to.be(false);
+        drive.delete(model.path).then(done);
       });
     });
 
     it('should create a directory', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_DIR);
-      });
       let options: Contents.ICreateOptions = {
-        path: '/foo',
+        path: DEFAULT_DIRECTORY.path,
         type: 'directory'
       };
-      let newDir = drive.newUntitled(options);
-      newDir.then(model => {
-        expect(model.content[0].path).to.be(DEFAULT_DIR.content[0].path);
-        done();
+      drive.newUntitled(options).then(model => {
+        expect(model.path).to.be(DEFAULT_DIRECTORY.path+'/'+model.name);
+        expect(model.name.indexOf('Untitled Folder') === -1).to.be(false);
+        drive.delete(model.path).then(done);
       });
     });
 
     it('should emit the fileChanged signal', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_FILE);
-      });
       drive.fileChanged.connect((sender, args) => {
         expect(args.type).to.be('new');
         expect(args.oldValue).to.be(null);
-        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
-        done();
+        expect(args.newValue.path).to.be(DEFAULT_DIRECTORY.path+
+                                         '/'+args.newValue.name);
+        expect(args.newValue.name.indexOf('untitled') === -1).to.be(false);
+        expect(args.newValue.name.indexOf('test') === -1).to.be(false);
+        drive.delete(args.newValue.path).then(done);
       });
-      drive.newUntitled({ type: 'file', ext: 'test' }).catch(done);
+      drive.newUntitled({
+        type: 'file',
+        ext: 'test',
+        path: DEFAULT_DIRECTORY.path
+      }).catch(done);
     });
 
-    it('should fail for an incorrect model', (done) => {
+    /*it('should fail for an incorrect model', (done) => {
       let drive = new Drive();
       let dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
       dir.name = 1;
@@ -319,9 +319,9 @@ describe('GoogleDrive', () => {
       });
       let newDir = drive.newUntitled();
       expectAjaxError(newDir, done, 'Invalid Status: 200');
-    });
+    });*/
 
-  });*/
+  });
 
   /*describe('#delete()', () => {
 
