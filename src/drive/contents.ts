@@ -156,7 +156,7 @@ class GoogleDrive implements Contents.IDrive {
     let model: Partial<Contents.IModel>;
     if (contentType === 'notebook') {
       fileType = DocumentRegistry.defaultNotebookFileType;
-      ext = fileType.extensions[0];
+      ext = ext || fileType.extensions[0];
       baseName = 'Untitled'
       const modelFactory = this._docRegistry.getModelFactory('Notebook');
       if (!modelFactory) {
@@ -170,7 +170,7 @@ class GoogleDrive implements Contents.IDrive {
       };
     } else if (contentType === 'file') {
       fileType = DocumentRegistry.defaultTextFileType;
-      ext = fileType.extensions[0];
+      ext = ext || fileType.extensions[0];
       baseName = 'untitled';
       model = {
         type: fileType.contentType,
@@ -180,7 +180,7 @@ class GoogleDrive implements Contents.IDrive {
       };
     } else if (contentType === 'directory') {
       fileType = DocumentRegistry.defaultDirectoryFileType;
-      ext = '';
+      ext = ext || '';
       baseName = 'Untitled Folder';
       model = {
         type: fileType.contentType,
