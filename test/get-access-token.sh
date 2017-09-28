@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cd offline
 npm install
 node get-access-token.js > token.txt

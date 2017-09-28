@@ -27,7 +27,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:test": "tsc --project test && webpack --config test/webpack.config.js",
+    "build:test": "cd test && ./get-access-token.sh && cd .. && tsc --project test && webpack --config test/webpack.config.js",
     "test": "karma start --browsers=Firefox test/karma.conf.js",
     "clean": "rimraf lib",
     "watch": "tsc -w"
@@ -60,6 +60,7 @@
     "@types/google-drive-realtime-api": "^0.0.33",
     "@types/mocha": "^2.2.32",
     "@types/node": "^7.0.11",
+    "css-loader": "^0.28.7",
     "expect.js": "^0.3.1",
     "karma": "^1.5.0",
     "karma-chrome-launcher": "^0.2.2",
@@ -69,6 +70,7 @@
     "karma-sourcemap-loader": "^0.3.7",
     "mocha": "^3.2.0",
     "rimraf": "^2.5.2",
+    "style-loader": "^0.18.2",
     "typescript": "~2.4.1",
     "webpack": "^2.2.1"
   },

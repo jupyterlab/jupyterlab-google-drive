@@ -23,7 +23,7 @@ module.exports = function (config) {
     preprocessors: {
       'build/bundle.js': ['sourcemap']
     },
-    port: 8899,
+    port: 8888,
     colors: true,
     singleRun: true,
     logLevel: config.LOG_INFO
