@@ -28,6 +28,10 @@ import {
 } from '@jupyterlab/docmanager';
 
 import {
+  DocumentRegistry, Context
+} from '@jupyterlab/docregistry';
+
+import {
   IFileBrowserFactory
 } from '@jupyterlab/filebrowser';
 
@@ -228,21 +232,71 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
     keys: ['Ctrl Enter']
   });
 
-  const updateDocumentContext = function (): void {
+  /**
+   * If the current collaborative context is closed,
+   * we can search through the currently active documents
+   * for another one. If none is found, remove the
+   * chatbox widget.
+   */
+  const maybeFindCollaborativeContext = () => {
+    const iterator = shell.widgets('main');
+    let widget: Widget | undefined;
+    while (widget = iterator.next()) {
+      // If the widget is a collaborative document,
+      // reset the context and show the chatbox.
+      const context = docManager.contextForWidget(widget);
+      if (context && !context.isDisposed &&
+          context.model.modelDB.isCollaborative) {
+        if (!panel.isAttached) {
+          shell.addToLeftArea(panel);
+        }
+        panel.context = context;
+        context.disposed.connect(onContextDisposed);
+        return;
+      }
+    }
+    panel.context = undefined;
+    panel.parent = null;
+  };
+
+  /**
+   * Handler for the disposal of one of our collaborative contexts.
+   * If it is not the currently active one, do nothing. If it is,
+   * we look for another one.
+   */
+  const onContextDisposed = (context: Context<DocumentRegistry.IModel>) => {
+    if (panel.context !== context) {
+      return;
+    } else {
+      maybeFindCollaborativeContext();
+    }
+  };
+
+  /**
+   * If there is a change in the active widget,
+   * check if it has a collaborative context. If
+   * so, set that to be the active chatbox context.
+   */
+  const onCurrentWidgetChanged = () =>  {
     const widget = shell.currentWidget;
     const context = widget ? docManager.contextForWidget(widget) : undefined;
-    if (context && context.model.modelDB.isCollaborative) {
+    if (context && !context.isDisposed &&
+        context.model.modelDB.isCollaborative) {
+      // If the new widget is a collaborative document,
+      // reset the context and show the chatbox.
       if (!panel.isAttached) {
         shell.addToLeftArea(panel);
       }
       panel.context = context;
+      context.disposed.connect(onContextDisposed);
+      return;
     }
   };
 
   app.restored.then(() => {
-    updateDocumentContext();
+    onCurrentWidgetChanged();
   });
-  shell.currentChanged.connect(updateDocumentContext);
+  shell.currentChanged.connect(onCurrentWidgetChanged);
 }
 
 
