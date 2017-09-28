@@ -323,33 +323,38 @@ describe('GoogleDrive', () => {
 
   });
 
-  /*describe('#delete()', () => {
+  describe('#delete()', () => {
 
     it('should delete a file', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(204, { });
-      });
-      drive.delete('/foo/bar.txt').then(() => {
-        done();
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
+      };
+      drive.save(contents.path, contents).then(model => {
+        drive.delete(model.path).then(done);
       });
     });
 
     it('should emit the fileChanged signal', (done) => {
-      let drive = new Drive();
-      let path = '/foo/bar.txt';
-      let handler = new RequestHandler(() => {
-        handler.respond(204, { path });
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
+      };
+      drive.save(contents.path, contents).then(model => {
+        drive.fileChanged.connect((sender, args) => {
+          expect(args.type).to.be('delete');
+          expect(args.oldValue.path).to.be(contents.path);
+          done();
+        });
+        drive.delete(contents.path).catch(done);
       });
-      drive.fileChanged.connect((sender, args) => {
-        expect(args.type).to.be('delete');
-        expect(args.oldValue.path).to.be(path);
-        done();
-      });
-      drive.delete(path).catch(done);
     });
 
-    it('should fail for an incorrect response', (done) => {
+    /*it('should fail for an incorrect response', (done) => {
       let drive = new Drive();
       let handler = new RequestHandler(() => {
         handler.respond(200, { });
@@ -374,11 +379,11 @@ describe('GoogleDrive', () => {
       });
       let del = drive.delete('/foo/');
       expectFailure(del, done, '');
-    });
+    });*/
 
   });
 
-  describe('#rename()', () => {
+  /*describe('#rename()', () => {
 
     it('should rename a file', (done) => {
       let drive = new Drive();
