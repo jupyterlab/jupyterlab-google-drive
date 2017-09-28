@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/rendermime';
 
 import {
-  ServiceManager
+  ServiceManager, ServerConnection
 } from '@jupyterlab/services';
 
 import {
@@ -115,6 +115,35 @@ function authorizeGapiTesting(): Promise<void> {
       console.error(err);
     });
   });
+}
+
+/**
+ * Expect a failure on a promise with the given message, then call `done`.
+ */
+export
+function expectFailure(promise: Promise<any>, done: () => void, message?: string): Promise<any> {
+  return promise.then((msg: any) => {
+    throw Error('Expected failure did not occur');
+  }, (error: Error) => {
+    if (message && error.message.indexOf(message) === -1) {
+      throw Error(`Error "${message}" not in: "${error.message}"`);
+    }
+  }).then(done, done);
+}
+
+
+/**
+ * Expect an Ajax failure with a given message.
+ */
+export
+function expectAjaxError(promise: Promise<any>, done: () => void, message: string): Promise<any> {
+  return promise.then((msg: any) => {
+    throw Error('Expected failure did not occur');
+  }, (error: ServerConnection.IError) => {
+    if (error.message !== message) {
+      throw Error(`Error "${message}" not equal to "${error.message}"`);
+    }
+  }).then(done, done);
 }
 
 /**
