@@ -158,23 +158,6 @@ describe('GoogleDrive', () => {
       drive.save(contents.path, contents).catch(done);
     });
 
-    /*it('should fail for an incorrect model', (done) => {
-      i++;
-      let contents = {
-        ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name+String(i),
-        path: DEFAULT_TEXT_FILE.path+String(i),
-        format: undefined
-      };
-      let save = drive.save(contents.path, contents);
-      expectFailure(save, done);
-    });
-
-    it('should fail for an incorrect response', (done) => {
-      let save = drive.save('/foo', { type: 'file', name: 'test' });
-      expectAjaxError(save, done, 'Invalid Status: 204');
-    });*/
-
   });
 
 
@@ -296,31 +279,6 @@ describe('GoogleDrive', () => {
       }).catch(done);
     });
 
-    /*it('should fail for an incorrect model', (done) => {
-      let drive = new Drive();
-      let dir = JSON.parse(JSON.stringify(DEFAULT_DIR));
-      dir.name = 1;
-      let handler = new RequestHandler(() => {
-        handler.respond(201, dir);
-      });
-      let options: Contents.ICreateOptions = {
-        path: '/foo',
-        type: 'file',
-        ext: 'py'
-      };
-      let newFile = drive.newUntitled(options);
-      expectFailure(newFile, done);
-    });
-
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, DEFAULT_DIR);
-      });
-      let newDir = drive.newUntitled();
-      expectAjaxError(newDir, done, 'Invalid Status: 200');
-    });*/
-
   });
 
   describe('#delete()', () => {
@@ -354,81 +312,47 @@ describe('GoogleDrive', () => {
       });
     });
 
-    /*it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, { });
-      });
-      let del = drive.delete('/foo/bar.txt');
-      expectAjaxError(del, done, 'Invalid Status: 200');
-    });
-
-    it('should throw a specific error', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(400, { });
-      });
-      let del = drive.delete('/foo/');
-      expectFailure(del, done, '');
-    });
-
-    it('should throw a general error', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(500, { });
-      });
-      let del = drive.delete('/foo/');
-      expectFailure(del, done, '');
-    });*/
-
   });
 
-  /*describe('#rename()', () => {
+  describe('#rename()', () => {
 
     it('should rename a file', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, DEFAULT_FILE);
-      });
-      let rename = drive.rename('/foo/bar.txt', '/foo/baz.txt');
-      rename.then(model => {
-        expect(model.created).to.be(DEFAULT_FILE.created);
-        done();
+      let id1 = uuid();
+      let id2 = uuid();
+      let path2 = DEFAULT_TEXT_FILE.path+id2;
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id1,
+        path: DEFAULT_TEXT_FILE.path+id1,
+      };
+      drive.save(contents.path, contents).then(() => {
+        drive.rename(contents.path, path2).then(model => {
+          expect(model.name).to.be(DEFAULT_TEXT_FILE.name+id2);
+          expect(model.path).to.be(path2);
+          expect(model.content).to.be(contents.content);
+          drive.delete(model.path).then(done);
+        });
       });
     });
 
     it('should emit the fileChanged signal', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, DEFAULT_FILE);
+      let id1 = uuid();
+      let id2 = uuid();
+      let path2 = DEFAULT_TEXT_FILE.path+id2;
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id1,
+        path: DEFAULT_TEXT_FILE.path+id1,
+      };
+      drive.save(contents.path, contents).then(() => {
+        drive.fileChanged.connect((sender, args) => {
+          expect(args.type).to.be('rename');
+          expect(args.oldValue.path).to.be(contents.path);
+          expect(args.newValue.path).to.be(path2);
+          drive.delete(args.newValue.path).then(done);
+        });
+        drive.rename(contents.path, path2);
       });
-      drive.fileChanged.connect((sender, args) => {
-        expect(args.type).to.be('rename');
-        expect(args.oldValue.path).to.be('/foo/bar.txt');
-        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
-        done();
-      });
-      drive.rename('/foo/bar.txt', '/foo/baz.txt').catch(done);
-    });
-
-    it('should fail for an incorrect model', (done) => {
-      let drive = new Drive();
-      let dir = JSON.parse(JSON.stringify(DEFAULT_FILE));
-      delete dir.path;
-      let handler = new RequestHandler(() => {
-        handler.respond(200, dir);
-      });
-      let rename = drive.rename('/foo/bar.txt', '/foo/baz.txt');
-      expectFailure(rename, done);
-    });
-
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_FILE);
-      });
-      let rename = drive.rename('/foo/bar.txt', '/foo/baz.txt');
-      expectAjaxError(rename, done, 'Invalid Status: 201');
     });
 
   });
@@ -436,53 +360,51 @@ describe('GoogleDrive', () => {
   describe('#copy()', () => {
 
     it('should copy a file', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_FILE);
-      });
-      drive.copy('/foo/bar.txt', '/baz').then(model => {
-        expect(model.created).to.be(DEFAULT_FILE.created);
-        done();
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
+      };
+      drive.save(contents.path, contents).then(() => {
+        drive.copy(contents.path, DEFAULT_DIRECTORY.path).then(model => {
+          expect(model.name.indexOf(contents.name) === -1).to.be(false);
+          expect(model.name.indexOf('Copy') === -1).to.be(false);
+          expect(model.content).to.be(contents.content);
+
+          let first = drive.delete(contents.path);
+          let second = drive.delete(model.path);
+          Promise.all([first, second]).then(() => { done(); }); 
+        });
       });
     });
 
     it('should emit the fileChanged signal', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_FILE);
-      });
-      drive.fileChanged.connect((sender, args) => {
-        expect(args.type).to.be('new');
-        expect(args.oldValue).to.be(null);
-        expect(args.newValue.path).to.be(DEFAULT_FILE.path);
-        done();
-      });
-      drive.copy('/foo/bar.txt', '/baz').catch(done);
-    });
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
+      };
+      drive.save(contents.path, contents).then(() => {
+        drive.fileChanged.connect((sender, args) => {
+          expect(args.type).to.be('new');
+          expect(args.oldValue).to.be(null);
+          expect(args.newValue.content).to.be(contents.content);
+          expect(args.newValue.name.indexOf(contents.name) === -1).to.be(false);
+          expect(args.newValue.name.indexOf('Copy') === -1).to.be(false);
 
-    it('should fail for an incorrect model', (done) => {
-      let drive = new Drive();
-      let file = JSON.parse(JSON.stringify(DEFAULT_FILE));
-      delete file.type;
-      let handler = new RequestHandler(() => {
-        handler.respond(201, file);
+          let first = drive.delete(contents.path);
+          let second = drive.delete(args.newValue.path);
+          Promise.all([first, second]).then(() => { done(); }); 
+        });
+        drive.copy(contents.path, DEFAULT_DIRECTORY.path);
       });
-      let copy = drive.copy('/foo/bar.txt', '/baz');
-      expectFailure(copy, done);
-    });
-
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, DEFAULT_FILE);
-      });
-      let copy = drive.copy('/foo/bar.txt', '/baz');
-      expectAjaxError(copy, done, 'Invalid Status: 200');
     });
 
   });
 
-  describe('#createCheckpoint()', () => {
+  /*describe('#createCheckpoint()', () => {
 
     it('should create a checkpoint', (done) => {
       let drive = new Drive();
