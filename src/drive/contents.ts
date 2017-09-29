@@ -300,8 +300,15 @@ class GoogleDrive implements Contents.IDrive {
     const ext = PathExt.extname(fromFile);
 
     return this._getNewFilename(toDir, ext, fileBasename).then((name) => {
-      return drive.copyFile(fromFile, PathExt.join(toDir, name),
-                            this._fileTypeForPath);
+      return drive.copyFile(fromFile, PathExt.join(toDir, name), this._fileTypeForPath)
+      .then( contents => {
+        this._fileChanged.emit({
+          type: 'new',
+          oldValue: null,
+          newValue: contents
+        });
+        return contents;
+      });
     });
   }
 
