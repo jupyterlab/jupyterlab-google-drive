@@ -669,7 +669,7 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       `GoogleDrive: "${newPath}" is not a valid target`);
   }
   if( oldPath === newPath ) {
-    return contentsModelForPath(oldPath, false, fileTypeForPath);
+    return contentsModelForPath(oldPath, true, fileTypeForPath);
   } else {
     let newFolderPath = PathExt.dirname(newPath);
     newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
@@ -715,7 +715,7 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       Private.resourceCache.delete(oldPath);
       Private.resourceCache.set(newPath, response);
 
-      return contentsModelForPath(newPath, false, fileTypeForPath);
+      return contentsModelForPath(newPath, true, fileTypeForPath);
     });
   }
 }
@@ -787,7 +787,7 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
     }).then((response) => {
       // Update the cache.
       Private.resourceCache.set(newPath, response);
-      return contentsModelForPath(newPath, false, fileTypeForPath);
+      return contentsModelForPath(newPath, true, fileTypeForPath);
     });
   }
 }
