@@ -150,13 +150,21 @@ describe('GoogleDrive', () => {
         name: DEFAULT_TEXT_FILE.name+String(id),
         path: DEFAULT_TEXT_FILE.path+String(id),
       };
-      drive.fileChanged.connect((sender, args) => {
+      let called = false;
+      const onFileChanged = (sender, args) => {
         expect(args.type).to.be('save');
         expect(args.oldValue).to.be(null);
         expect(args.newValue.path).to.be(contents.path);
-        drive.delete(args.newValue.path).then(done);
+        called = true;
+      };
+      drive.fileChanged.connect(onFileChanged);
+      drive.save(contents.path, contents).then(model => {
+        drive.fileChanged.disconnect(onFileChanged);
+        return drive.delete(model.path)
+      }).then(() => {
+        expect(called).to.be(true);
+        done();
       });
-      drive.save(contents.path, contents).catch(done);
     });
 
   });
@@ -165,17 +173,25 @@ describe('GoogleDrive', () => {
   describe('#fileChanged', () => {
 
     it('should be emitted when a file changes', (done) => {
-      drive.fileChanged.connect((sender, args) => {
+      let called = false;
+      const onFileChanged = (sender, args) => {
         expect(sender).to.be(drive);
         expect(args.type).to.be('new');
         expect(args.oldValue).to.be(null);
         expect(args.newValue.name.indexOf('untitled') === -1).to.be(false);
-        drive.delete(args.newValue.path).then(done);
-      });
+        called = true;
+      };
+      drive.fileChanged.connect(onFileChanged);
       drive.newUntitled({
         path: DEFAULT_DIRECTORY.path,
         type: 'file'
-      }).catch(done);
+      }).then(model => {
+        drive.fileChanged.disconnect(onFileChanged);
+        return drive.delete(model.path)
+      }).then(() => {
+        expect(called).to.be(true);
+        done();
+      });
     });
 
   });
@@ -264,20 +280,28 @@ describe('GoogleDrive', () => {
     });
 
     it('should emit the fileChanged signal', (done) => {
-      drive.fileChanged.connect((sender, args) => {
+      let called = false;
+      const onFileChanged = (sender, args) => {
         expect(args.type).to.be('new');
         expect(args.oldValue).to.be(null);
         expect(args.newValue.path).to.be(DEFAULT_DIRECTORY.path+
                                          '/'+args.newValue.name);
         expect(args.newValue.name.indexOf('untitled') === -1).to.be(false);
         expect(args.newValue.name.indexOf('test') === -1).to.be(false);
-        drive.delete(args.newValue.path).then(done);
-      });
+        called = true;
+      };
+      drive.fileChanged.connect(onFileChanged);
       drive.newUntitled({
         type: 'file',
         ext: 'test',
         path: DEFAULT_DIRECTORY.path
-      }).catch(done);
+      }).then( model => {
+        drive.fileChanged.disconnect(onFileChanged);
+        return drive.delete(model.path);
+      }).then(() => {
+        expect(called).to.be(true);
+        done();
+      });
     });
 
   });
@@ -345,14 +369,22 @@ describe('GoogleDrive', () => {
         name: DEFAULT_TEXT_FILE.name+id1,
         path: DEFAULT_TEXT_FILE.path+id1,
       };
+      let called = false;
+      const onFileChanged = (sender, args) => {
+        expect(args.type).to.be('rename');
+        expect(args.oldValue.path).to.be(contents.path);
+        expect(args.newValue.path).to.be(path2);
+        called = true;
+      };
       drive.save(contents.path, contents).then(() => {
-        drive.fileChanged.connect((sender, args) => {
-          expect(args.type).to.be('rename');
-          expect(args.oldValue.path).to.be(contents.path);
-          expect(args.newValue.path).to.be(path2);
-          drive.delete(args.newValue.path).then(done);
-        });
-        drive.rename(contents.path, path2);
+        drive.fileChanged.connect(onFileChanged);
+        return drive.rename(contents.path, path2);
+      }).then(model => {
+        drive.fileChanged.disconnect(onFileChanged);
+        return drive.delete(model.path);
+      }).then(() => {
+        expect(called).to.be(true);
+        done();
       });
     });
 
@@ -387,19 +419,26 @@ describe('GoogleDrive', () => {
         name: DEFAULT_TEXT_FILE.name+id,
         path: DEFAULT_TEXT_FILE.path+id,
       };
+      let called = false;
+      const onFileChanged = (sender, args) => {
+        expect(args.type).to.be('new');
+        expect(args.oldValue).to.be(null);
+        expect(args.newValue.content).to.be(contents.content);
+        expect(args.newValue.name.indexOf(contents.name) === -1).to.be(false);
+        expect(args.newValue.name.indexOf('Copy') === -1).to.be(false);
+        called = true;
+      };
       drive.save(contents.path, contents).then(() => {
-        drive.fileChanged.connect((sender, args) => {
-          expect(args.type).to.be('new');
-          expect(args.oldValue).to.be(null);
-          expect(args.newValue.content).to.be(contents.content);
-          expect(args.newValue.name.indexOf(contents.name) === -1).to.be(false);
-          expect(args.newValue.name.indexOf('Copy') === -1).to.be(false);
-
-          let first = drive.delete(contents.path);
-          let second = drive.delete(args.newValue.path);
-          Promise.all([first, second]).then(() => { done(); }); 
-        });
-        drive.copy(contents.path, DEFAULT_DIRECTORY.path);
+        drive.fileChanged.connect(onFileChanged);
+        return drive.copy(contents.path, DEFAULT_DIRECTORY.path);
+      }).then(model => {
+        drive.fileChanged.disconnect(onFileChanged);
+        let first = drive.delete(contents.path);
+        let second = drive.delete(model.path);
+        return Promise.all([first, second]);
+      }).then(() => {
+        expect(called).to.be(true);
+        done();
       });
     });
 
