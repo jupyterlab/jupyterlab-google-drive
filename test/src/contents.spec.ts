@@ -52,6 +52,7 @@ const DEFAULT_TEXT_FILE: Contents.IModel = {
   format: 'text'
 };
 
+
 describe('GoogleDrive', () => {
 
   let registry: DocumentRegistry;
@@ -404,38 +405,22 @@ describe('GoogleDrive', () => {
 
   });
 
-  /*describe('#createCheckpoint()', () => {
+  describe('#createCheckpoint()', () => {
 
     it('should create a checkpoint', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, DEFAULT_CP);
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
+      };
+      drive.save(contents.path, contents).then(() => {
+        drive.createCheckpoint(contents.path).then( cp => {
+          expect(cp.last_modified.length > 0).to.be(true);
+          expect(cp.id.length > 0).to.be(true);
+          drive.delete(contents.path).then(done);
+        });
       });
-      let checkpoint = drive.createCheckpoint('/foo/bar.txt');
-      checkpoint.then(model => {
-        expect(model.last_modified).to.be(DEFAULT_CP.last_modified);
-        done();
-      });
-    });
-
-    it('should fail for an incorrect model', (done) => {
-      let drive = new Drive();
-      let cp = JSON.parse(JSON.stringify(DEFAULT_CP));
-      delete cp.last_modified;
-      let handler = new RequestHandler(() => {
-        handler.respond(201, cp);
-      });
-      let checkpoint = drive.createCheckpoint('/foo/bar.txt');
-      expectFailure(checkpoint, done);
-    });
-
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, DEFAULT_CP);
-      });
-      let checkpoint = drive.createCheckpoint('/foo/bar.txt');
-      expectAjaxError(checkpoint, done, 'Invalid Status: 200');
     });
 
   });
@@ -443,43 +428,22 @@ describe('GoogleDrive', () => {
   describe('#listCheckpoints()', () => {
 
     it('should list the checkpoints', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, [DEFAULT_CP, DEFAULT_CP]);
-      });
-      let checkpoints = drive.listCheckpoints('/foo/bar.txt');
-      checkpoints.then(models => {
-        expect(models[0].last_modified).to.be(DEFAULT_CP.last_modified);
-        done();
-      });
-    });
-
-    it('should fail for an incorrect model', (done) => {
-      let drive = new Drive();
-      let cp = JSON.parse(JSON.stringify(DEFAULT_CP));
-      delete cp.id;
-      let handler = new RequestHandler(() => {
-        handler.respond(200, [cp, DEFAULT_CP]);
-      });
-      let checkpoints = drive.listCheckpoints('/foo/bar.txt');
-      let second = () => {
-        handler.onRequest = () => {
-          handler.respond(200, DEFAULT_CP);
-        };
-        let newCheckpoints = drive.listCheckpoints('/foo/bar.txt');
-        expectAjaxError(newCheckpoints, done, 'Invalid Checkpoint list');
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
       };
-
-      expectFailure(checkpoints, second);
-    });
-
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(201, { });
+      let cp: Contents.ICheckpointModel;
+      drive.save(contents.path, contents).then(() => {
+        drive.createCheckpoint(contents.path).then( checkpoint => {
+          cp = checkpoint;
+          drive.listCheckpoints(contents.path).then( cps => {
+            expect(cps.filter(c => c.id === cp.id).length === 0).to.be(false);
+            drive.delete(contents.path).then(done);
+          });
+        });
       });
-      let checkpoints = drive.listCheckpoints('/foo/bar.txt');
-      expectAjaxError(checkpoints, done, 'Invalid Status: 201');
     });
 
   });
@@ -487,25 +451,33 @@ describe('GoogleDrive', () => {
   describe('#restoreCheckpoint()', () => {
 
     it('should restore a checkpoint', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(204, { });
-      });
-      let checkpoint = drive.restoreCheckpoint('/foo/bar.txt',
-                                                  DEFAULT_CP.id);
-      checkpoint.then(() => {
-        done();
-      });
-    });
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
+      };
+      let newContents = {
+        ...contents,
+        content: 'This is some new text'
+      }
+      let cp: Contents.ICheckpointModel;
 
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, { });
-      });
-      let checkpoint = drive.restoreCheckpoint('/foo/bar.txt',
-                                                  DEFAULT_CP.id);
-      expectAjaxError(checkpoint, done, 'Invalid Status: 200');
+      drive.save(contents.path, contents).then(() => {
+        return drive.createCheckpoint(contents.path);
+      }).then( checkpoint => {
+        cp = checkpoint;
+        return drive.save(contents.path, newContents);
+      }).then( model => {
+        expect(model.content).to.be(newContents.content);
+        return drive.restoreCheckpoint(contents.path, cp.id);
+      }).then(() => {
+        done();
+        return drive.get(contents.path);
+      }).then( oldModel => {
+        expect(oldModel.content).to.be(contents.content);
+        return drive.delete(contents.path);
+      }).then(done);
     });
 
   });
@@ -513,22 +485,26 @@ describe('GoogleDrive', () => {
   describe('#deleteCheckpoint()', () => {
 
     it('should delete a checkpoint', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(204, { });
-      });
-      drive.deleteCheckpoint('/foo/bar.txt', DEFAULT_CP.id)
-      .then(() => { done(); });
-    });
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
+      };
+      let cp: Contents.ICheckpointModel;
 
-    it('should fail for an incorrect response', (done) => {
-      let drive = new Drive();
-      let handler = new RequestHandler(() => {
-        handler.respond(200, { });
-      });
-      let checkpoint = drive.deleteCheckpoint('/foo/bar.txt',
-                                                  DEFAULT_CP.id);
-      expectAjaxError(checkpoint, done, 'Invalid Status: 200');
+      drive.save(contents.path, contents).then(() => {
+        return drive.createCheckpoint(contents.path);
+      }).then( checkpoint => {
+        cp = checkpoint;
+        return drive.deleteCheckpoint(contents.path, cp.id);
+      }).then(() => {
+        return drive.listCheckpoints(contents.path);
+      }).then(cps => {
+        expect(cps.filter(c => c.id === cp.id).length === 0).to.be(true);
+        return drive.delete(contents.path);
+      }).then(done);
     });
-  */
+  });
+
 });
