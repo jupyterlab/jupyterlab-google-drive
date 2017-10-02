@@ -10,5 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "googleapis": "^21.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jupyterlab/jupyterlab-google-drive.git"
   }
 }
