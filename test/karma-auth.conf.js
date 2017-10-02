@@ -12,7 +12,7 @@ module.exports = function (config) {
     ],
     client: {
       mocha: {
-        timeout : 5000, // 5 seconds - upped from 2 seconds
+        timeout : 10000, // 10 seconds: Google Drive can be slow.
         retries: 3 // Allow for slow server on CI.
       }
     },

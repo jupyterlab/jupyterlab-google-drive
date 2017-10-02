@@ -6,6 +6,6 @@ karma start --browsers=Firefox karma.conf.js
 if [ ! -z $CLIENT_ID ] && [ ! -z $CLIENT_SECRET ] && [ ! -z $REFRESH_TOKEN ]; then
 
   echo "Running remote Google Drive tests"
-  karma start --browsers=Firefox karma-auth.conf.js
+  karma start --browsers=Firefox karma-auth.conf.js || karma start --browsers=Firefox karma-auth.conf.js
 
 fi
