@@ -29,7 +29,7 @@ import {
 
 import {
   validateContentsModel, validateCheckpointModel
-} from './validate';
+} from '@jupyterlab/services/lib/contents/validate';
 
 
 /**
