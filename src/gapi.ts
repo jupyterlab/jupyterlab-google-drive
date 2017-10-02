@@ -160,9 +160,8 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
       request.then((response) => {
         if(response.status !== successCode) {
           // Handle an HTTP error.
-          console.log("gapi: Drive API error: ", response.status);
-          console.log(response, request);
-          reject(makeError(response.result));
+          let result: any = response.result;
+          reject(makeError(result.error.code, result.error.message));
         } else {
           // If the response is note JSON-able, then `response.result`
           // will be `false`, and the raw data will be in `response.body`.
@@ -191,8 +190,8 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
             });
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
         } else {
-          console.log(response, request);
-          reject(makeError(response.result));
+          let result: any = response.result;
+          reject(makeError(result.error.code, result.error.message));
         }
       });
     });
@@ -293,13 +292,13 @@ function refreshAuthToken(): Promise<void> {
 
 /**
  * Wrap an API error in a hacked-together error object
- * masquerading as an `IAJaxError`.
+ * masquerading as an `ServerConnection.IError`.
  */
 export
-function makeError(result: any): ServerConnection.IError {
+function makeError(code: number, message: string): ServerConnection.IError {
   const xhr = {
-    status: result.error.code,
-    responseText: result.error.message
+    status: code,
+    responseText: message
   };
   return {
     event: undefined,
