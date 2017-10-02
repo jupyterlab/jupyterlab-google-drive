@@ -156,7 +156,7 @@ class GoogleDrive implements Contents.IDrive {
     let model: Partial<Contents.IModel>;
     if (contentType === 'notebook') {
       fileType = DocumentRegistry.defaultNotebookFileType;
-      ext = fileType.extensions[0];
+      ext = ext || fileType.extensions[0];
       baseName = 'Untitled'
       const modelFactory = this._docRegistry.getModelFactory('Notebook');
       if (!modelFactory) {
@@ -170,7 +170,7 @@ class GoogleDrive implements Contents.IDrive {
       };
     } else if (contentType === 'file') {
       fileType = DocumentRegistry.defaultTextFileType;
-      ext = fileType.extensions[0];
+      ext = ext || fileType.extensions[0];
       baseName = 'untitled';
       model = {
         type: fileType.contentType,
@@ -180,7 +180,7 @@ class GoogleDrive implements Contents.IDrive {
       };
     } else if (contentType === 'directory') {
       fileType = DocumentRegistry.defaultDirectoryFileType;
-      ext = '';
+      ext = ext || '';
       baseName = 'Untitled Folder';
       model = {
         type: fileType.contentType,
@@ -194,7 +194,7 @@ class GoogleDrive implements Contents.IDrive {
     return this._getNewFilename(path, ext, baseName).then((name: string) => {
       const m = { ...model, name };
       path = PathExt.join(path, name);
-      return drive.uploadFile(path, m, fileType, false);
+      return drive.uploadFile(path, m, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'new',
@@ -265,7 +265,7 @@ class GoogleDrive implements Contents.IDrive {
       //The file exists
       if(options) {
         //Overwrite the existing file
-        return drive.uploadFile(path, options, fileType, true);
+        return drive.uploadFile(path, options, fileType, true, this._fileTypeForPath);
       } else {
         // File exists, but we are not saving anything
         // to it? Just return the contents.
@@ -273,7 +273,7 @@ class GoogleDrive implements Contents.IDrive {
       }
     }, () => {
       //The file does not exist already, create a new one.
-      return drive.uploadFile(path, options, fileType, false);
+      return drive.uploadFile(path, options, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       this._fileChanged.emit({
         type: 'save',
@@ -300,8 +300,15 @@ class GoogleDrive implements Contents.IDrive {
     const ext = PathExt.extname(fromFile);
 
     return this._getNewFilename(toDir, ext, fileBasename).then((name) => {
-      return drive.copyFile(fromFile, PathExt.join(toDir, name),
-                            this._fileTypeForPath);
+      return drive.copyFile(fromFile, PathExt.join(toDir, name), this._fileTypeForPath)
+      .then( contents => {
+        this._fileChanged.emit({
+          type: 'new',
+          oldValue: null,
+          newValue: contents
+        });
+        return contents;
+      });
     });
   }
 

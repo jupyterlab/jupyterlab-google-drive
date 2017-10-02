@@ -121,7 +121,7 @@ function urlForFile(path: string): Promise<string> {
  *   or throws an Error if it fails.
  */
 export
-function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType, existing: boolean = false): Promise<Contents.IModel> {
+function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType, existing: boolean = false, fileTypeForPath: ((path: string) => DocumentRegistry.IFileType) | undefined = undefined): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(path)) && !existing) {
     return Promise.reject(
       `Google Drive: "${path}" is not a valid target directory`);
@@ -206,11 +206,10 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
 
     return driveApiRequest<FileResource>(request);
   }).then((result) => {
-    console.log("gapi: uploaded document to "+result.id);
     // Update the cache.
     Private.resourceCache.set(path, result);
 
-    return contentsModelFromFileResource(result, path, fileType, true, undefined);
+    return contentsModelFromFileResource(result, path, fileType, true, fileTypeForPath);
   });
 }
 
@@ -501,7 +500,6 @@ function createRealtimeDocument(): Promise<string> {
       }
   });
   return driveApiRequest<FileResource>(request).then((result) => {
-    console.log("gapi: created realtime document "+result.id);
     return result.id!;
   });
 }
@@ -517,7 +515,6 @@ export
 function loadRealtimeDocument(resource: FileResource, picked: boolean = false): Promise<gapi.drive.realtime.Document> {
   return new Promise((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
-      console.log("gapi: attempting to load realtime file " + resource.id);
       gapi.drive.realtime.load(resource.id!, (doc: gapi.drive.realtime.Document) => {
         resolve(doc);
       }, (model: gapi.drive.realtime.Model) => {
@@ -667,7 +664,7 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       `GoogleDrive: "${newPath}" is not a valid target`);
   }
   if( oldPath === newPath ) {
-    return contentsModelForPath(oldPath, false, fileTypeForPath);
+    return contentsModelForPath(oldPath, true, fileTypeForPath);
   } else {
     let newFolderPath = PathExt.dirname(newPath);
     newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
@@ -713,7 +710,7 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       Private.resourceCache.delete(oldPath);
       Private.resourceCache.set(newPath, response);
 
-      return contentsModelForPath(newPath, false, fileTypeForPath);
+      return contentsModelForPath(newPath, true, fileTypeForPath);
     });
   }
 }
@@ -785,7 +782,7 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
     }).then((response) => {
       // Update the cache.
       Private.resourceCache.set(newPath, response);
-      return contentsModelForPath(newPath, false, fileTypeForPath);
+      return contentsModelForPath(newPath, true, fileTypeForPath);
     });
   }
 }
@@ -916,7 +913,7 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
     };
 
     // Reupload the reverted file to the head revision.
-    return uploadFile(path, contents, fileType, true);
+    return uploadFile(path, contents, fileType, true, undefined);
   }).then(() => {
     return void 0;
   });

@@ -1,0 +1,18 @@
+{
+  "name": "gapi-access-token-generator",
+  "version": "0.1.0",
+  "description": "Generate access token for testing purposes.",
+  "main": "authorize.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "googleapis": "^21.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jupyterlab/jupyterlab-google-drive.git"
+  }
+}
