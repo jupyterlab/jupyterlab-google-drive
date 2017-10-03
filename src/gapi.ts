@@ -28,7 +28,7 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
  */
 const FORBIDDEN_ERROR = 403;
 const BACKEND_ERROR = 500;
-const RATE_LIMIT_REASON = 'rateLimitExceeded';
+const RATE_LIMIT_REASON = 'userRateLimitExceeded';
 
 /**
  * A promise delegate that is resolved when the google client
@@ -139,7 +139,10 @@ const INITIAL_DELAY = 250; //250 ms
 /**
  * Wrapper function for making API requests to Google Drive.
  *
- * @param request: a request object created by the Javascript client library.
+ * @param createRequest: a function that creates a request object for
+ *   the Google Drive APIs. This is typically created by the Javascript
+ *   client library. We use a request factory to create additional requests
+ *   should we need to try exponential backoff.
  *
  * @param successCode: the code to check against for success of the request, defaults
  *   to 200.
@@ -150,13 +153,13 @@ const INITIAL_DELAY = 250; //250 ms
  * @returns a promse that resolves with the result of the request.
  */
 export
-function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: number = 200, attemptNumber: number = 0): Promise<T> {
+function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, successCode: number = 200, attemptNumber: number = 0): Promise<T> {
   if(attemptNumber === MAX_API_REQUESTS) {
-    console.log(request);
     return Promise.reject('Maximum number of API retries reached.');
   }
   return new Promise<T>((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
+      const request = createRequest();
       request.then((response) => {
         if(response.status !== successCode) {
           // Handle an HTTP error.
@@ -180,11 +183,11 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
            (response.status === FORBIDDEN_ERROR &&
             (<any>response.result.error).errors[0].reason
              === RATE_LIMIT_REASON)) {
-          console.warn(`gapi: ${response.status} error,` +
-                       `attempting exponential backoff...`);
+          console.warn(`gapi: ${response.status} error, exponential ` +
+                       `backoff attempt number ${attemptNumber}...`);
           window.setTimeout( () => {
             // Try again after a delay.
-            driveApiRequest<T>(request, successCode, attemptNumber+1)
+            driveApiRequest<T>(createRequest, successCode, attemptNumber+1)
             .then((result) => {
               resolve(result);
             });
@@ -307,7 +310,6 @@ namespace Private {
           clearTimeout(authorizeRefresh);
         }
         authorizeRefresh = setTimeout(() => {
-          console.log('gapi: refreshing authorization.')
           Private.refreshAuthToken();
         }, 750 * Number(authResponse.expires_in));
         resolve(void 0);
