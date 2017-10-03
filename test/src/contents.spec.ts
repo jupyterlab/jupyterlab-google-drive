@@ -125,6 +125,24 @@ describe('GoogleDrive', () => {
       });
     });
 
+    it('should fail for an incorrect model', (done) => {
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
+      };
+      delete contents.format;
+      const finish = () => {
+        drive.delete(contents.path).then(done);
+      };
+      drive.save(contents.path, contents).catch(err => { /* */ }).then(() => {
+        let getter = drive.get(contents.path);
+
+        expectFailure(getter, finish);
+      });
+    });
+
   });
 
   describe('#save()', () => {
@@ -165,6 +183,21 @@ describe('GoogleDrive', () => {
         expect(called).to.be(true);
         done();
       });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+String(id),
+        path: DEFAULT_TEXT_FILE.path+String(id),
+      };
+      delete contents.format;
+      const finish = () => {
+        drive.delete(contents.path).then(done);
+      };
+      let save = drive.save(contents.path, contents);
+      expectFailure(save, finish);
     });
 
   });
@@ -388,6 +421,26 @@ describe('GoogleDrive', () => {
       });
     });
 
+    it('should fail for an incorrect model', (done) => {
+      let id1 = uuid();
+      let id2 = uuid();
+      let path2 = DEFAULT_TEXT_FILE.path+id2;
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id1,
+        path: DEFAULT_TEXT_FILE.path+id1,
+      };
+      delete contents.format;
+      const finish = () => {
+        drive.delete(path2).then(done);
+      };
+      drive.save(contents.path, contents).catch(err => { /* */ }).then(() => {
+        let renamer = drive.rename(contents.path, path2);
+
+        expectFailure(renamer, finish);
+      });
+    });
+
   });
 
   describe('#copy()', () => {
@@ -439,6 +492,26 @@ describe('GoogleDrive', () => {
       }).then(() => {
         expect(called).to.be(true);
         done();
+      });
+    });
+
+    it('should fail for an incorrect model', (done) => {
+      let id = uuid();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name+id,
+        path: DEFAULT_TEXT_FILE.path+id,
+      };
+      delete contents.format;
+      let path2 = DEFAULT_TEXT_FILE.path+id+'-Copy';
+      drive.save(contents.path, contents).catch( () => { /* */ }).then(() => {
+        let copier = drive.copy(contents.path, DEFAULT_DIRECTORY.path);
+        const finish = () => {
+          let first = drive.delete(contents.path);
+          let second = drive.delete(path2);
+          Promise.all([first, second]).then(() => { done(); });
+        };
+        expectFailure(copier, finish);
       });
     });
 

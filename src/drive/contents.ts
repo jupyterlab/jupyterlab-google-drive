@@ -6,10 +6,6 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  Contents, ServerConnection
-} from '@jupyterlab/services';
-
-import {
   PathExt, ModelDB
 } from '@jupyterlab/coreutils';
 
@@ -18,10 +14,19 @@ import {
 } from '@jupyterlab/docregistry';
 
 import {
+  Contents, ServerConnection,
+} from '@jupyterlab/services';
+
+import {
   GoogleModelDB
 } from '../realtime/modeldb';
 
 import * as drive from './drive';
+
+import {
+  makeError
+} from '../gapi';
+
 
 /**
  * A contents manager that passes file operations to the server.
@@ -111,7 +116,15 @@ class GoogleDrive implements Contents.IDrive {
     const getContent = options ? !!options.content : true;
     // TODO: the contents manager probably should not be passing in '.'.
     path = path === '.' ? '' : path;
-    return drive.contentsModelForPath(path, getContent, this._fileTypeForPath);
+    return drive.contentsModelForPath(path, getContent, this._fileTypeForPath)
+    .then(contents => {
+      try {
+        Contents.validateContentsModel(contents);
+      } catch (error) {
+        throw makeError(200, error.message);
+      }
+      return contents;
+    });
   }
 
   /**
@@ -196,6 +209,11 @@ class GoogleDrive implements Contents.IDrive {
       path = PathExt.join(path, name);
       return drive.uploadFile(path, m, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
+      try {
+        Contents.validateContentsModel(contents);
+      } catch (error) {
+        throw makeError(201, error.message);
+      }
       this._fileChanged.emit({
         type: 'new',
         oldValue: null,
@@ -239,6 +257,11 @@ class GoogleDrive implements Contents.IDrive {
     } else {
       return drive.moveFile(path, newPath, this._fileTypeForPath)
       .then((contents: Contents.IModel) => {
+        try {
+          Contents.validateContentsModel(contents);
+        } catch (error) {
+          throw makeError(200, error.message);
+        }
         this._fileChanged.emit({
           type: 'rename',
           oldValue: { path },
@@ -275,12 +298,17 @@ class GoogleDrive implements Contents.IDrive {
       //The file does not exist already, create a new one.
       return drive.uploadFile(path, options, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
+      try {
+         Contents.validateContentsModel(contents);
+      } catch (error) {
+         throw makeError(200, error.message);
+      }
       this._fileChanged.emit({
         type: 'save',
         oldValue: null,
         newValue: contents
       });
-      return contents as Contents.IModel;
+      return contents;
     });
   }
 
@@ -302,6 +330,11 @@ class GoogleDrive implements Contents.IDrive {
     return this._getNewFilename(toDir, ext, fileBasename).then((name) => {
       return drive.copyFile(fromFile, PathExt.join(toDir, name), this._fileTypeForPath)
       .then( contents => {
+        try {
+          Contents.validateContentsModel(contents);
+        } catch (error) {
+          throw makeError(201, error.message);
+        }
         this._fileChanged.emit({
           type: 'new',
           oldValue: null,
@@ -321,7 +354,14 @@ class GoogleDrive implements Contents.IDrive {
    *   checkpoint is created.
    */
   createCheckpoint(path: string): Promise<Contents.ICheckpointModel> {
-    return drive.pinCurrentRevision(path);
+    return drive.pinCurrentRevision(path).then(checkpoint => {
+      try {
+        Contents.validateCheckpointModel(checkpoint);
+      } catch (error) {
+        throw makeError(200, error.message);
+      }
+      return checkpoint;
+    });
   }
 
   /**
@@ -333,7 +373,16 @@ class GoogleDrive implements Contents.IDrive {
    *    the file.
    */
   listCheckpoints(path: string): Promise<Contents.ICheckpointModel[]> {
-    return drive.listRevisions(path);
+    return drive.listRevisions(path).then(checkpoints => {
+      try {
+        for (let checkpoint of checkpoints) {
+          Contents.validateCheckpointModel(checkpoint);
+        }
+      } catch (error) {
+        throw makeError(200, error.message);
+      }
+      return checkpoints;
+    });
   }
 
   /**
