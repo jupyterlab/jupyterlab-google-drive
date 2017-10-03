@@ -20,7 +20,7 @@ import {
 } from '@jupyterlab/docregistry';
 
 import {
-  driveApiRequest, gapiAuthorized, gapiInitialized
+  driveApiRequest, gapiAuthorized, gapiInitialized, makeError
 } from '../gapi';
 
 
@@ -123,8 +123,8 @@ function urlForFile(path: string): Promise<string> {
 export
 function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType, existing: boolean = false, fileTypeForPath: ((path: string) => DocumentRegistry.IFileType) | undefined = undefined): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(path)) && !existing) {
-    return Promise.reject(
-      `Google Drive: "${path}" is not a valid target directory`);
+    throw makeError(400, `Google Drive: "${path}"` +
+                    ' is not a valid save directory');
   }
   let resourceReadyPromise: Promise<FileResource>;
   if(existing) {
@@ -660,8 +660,8 @@ function searchSharedFiles(query: string = ''): Promise<FileResource[]> {
 export
 function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(newPath))) {
-    return Promise.reject(
-      `GoogleDrive: "${newPath}" is not a valid target`);
+    throw makeError(400, `Google Drive: "${newPath}" `
+                    + 'is not a valid save directory');
   }
   if( oldPath === newPath ) {
     return contentsModelForPath(oldPath, true, fileTypeForPath);
@@ -735,12 +735,12 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
 export
 function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(newPath))) {
-    return Promise.reject(
-      `GoogleDrive: "${newPath}" is not a valid target location`);
+    throw makeError(400, `Google Drive: "${newPath}"`+
+                    ' is not a valid save directory');
   }
   if( oldPath === newPath ) {
-    return Promise.reject('Google Drive: cannot copy a file with'+
-                ' the same name to the same directory');
+    throw makeError(400, 'Google Drive: cannot copy a file with'+
+                         ' the same name to the same directory');
   } else {
     let newFolderPath = PathExt.dirname(newPath);
     newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
