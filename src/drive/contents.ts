@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/docregistry';
 
 import {
-  Contents, ServerConnection
+  Contents, ServerConnection,
 } from '@jupyterlab/services';
 
 import {
@@ -26,10 +26,6 @@ import * as drive from './drive';
 import {
   makeError
 } from '../gapi';
-
-import {
-  validateContentsModel, validateCheckpointModel
-} from '@jupyterlab/services/lib/contents/validate';
 
 
 /**
@@ -123,7 +119,7 @@ class GoogleDrive implements Contents.IDrive {
     return drive.contentsModelForPath(path, getContent, this._fileTypeForPath)
     .then(contents => {
       try {
-        validateContentsModel(contents);
+        Contents.validateContentsModel(contents);
       } catch (error) {
         throw makeError(200, error.message);
       }
@@ -214,7 +210,7 @@ class GoogleDrive implements Contents.IDrive {
       return drive.uploadFile(path, m, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       try {
-        validateContentsModel(contents);
+        Contents.validateContentsModel(contents);
       } catch (error) {
         throw makeError(201, error.message);
       }
@@ -262,7 +258,7 @@ class GoogleDrive implements Contents.IDrive {
       return drive.moveFile(path, newPath, this._fileTypeForPath)
       .then((contents: Contents.IModel) => {
         try {
-          validateContentsModel(contents);
+          Contents.validateContentsModel(contents);
         } catch (error) {
           throw makeError(200, error.message);
         }
@@ -303,7 +299,7 @@ class GoogleDrive implements Contents.IDrive {
       return drive.uploadFile(path, options, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       try {
-         validateContentsModel(contents);
+         Contents.validateContentsModel(contents);
       } catch (error) {
          throw makeError(200, error.message);
       }
@@ -335,7 +331,7 @@ class GoogleDrive implements Contents.IDrive {
       return drive.copyFile(fromFile, PathExt.join(toDir, name), this._fileTypeForPath)
       .then( contents => {
         try {
-          validateContentsModel(contents);
+          Contents.validateContentsModel(contents);
         } catch (error) {
           throw makeError(201, error.message);
         }
@@ -360,7 +356,7 @@ class GoogleDrive implements Contents.IDrive {
   createCheckpoint(path: string): Promise<Contents.ICheckpointModel> {
     return drive.pinCurrentRevision(path).then(checkpoint => {
       try {
-        validateCheckpointModel(checkpoint);
+        Contents.validateCheckpointModel(checkpoint);
       } catch (error) {
         throw makeError(200, error.message);
       }
@@ -380,7 +376,7 @@ class GoogleDrive implements Contents.IDrive {
     return drive.listRevisions(path).then(checkpoints => {
       try {
         for (let checkpoint of checkpoints) {
-          validateCheckpointModel(checkpoint);
+          Contents.validateCheckpointModel(checkpoint);
         }
       } catch (error) {
         throw makeError(200, error.message);
