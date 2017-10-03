@@ -111,7 +111,7 @@ function initializeGapi(clientId: string): Promise<boolean> {
         // authomatically authorized.
         const googleAuth = gapi.auth2.getAuthInstance();
         if (googleAuth.isSignedIn.get()) {
-          refreshAuthToken().then(() => {
+          Private.refreshAuthToken().then(() => {
             gapiAuthorized.resolve(void 0);
           });
           gapiInitialized.resolve(void 0);
@@ -199,12 +199,6 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
 }
 
 /**
- * Timer for keeping track of refreshing the authorization with
- * Google drive.
- */
-let authorizeRefresh: any = null;
-
-/**
  * Ask the user for permission to use their Google Drive account.
  * First it tries to authorize without a popup, and if it fails, it
  * creates a popup. If the argument `allowPopup` is false, then it will
@@ -220,7 +214,7 @@ function signIn(): Promise<boolean> {
       const googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
         googleAuth.signIn({ prompt: 'select_account' }).then(() => {
-          refreshAuthToken().then(() => {
+          Private.refreshAuthToken().then(() => {
             // Resolve the exported promise.
             gapiAuthorized.resolve(void 0);
             resolve(true);
@@ -261,36 +255,6 @@ function getCurrentUserProfile(): gapi.auth2.BasicProfile {
 }
 
 /**
- * Refresh the authorization token for Google APIs.
- *
- * #### Notes
- * Importantly, this calls `gapi.auth.setToken`.
- * Without this step, the realtime API will not pick
- * up the OAuth token, and it will not work. This step is
- * completely undocumented, but without it we cannot
- * use the newer, better documented, undeprecated `gapi.auth2`
- * authorization API.
- */
-function refreshAuthToken(): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const googleAuth = gapi.auth2.getAuthInstance();
-    const user = googleAuth.currentUser.get();
-    user.reloadAuthResponse().then((authResponse: any) => {
-      gapi.auth.setToken(authResponse);
-      // Set a timer to refresh the authorization.
-      if(authorizeRefresh) {
-        clearTimeout(authorizeRefresh);
-      }
-      authorizeRefresh = setTimeout(() => {
-        console.log('gapi: refreshing authorization.')
-        refreshAuthToken();
-      }, 750 * Number(authResponse.expires_in));
-      resolve(void 0);
-    });
-  });
-}
-
-/**
  * Wrap an API error in a hacked-together error object
  * masquerading as an `ServerConnection.IError`.
  */
@@ -307,4 +271,47 @@ function makeError(code: number, message: string): ServerConnection.IError {
     throwError: xhr.responseText,
     message: xhr.responseText
   } as any as ServerConnection.IError;
+}
+
+
+/**
+ * A namespace for private functions and values.
+ */
+namespace Private {
+  /**
+   * Timer for keeping track of refreshing the authorization with
+   * Google drive.
+   */
+  let authorizeRefresh: any = null;
+
+  /**
+   * Refresh the authorization token for Google APIs.
+   *
+   * #### Notes
+   * Importantly, this calls `gapi.auth.setToken`.
+   * Without this step, the realtime API will not pick
+   * up the OAuth token, and it will not work. This step is
+   * completely undocumented, but without it we cannot
+   * use the newer, better documented, undeprecated `gapi.auth2`
+   * authorization API.
+   */
+  export
+  function refreshAuthToken(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const googleAuth = gapi.auth2.getAuthInstance();
+      const user = googleAuth.currentUser.get();
+      user.reloadAuthResponse().then((authResponse: any) => {
+        gapi.auth.setToken(authResponse);
+        // Set a timer to refresh the authorization.
+        if(authorizeRefresh) {
+          clearTimeout(authorizeRefresh);
+        }
+        authorizeRefresh = setTimeout(() => {
+          console.log('gapi: refreshing authorization.')
+          Private.refreshAuthToken();
+        }, 750 * Number(authResponse.expires_in));
+        resolve(void 0);
+      });
+    });
+  }
 }
