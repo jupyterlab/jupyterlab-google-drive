@@ -428,8 +428,8 @@ class GoogleDrive implements Contents.IDrive {
     // directory (i.e., not the pseudo-root or
     // the "Shared with me" directory).
     if (drive.isDummy(path)) {
-      return Promise.reject(
-        `Google Drive: "${path}" is not a valid target directory`);
+      throw makeError(400, `Google Drive: "${path}"` +
+                     ' is not a valid save directory');
     }
     // Get the file listing for the directory.
     const query = 'name contains \''+baseName+

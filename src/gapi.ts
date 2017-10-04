@@ -28,7 +28,7 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
  */
 const FORBIDDEN_ERROR = 403;
 const BACKEND_ERROR = 500;
-const RATE_LIMIT_REASON = 'rateLimitExceeded';
+const RATE_LIMIT_REASON = 'userRateLimitExceeded';
 
 /**
  * A promise delegate that is resolved when the google client
@@ -111,7 +111,7 @@ function initializeGapi(clientId: string): Promise<boolean> {
         // authomatically authorized.
         const googleAuth = gapi.auth2.getAuthInstance();
         if (googleAuth.isSignedIn.get()) {
-          refreshAuthToken().then(() => {
+          Private.refreshAuthToken().then(() => {
             gapiAuthorized.resolve(void 0);
           });
           gapiInitialized.resolve(void 0);
@@ -139,7 +139,10 @@ const INITIAL_DELAY = 250; //250 ms
 /**
  * Wrapper function for making API requests to Google Drive.
  *
- * @param request: a request object created by the Javascript client library.
+ * @param createRequest: a function that creates a request object for
+ *   the Google Drive APIs. This is typically created by the Javascript
+ *   client library. We use a request factory to create additional requests
+ *   should we need to try exponential backoff.
  *
  * @param successCode: the code to check against for success of the request, defaults
  *   to 200.
@@ -150,13 +153,13 @@ const INITIAL_DELAY = 250; //250 ms
  * @returns a promse that resolves with the result of the request.
  */
 export
-function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: number = 200, attemptNumber: number = 0): Promise<T> {
+function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, successCode: number = 200, attemptNumber: number = 0): Promise<T> {
   if(attemptNumber === MAX_API_REQUESTS) {
-    console.log(request);
     return Promise.reject('Maximum number of API retries reached.');
   }
   return new Promise<T>((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
+      const request = createRequest();
       request.then((response) => {
         if(response.status !== successCode) {
           // Handle an HTTP error.
@@ -180,11 +183,11 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
            (response.status === FORBIDDEN_ERROR &&
             (<any>response.result.error).errors[0].reason
              === RATE_LIMIT_REASON)) {
-          console.warn(`gapi: ${response.status} error,` +
-                       `attempting exponential backoff...`);
+          console.warn(`gapi: ${response.status} error, exponential ` +
+                       `backoff attempt number ${attemptNumber}...`);
           window.setTimeout( () => {
             // Try again after a delay.
-            driveApiRequest<T>(request, successCode, attemptNumber+1)
+            driveApiRequest<T>(createRequest, successCode, attemptNumber+1)
             .then((result) => {
               resolve(result);
             });
@@ -197,12 +200,6 @@ function driveApiRequest<T>( request: gapi.client.HttpRequest<T>, successCode: n
     });
   });
 }
-
-/**
- * Timer for keeping track of refreshing the authorization with
- * Google drive.
- */
-let authorizeRefresh: any = null;
 
 /**
  * Ask the user for permission to use their Google Drive account.
@@ -220,7 +217,7 @@ function signIn(): Promise<boolean> {
       const googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
         googleAuth.signIn({ prompt: 'select_account' }).then(() => {
-          refreshAuthToken().then(() => {
+          Private.refreshAuthToken().then(() => {
             // Resolve the exported promise.
             gapiAuthorized.resolve(void 0);
             resolve(true);
@@ -261,36 +258,6 @@ function getCurrentUserProfile(): gapi.auth2.BasicProfile {
 }
 
 /**
- * Refresh the authorization token for Google APIs.
- *
- * #### Notes
- * Importantly, this calls `gapi.auth.setToken`.
- * Without this step, the realtime API will not pick
- * up the OAuth token, and it will not work. This step is
- * completely undocumented, but without it we cannot
- * use the newer, better documented, undeprecated `gapi.auth2`
- * authorization API.
- */
-function refreshAuthToken(): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const googleAuth = gapi.auth2.getAuthInstance();
-    const user = googleAuth.currentUser.get();
-    user.reloadAuthResponse().then((authResponse: any) => {
-      gapi.auth.setToken(authResponse);
-      // Set a timer to refresh the authorization.
-      if(authorizeRefresh) {
-        clearTimeout(authorizeRefresh);
-      }
-      authorizeRefresh = setTimeout(() => {
-        console.log('gapi: refreshing authorization.')
-        refreshAuthToken();
-      }, 750 * Number(authResponse.expires_in));
-      resolve(void 0);
-    });
-  });
-}
-
-/**
  * Wrap an API error in a hacked-together error object
  * masquerading as an `ServerConnection.IError`.
  */
@@ -307,4 +274,46 @@ function makeError(code: number, message: string): ServerConnection.IError {
     throwError: xhr.responseText,
     message: xhr.responseText
   } as any as ServerConnection.IError;
+}
+
+
+/**
+ * A namespace for private functions and values.
+ */
+namespace Private {
+  /**
+   * Timer for keeping track of refreshing the authorization with
+   * Google drive.
+   */
+  let authorizeRefresh: any = null;
+
+  /**
+   * Refresh the authorization token for Google APIs.
+   *
+   * #### Notes
+   * Importantly, this calls `gapi.auth.setToken`.
+   * Without this step, the realtime API will not pick
+   * up the OAuth token, and it will not work. This step is
+   * completely undocumented, but without it we cannot
+   * use the newer, better documented, undeprecated `gapi.auth2`
+   * authorization API.
+   */
+  export
+  function refreshAuthToken(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const googleAuth = gapi.auth2.getAuthInstance();
+      const user = googleAuth.currentUser.get();
+      user.reloadAuthResponse().then((authResponse: any) => {
+        gapi.auth.setToken(authResponse);
+        // Set a timer to refresh the authorization.
+        if(authorizeRefresh) {
+          clearTimeout(authorizeRefresh);
+        }
+        authorizeRefresh = setTimeout(() => {
+          Private.refreshAuthToken();
+        }, 750 * Number(authResponse.expires_in));
+        resolve(void 0);
+      });
+    });
+  }
 }
