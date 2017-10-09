@@ -26,6 +26,7 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
 /**
  * Aliases for common API errors.
  */
+const INVALID_CREDENTIALS_ERROR = 401;
 const FORBIDDEN_ERROR = 403;
 const BACKEND_ERROR = 500;
 const RATE_LIMIT_REASON = 'userRateLimitExceeded';
@@ -177,12 +178,13 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
           }
         }
       }, (response) => {
-        // Some other error happened. If we are being rate limited,
-        // attempt exponential backoff. If that fails, bail.
+        // Some error happened.
         if (response.status === BACKEND_ERROR ||
            (response.status === FORBIDDEN_ERROR &&
             (<any>response.result.error).errors[0].reason
              === RATE_LIMIT_REASON)) {
+          // If we are being rate limited, or if there is a backend error,
+          // attempt exponential backoff.
           console.warn(`gapi: ${response.status} error, exponential ` +
                        `backoff attempt number ${attemptNumber}...`);
           window.setTimeout( () => {
@@ -192,6 +194,15 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
               resolve(result);
             });
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
+        } else if (response.status === INVALID_CREDENTIALS_ERROR) {
+          // If the credentials are invalid, try refreshing the authorization
+          // token, then retry the request.
+          Private.refreshAuthToken().then(() => {
+            driveApiRequest<T>(createRequest, successCode, attemptNumber+1)
+            .then(result => {
+              resolve(result);
+            });
+          });
         } else {
           let result: any = response.result;
           reject(makeError(result.error.code, result.error.message));
