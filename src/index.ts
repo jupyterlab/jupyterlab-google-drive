@@ -73,7 +73,7 @@ namespace CommandIDs {
  * The JupyterLab plugin for the Google Drive Filebrowser.
  */
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
-  id: 'jupyter.extensions.google-drive',
+  id: '@jupyterlab/google-drive:drive',
   requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
   activate: activateFileBrowser,
   autoStart: true
@@ -161,7 +161,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
  */
 export
 const chatboxPlugin: JupyterLabPlugin<void> = {
-  id: 'jupyter.extensions.chatbox',
+  id: '@jupyterlab/google-drive:chatbox',
   requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer],
   autoStart: true,
   activate: activateChatbox
