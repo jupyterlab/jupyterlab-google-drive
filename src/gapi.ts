@@ -112,9 +112,8 @@ function initializeGapi(clientId: string): Promise<boolean> {
         // authomatically authorized.
         const googleAuth = gapi.auth2.getAuthInstance();
         if (googleAuth.isSignedIn.get()) {
-          Private.refreshAuthToken().then(() => {
-            gapiAuthorized.resolve(void 0);
-          });
+          Private.setAuthToken();
+          gapiAuthorized.resolve(void 0);
           gapiInitialized.resolve(void 0);
           resolve(true);
         } else {
@@ -228,11 +227,10 @@ function signIn(): Promise<boolean> {
       const googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
         googleAuth.signIn({ prompt: 'select_account' }).then(() => {
-          Private.refreshAuthToken().then(() => {
-            // Resolve the exported promise.
-            gapiAuthorized.resolve(void 0);
-            resolve(true);
-          });
+          Private.setAuthToken();
+          // Resolve the exported promise.
+          gapiAuthorized.resolve(void 0);
+          resolve(true);
         });
       } else {
         // Otherwise we are already signed in.
@@ -293,13 +291,7 @@ function makeError(code: number, message: string): ServerConnection.IError {
  */
 namespace Private {
   /**
-   * Timer for keeping track of refreshing the authorization with
-   * Google drive.
-   */
-  let authorizeRefresh: any = null;
-
-  /**
-   * Refresh the authorization token for Google APIs.
+   * Set authorization token for Google APIs.
    *
    * #### Notes
    * Importantly, this calls `gapi.auth.setToken`.
@@ -310,20 +302,29 @@ namespace Private {
    * authorization API.
    */
   export
+  function setAuthToken(): void {
+    const googleAuth = gapi.auth2.getAuthInstance();
+    const user = googleAuth.currentUser.get();
+    const authResponse = user.getAuthResponse();
+    gapi.auth.setToken({
+      access_token: authResponse.access_token,
+      expires_in: String(authResponse.expires_in),
+      error: '',
+      state: authResponse.scope
+    });
+  }
+
+  /**
+   * If the user's credentials have expired,
+   * try refreshing the auth token and resetting it.
+   */
+  export
   function refreshAuthToken(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(resolve => {
       const googleAuth = gapi.auth2.getAuthInstance();
       const user = googleAuth.currentUser.get();
-      user.reloadAuthResponse().then((authResponse: any) => {
-        gapi.auth.setToken(authResponse);
-        // Set a timer to refresh the authorization.
-        if(authorizeRefresh) {
-          clearTimeout(authorizeRefresh);
-        }
-        authorizeRefresh = setTimeout(() => {
-          Private.refreshAuthToken();
-        }, 750 * Number(authResponse.expires_in));
-        resolve(void 0);
+      user.reloadAuthResponse().then(authResponse => {
+        setAuthToken();
       });
     });
   }
