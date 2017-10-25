@@ -201,6 +201,9 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
             .then(result => {
               resolve(result);
             });
+          }).catch(err => {
+            let result: any = response.result;
+            reject(makeError(result.error.code, result.error.message));
           });
         } else {
           let result: any = response.result;
@@ -320,11 +323,15 @@ namespace Private {
    */
   export
   function refreshAuthToken(): Promise<void> {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve, reject) => {
       const googleAuth = gapi.auth2.getAuthInstance();
       const user = googleAuth.currentUser.get();
       user.reloadAuthResponse().then(authResponse => {
         setAuthToken();
+      }, err => {
+        console.error('Error on refreshing authorization!');
+        setAuthToken();
+        reject(err);
       });
     });
   }
