@@ -288,6 +288,30 @@ function makeError(code: number, message: string): ServerConnection.IError {
   } as any as ServerConnection.IError;
 }
 
+/**
+ * Handle an error thrown by a realtime file,
+ * if possible.
+ *
+ * @param err - the realtime error.
+ */
+export
+function handleRealtimeError(err: gapi.drive.realtime.Error): void {
+  if (err.type === gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
+    // gapi.auth2 automatically refreshes the token,
+    // but due to a bug in the drive realtime client,
+    // this is not automatically picked up by the
+    // realtime system. If we get a TOKEN_REFRESH_REQUIRED,
+    // it should be enough to manually set the token that
+    // has already been refreshed.
+    Private.setAuthToken();
+  } else if (err.isFatal === false) {
+    // If we can recover, do nothing.
+    return void 0;
+  } else {
+   throw err;
+  }
+}
+
 
 /**
  * A namespace for private functions and values.
