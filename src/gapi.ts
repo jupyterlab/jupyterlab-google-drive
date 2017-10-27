@@ -303,7 +303,7 @@ function handleRealtimeError(err: gapi.drive.realtime.Error): void {
     // realtime system. If we get a TOKEN_REFRESH_REQUIRED,
     // it should be enough to manually set the token that
     // has already been refreshed.
-    Private.setAuthToken();
+    Private.refreshAuthToken();
   } else if (err.isFatal === false) {
     // If we can recover, do nothing.
     return void 0;
@@ -317,6 +317,12 @@ function handleRealtimeError(err: gapi.drive.realtime.Error): void {
  * A namespace for private functions and values.
  */
 namespace Private {
+  /**
+   * Timer for keeping track of refreshing the authorization with
+   * Google drive.
+   */
+  let authorizeRefresh: any = null;
+
   /**
    * Set authorization token for Google APIs.
    *
@@ -339,6 +345,13 @@ namespace Private {
       error: '',
       state: authResponse.scope
     });
+    // Schedule the next refresh.
+    if(authorizeRefresh) {
+      clearTimeout(authorizeRefresh);
+    }
+    authorizeRefresh = setTimeout(() => {
+      refreshAuthToken();
+    }, 750 * Number(authResponse.expires_in));
   }
 
   /**
@@ -352,8 +365,9 @@ namespace Private {
       const user = googleAuth.currentUser.get();
       user.reloadAuthResponse().then(authResponse => {
         setAuthToken();
+        resolve(void 0);
       }, err => {
-        console.error('Error on refreshing authorization!');
+        console.error('gapi: Error on refreshing authorization!');
         setAuthToken();
         reject(err);
       });
