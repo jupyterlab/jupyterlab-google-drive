@@ -42,7 +42,9 @@ In the `jupyterlab.google-drive` settings of the settings registry, set the **cl
 ### Seeding JupyterLab images with Google credentials
 While adding credentials via the settings functionality from within JupyterLab is possible, as described above, users may also wish to pre-seed these settings so the extension works out-of-the-box on start-up.
 
-With a [redesign](https://github.com/jupyterlab/jupyterlab/pull/2936) of JupyterLab's setting system, the location of settings pertaining to the google-drive extension changed.  When you manually add credentials from within JupyterLab, they now get persisted to:
+The location of the `@jupyterlab/google-drive` plugin's settings can be found in `$SETTINGS_PATH/@jupyterlab/google-drive/drive.json`, where `$SETTINGS_PATH` can be found by entering `jupyter lab path` on your terminal from a running JupyterLab.
+
+For instance, the docker-stacks [base-notebook](https://github.com/jupyter/docker-stacks/blob/master/base-notebook/Dockerfile) comes pre-loaded with JupyterLab and if you were to add the google-drive extension, then given that the default user in that set-up is `jovyan`, the relevant path for the settings file would therefore be:
 
 `home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive/drive.json`
 
@@ -52,13 +54,17 @@ There are many ways to do this.  A few to consider are:
 
 (i) adding the file as part of a docker image-build process
 
-One might include a `drive.json` file within a folder accessible to a Dockerfile used to build an image to be used to spawn JupyterLab.  As part of the Dockerfile, the following line would be included in order to transfer the credentials into the built image.
+One might include a `drive.json` file within a folder accessible to a Dockerfile used to build an image to be used to spawn JupyterLab.  For example, one could extend the docker-stacks base-notebook by adding the google-drive extension and pre-seed the credentials as follows:
 
-`ADD drive.json /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive`
+```
+FROM jupyter/base-notebook
+RUN jupyter labextension install @jupyterlab/google-drive
+COPY drive.json /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive/drive.json
+```
 
 (ii) injecting the credentials as part of an image-spawn process
 
-Alternatively, if one didn't want to bake-in the credentials to an image, they could pass them into a notebook server at spawn time.  Taking the [zero-to-jupyterhub-k8s](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) implementation (which uses kubespawner and is therefore kubernetes-centric), for example, one could use the `config.yaml` file to:
+Alternatively, if one didn't want to bake-in the credentials to an image, one could pass them into a notebook server at spawn time.  Taking the [zero-to-jupyterhub-k8s](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) implementation (which uses kubespawner and is therefore kubernetes-centric), for example, one could use the `config.yaml` file to:
 
 (a) set the extraEnv to pass the clientId as an environment variable to the spawned container
 
