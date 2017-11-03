@@ -38,3 +38,42 @@ The Dashboard panel should now show be showing those APIs:
 Once these steps have been completed, you will be able to use these credentials in the extension.
 In the `jupyterlab.google-drive` settings of the settings registry, set the **clientID** field to be the client id provided by the developer console. If everything is configured properly, you should be able to use the application with your new credentials.
 ![Client ID](images/clientid.png)
+
+### Seeding JupyterLab images with Google credentials
+While adding credentials via the settings functionality from within JupyterLab is possible, as described above, users may also wish to pre-seed these settings so the extension works out-of-the-box on start-up.
+
+With a [redesign](https://github.com/jupyterlab/jupyterlab/pull/2936) of JupyterLab's setting system, the location of settings pertaining to the google-drive extension changed.  When you manually add credentials from within JupyterLab, they now get persisted to:
+
+`home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive/drive.json`
+
+As such, any file containing the credentials of the form `{ "clientId": "0123456789012-abcd2efghijklmnopqr2s9t2u6v4wxyz.apps.googleusercontent.com"}` (sample only) will need to get persisted to this location ahead of time.
+
+There are many ways to do this.  A few to consider are:
+
+(i) adding the file as part of a docker image-build process
+
+One might include a `drive.json` file within a folder accessible to a Dockerfile used to build an image to be used to spawn JupyterLab.  As part of the Dockerfile, the following line would be included in order to transfer the credentials into the built image.
+
+`ADD drive.json /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive`
+
+(ii) injecting the credentials as part of an image-spawn process
+
+Alternatively, if one didn't want to bake-in the credentials to an image, they could pass them into a notebook server at spawn time.  Taking the [zero-to-jupyterhub-k8s](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) implementation (which uses kubespawner and is therefore kubernetes-centric), for example, one could use the `config.yaml` file to:
+
+(a) set the extraEnv to pass the clientId as an environment variable to the spawned container
+
+```
+hub
+  extraEnv:
+    GOOGLE_DRIVE_CLIENT_ID: "551338180476-snfu2vasacgjanovrso2j9q2j6e4capk.apps.googleusercontent.com"
+```
+
+(b) then pass that variable to the container file-system in a life-cycle hook command something like this
+
+```
+singleuser
+  lifecycleHooks:
+    postStart:
+      exec:
+        command: ["/bin/sh", "-c", "echo '{\"clientId\":\"${GOOGLE_DRIVE_CLIENT_ID}\"}' > /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive/drive.json"]
+``` 
