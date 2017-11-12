@@ -58,6 +58,7 @@
     "@phosphor/widgets": "^1.5.0"
   },
   "devDependencies": {
+    "@jupyterlab/codemirror": "^0.12.0",
     "@types/expect.js": "~0.3.29",
     "@types/gapi": "^0.0.33",
     "@types/gapi.auth2": "^0.0.40",
