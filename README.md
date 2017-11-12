@@ -28,7 +28,7 @@ If you run into troubles, see if the [troubleshooting guide](docs/troubleshootin
 
 ## Prerequisites
 
-* JupyterLab 0.28.0
+* JupyterLab 0.29
 * A Google Drive account
 
 ## Installation
