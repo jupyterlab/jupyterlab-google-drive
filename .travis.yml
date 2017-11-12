@@ -12,7 +12,7 @@ before_install:
   - cd jupyterlab
 install:
   - npm install --no-optional
-  - npm run addsibling $TRAVIS_BUILD_DIR
+  - npm run add:sibling $TRAVIS_BUILD_DIR
   - npm run build
 before_script:
   - cd packages && cd `basename $TRAVIS_BUILD_DIR`
