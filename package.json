@@ -2,9 +2,17 @@
   "name": "@jupyterlab/google-drive",
   "version": "0.8.0",
   "description": "Realtime collaboration with JupyterLab through Google Drive",
+  "keywords": [
+    "google drive",
+    "jupyter",
+    "jupyterlab"
+  ],
+  "homepage": "https://github.com/jupyterlab/jupyterlab-google-drive",
+  "bugs": {
+    "url": "https://github.com/jupyterlab/jupyterlab-google-drive/issues"
+  },
+  "license": "BSD-3-Clause",
   "author": "Ian Rose",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "files": [
     "lib/*/*d.ts",
     "lib/*/*.js",
@@ -13,17 +21,14 @@
     "schema/*.json",
     "style/*.*"
   ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "directories": {
     "lib": "lib/"
   },
-  "keywords": [
-    "jupyter",
-    "jupyterlab",
-    "google drive"
-  ],
-  "jupyterlab": {
-    "extension": true,
-    "schemaDir": "schema"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jupyterlab/jupyterlab-google-drive.git"
   },
   "scripts": {
     "build": "tsc",
@@ -43,44 +48,40 @@
     "@jupyterlab/filebrowser": "^0.12.0",
     "@jupyterlab/rendermime": "^0.12.0",
     "@jupyterlab/services": "^0.51.0",
-    "@phosphor/algorithm": "^1.1.1",
-    "@phosphor/commands": "^1.3.0",
-    "@phosphor/coreutils": "^1.2.0",
-    "@phosphor/disposable": "^1.1.1",
-    "@phosphor/dragdrop": "^1.1.1",
-    "@phosphor/signaling": "^1.2.1",
-    "@phosphor/widgets": "^1.3.0"
+    "@phosphor/algorithm": "^1.1.2",
+    "@phosphor/commands": "^1.4.0",
+    "@phosphor/coreutils": "^1.3.0",
+    "@phosphor/disposable": "^1.1.2",
+    "@phosphor/dragdrop": "^1.3.0",
+    "@phosphor/messaging": "^1.2.2",
+    "@phosphor/signaling": "^1.2.2",
+    "@phosphor/widgets": "^1.5.0"
   },
   "devDependencies": {
-    "@types/expect.js": "^0.3.29",
+    "@types/expect.js": "~0.3.29",
     "@types/gapi": "^0.0.33",
     "@types/gapi.auth2": "^0.0.40",
     "@types/google-drive-realtime-api": "^0.0.33",
-    "@types/mocha": "^2.2.32",
-    "@types/node": "^8.0.31",
-    "css-loader": "^0.28.5",
-    "expect.js": "^0.3.1",
-    "file-loader": "^0.10.1",
-    "karma": "^1.5.0",
-    "karma-chrome-launcher": "^0.2.2",
-    "karma-firefox-launcher": "^0.1.7",
-    "karma-mocha": "^0.2.1",
-    "karma-mocha-reporter": "^1.1.5",
-    "karma-sourcemap-loader": "^0.3.7",
-    "mocha": "^3.2.0",
-    "rimraf": "^2.5.2",
-    "style-loader": "^0.13.1",
-    "typescript": "~2.4.1",
-    "url-loader": "^0.5.7",
-    "webpack": "^2.2.1"
+    "@types/mocha": "~2.2.44",
+    "@types/node": "~8.0.47",
+    "css-loader": "~0.28.7",
+    "expect.js": "~0.3.1",
+    "file-loader": "~0.10.1",
+    "karma": "~1.7.1",
+    "karma-chrome-launcher": "~0.2.3",
+    "karma-firefox-launcher": "~0.1.7",
+    "karma-mocha": "~0.2.2",
+    "karma-mocha-reporter": "~1.3.0",
+    "karma-sourcemap-loader": "~0.3.7",
+    "mocha": "~3.5.3",
+    "rimraf": "~2.6.2",
+    "style-loader": "~0.13.2",
+    "typescript": "~2.4.2",
+    "url-loader": "~0.5.9",
+    "webpack": "~2.7.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jupyterlab/jupyterlab-google-drive.git"
-  },
-  "license": "BSD-3-Clause",
-  "bugs": {
-    "url": "https://github.com/jupyterlab/jupyterlab-google-drive/issues"
-  },
-  "homepage": "https://github.com/jupyterlab/jupyterlab-google-drive"
+  "jupyterlab": {
+    "extension": true,
+    "schemaDir": "schema"
+  }
 }
