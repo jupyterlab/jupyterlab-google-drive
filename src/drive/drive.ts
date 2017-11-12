@@ -20,7 +20,8 @@ import {
 } from '@jupyterlab/docregistry';
 
 import {
-  driveApiRequest, gapiAuthorized, gapiInitialized, makeError
+  driveApiRequest, gapiAuthorized, gapiInitialized,
+  handleRealtimeError, makeError
 } from '../gapi';
 
 
@@ -526,10 +527,7 @@ function loadRealtimeDocument(resource: FileResource, picked: boolean = false): 
         resolve(doc);
       }, (model: gapi.drive.realtime.Model) => {
         /* no-op initializer */
-      }, (err: any) => {
-        // If there is a not found error, we may need to invoke
-        // the picker to gain file access.
-      });
+      }, handleRealtimeError);
     });
   });
 }

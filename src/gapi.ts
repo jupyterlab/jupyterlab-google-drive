@@ -112,9 +112,12 @@ function initializeGapi(clientId: string): Promise<boolean> {
         // authomatically authorized.
         const googleAuth = gapi.auth2.getAuthInstance();
         if (googleAuth.isSignedIn.get()) {
-          Private.refreshAuthToken().then(() => {
-            gapiAuthorized.resolve(void 0);
-          });
+          // Manually set the auth token so that the realtime
+          // API can pick it up, then listen for changes to the auth.
+          Private.setAuthToken();
+          googleAuth.currentUser.listen(Private.onAuthRefreshed);
+          // Resolve the relevant promises.
+          gapiAuthorized.resolve(void 0);
           gapiInitialized.resolve(void 0);
           resolve(true);
         } else {
@@ -195,12 +198,15 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
             });
           }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
         } else if (response.status === INVALID_CREDENTIALS_ERROR) {
-          // If the credentials are invalid, try refreshing the authorization
-          // token, then retry the request.
+          // If we have invalid credentials, try to refresh
+          // the authorization, then retry the request.
           Private.refreshAuthToken().then(() => {
             driveApiRequest<T>(createRequest, successCode, attemptNumber+1)
-            .then(result => {
+            .then((result) => {
               resolve(result);
+            }).catch(err => {
+              let result: any = response.result;
+              reject(makeError(result.error.code, result.error.message));
             });
           });
         } else {
@@ -228,15 +234,20 @@ function signIn(): Promise<boolean> {
       const googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
         googleAuth.signIn({ prompt: 'select_account' }).then(() => {
-          Private.refreshAuthToken().then(() => {
-            // Resolve the exported promise.
-            gapiAuthorized.resolve(void 0);
-            resolve(true);
-          });
+          // Manually set the auth token so that the realtime
+          // API can pick it up, then listen for refreshes.
+          Private.setAuthToken();
+          googleAuth.currentUser.listen(Private.onAuthRefreshed);
+          // Resolve the exported promise.
+          gapiAuthorized.resolve(void 0);
+          resolve(true);
         });
       } else {
         // Otherwise we are already signed in.
-        // Resolve the exported promise.
+        // Manually set the auth token so that the realtime
+        // API can pick it up, then listen for refreshes.
+        Private.setAuthToken();
+        googleAuth.currentUser.listen(Private.onAuthRefreshed);
         gapiAuthorized.resolve(void 0);
         resolve(true);
       }
@@ -287,19 +298,37 @@ function makeError(code: number, message: string): ServerConnection.IError {
   } as any as ServerConnection.IError;
 }
 
+/**
+ * Handle an error thrown by a realtime file,
+ * if possible.
+ *
+ * @param err - the realtime error.
+ */
+export
+function handleRealtimeError(err: gapi.drive.realtime.Error): void {
+  if (err.type === gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
+    // gapi.auth2 automatically refreshes the token,
+    // but due to a bug in the drive realtime client,
+    // this is not automatically picked up by the
+    // realtime system. If we get a TOKEN_REFRESH_REQUIRED,
+    // it may be enough to manually set the token that
+    // has already been refreshed.
+    Private.refreshAuthToken();
+  } else if (err.isFatal === false) {
+    // If we can recover, do nothing.
+    return void 0;
+  } else {
+   throw err;
+  }
+}
+
 
 /**
  * A namespace for private functions and values.
  */
 namespace Private {
   /**
-   * Timer for keeping track of refreshing the authorization with
-   * Google drive.
-   */
-  let authorizeRefresh: any = null;
-
-  /**
-   * Refresh the authorization token for Google APIs.
+   * Set authorization token for Google APIs.
    *
    * #### Notes
    * Importantly, this calls `gapi.auth.setToken`.
@@ -310,21 +339,46 @@ namespace Private {
    * authorization API.
    */
   export
+  function setAuthToken(): void {
+    const googleAuth = gapi.auth2.getAuthInstance();
+    const user = googleAuth.currentUser.get();
+    const authResponse = user.getAuthResponse();
+    gapi.auth.setToken({
+      access_token: authResponse.access_token,
+      expires_in: String(authResponse.expires_in),
+      error: '',
+      state: authResponse.scope
+    });
+  }
+
+  /**
+   * Try to manually refresh the authorization if we run
+   * into credential problems.
+   */
+  export
   function refreshAuthToken(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const googleAuth = gapi.auth2.getAuthInstance();
       const user = googleAuth.currentUser.get();
-      user.reloadAuthResponse().then((authResponse: any) => {
-        gapi.auth.setToken(authResponse);
-        // Set a timer to refresh the authorization.
-        if(authorizeRefresh) {
-          clearTimeout(authorizeRefresh);
-        }
-        authorizeRefresh = setTimeout(() => {
-          Private.refreshAuthToken();
-        }, 750 * Number(authResponse.expires_in));
+      user.reloadAuthResponse().then(authResponse => {
+        setAuthToken();
         resolve(void 0);
+      }, err => {
+        console.error('gapi: Error on refreshing authorization!');
+        setAuthToken();
+        reject(err);
       });
     });
+  }
+
+  /**
+   * If the current user state has changed, there has either
+   * been a log in/out, or the auth has automatically refreshed.
+   * Manually reset the auth token so that the realtime API can
+   * pick it up.
+   */
+  export
+  function onAuthRefreshed(): void {
+    setAuthToken();
   }
 }
