@@ -44,15 +44,15 @@ jupyter labextension install @jupyterlab/google-drive
 For a development install, do the following in the repository directory:
 
 ```bash
-npm install
-npm run build
+jlpm install
+jlpm run build
 jupyter labextension link .
 ```
 
 To rebuild the package and the JupyterLab app after making changes:
 
 ```bash
-npm run build
+jlpm run build
 jupyter lab build
 ```
 
