@@ -49,12 +49,18 @@ jlpm run build
 jupyter labextension link .
 ```
 
-To rebuild the package and the JupyterLab app after making changes:
-
+You can then run JupyterLab in developer mode to automatically pick up changes to `@jupyterlab/google-drive`.
+Open a terminal in the `@jupyterlab/google-drive` repository directory and enter
 ```bash
-jlpm run build
-jupyter lab build
+jlpm run watch
 ```
+Then launch JupyterLab using
+```bash
+jupyter lab --dev-mode
+```
+This will automatically recompile `@jupyterlab/google-drive` upon changes,
+and JupyterLab will rebuild itself. You should then be able to refresh the
+page and see your changes.
 
 ## Getting Started from Scratch
 
