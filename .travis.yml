@@ -10,6 +10,9 @@ notifications:
   email: false
 before_install:
   - cd ..
+  - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/miniconda.sh;
+  - bash ~/miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
   - git clone --depth=50 --branch=master https://github.com/jupyterlab/jupyterlab.git
   - cd jupyterlab
 install:
