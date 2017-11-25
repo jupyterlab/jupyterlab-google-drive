@@ -8,7 +8,7 @@ if [ ! -z $CLIENT_ID ] && [ ! -z $CLIENT_SECRET ] && [ ! -z $REFRESH_TOKEN ]; th
 
   # Run the script to get the access token.
   cd get-access-token
-  npm install
+  jlpm install
   node get-access-token.js > token.txt
   source token.txt && rm token.txt
   cd ..
