@@ -806,6 +806,22 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
   }
 }
 
+/**
+ * Invalidate the resource cache.
+ *
+ * #### Notes
+ * The resource cache is mostly private to this module, and
+ * is essential to not be rate-limited by Google.
+ *
+ * This should only be called when the user signs out, and
+ * the cached information about their directory structure
+ * is no longer valid.
+ */
+export
+function clearCache(): void {
+  Private.resourceCache.clear();
+}
+
 
 /* ******** Functions for dealing with revisions ******** */
 

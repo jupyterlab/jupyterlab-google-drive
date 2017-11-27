@@ -9,6 +9,10 @@ import {
   ServerConnection
 } from '@jupyterlab/services';
 
+import {
+  clearCache
+} from './drive/drive';
+
 /**
  * Default Client ID to let the Google Servers know who
  * we are. These can be changed to ones linked to a particular
@@ -265,7 +269,7 @@ function signOut(): Promise<void> {
   const googleAuth = gapi.auth2.getAuthInstance();
   // Invalidate the gapiAuthorized promise and set up a new one.
   gapiAuthorized = new PromiseDelegate<void>();
-  return googleAuth.signOut();
+  return googleAuth.signOut().then(() => { clearCache(); });
 }
 
 /**
