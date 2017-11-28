@@ -157,19 +157,23 @@ class GoogleDriveFileBrowser extends Widget {
       return;
     }
 
-    // Swap out the file browser for the login screen.
-    this._browser.parent = null;
-    (this.layout as PanelLayout).addWidget(this._loginScreen);
-    this._browser.dispose();
-    this._logoutButton.dispose();
+    // Change to the root directory, so an invalid path
+    // is not cached, then sign out.
+    this._browser.model.cd('/').then(() => {
+      // Swap out the file browser for the login screen.
+      this._browser.parent = null;
+      (this.layout as PanelLayout).addWidget(this._loginScreen);
+      this._browser.dispose();
+      this._logoutButton.dispose();
 
-    // Sign out.
-    signOut().then(() => {
-      // After sign-out, set up a new listener
-      // for authorization, should the user log
-      // back in.
-      gapiAuthorized.promise.then(() => {
-        this._createBrowser();
+      // Do the actual sign-out.
+      signOut().then(() => {
+        // After sign-out, set up a new listener
+        // for authorization, should the user log
+        // back in.
+        gapiAuthorized.promise.then(() => {
+          this._createBrowser();
+        });
       });
     });
   }

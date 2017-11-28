@@ -133,8 +133,6 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
   } else {
     resourceReadyPromise = new Promise<FileResource>((resolve, reject) => {
       let enclosingFolderPath = PathExt.dirname(path);
-      enclosingFolderPath =
-        enclosingFolderPath === '.' ? '' : enclosingFolderPath;
       const resource: FileResource = fileResourceFromContentsModel(model, fileType);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FileResource) => {
@@ -682,7 +680,6 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
     return contentsModelForPath(oldPath, true, fileTypeForPath);
   } else {
     let newFolderPath = PathExt.dirname(newPath);
-    newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
 
     // Get a promise that resolves with the resource in the current position.
     const resourcePromise = getResourceForPath(oldPath)
@@ -760,7 +757,6 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
                          ' the same name to the same directory');
   } else {
     let newFolderPath = PathExt.dirname(newPath);
-    newFolderPath = newFolderPath === '.' ? '' : newFolderPath;
 
     // Get a promise that resolves with the resource in the current position.
     const resourcePromise = getResourceForPath(oldPath)
@@ -804,6 +800,22 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       return contentsModelForPath(newPath, true, fileTypeForPath);
     });
   }
+}
+
+/**
+ * Invalidate the resource cache.
+ *
+ * #### Notes
+ * The resource cache is mostly private to this module, and
+ * is essential to not be rate-limited by Google.
+ *
+ * This should only be called when the user signs out, and
+ * the cached information about their directory structure
+ * is no longer valid.
+ */
+export
+function clearCache(): void {
+  Private.resourceCache.clear();
 }
 
 
@@ -1272,16 +1284,12 @@ namespace Private {
    */
   export
   function clearCacheForDirectory(path: string): void {
-    // TODO: my TS compiler complains here?
-    const keys = (resourceCache as any).keys();
-    for(let key of keys) {
-      let enclosingFolderPath = PathExt.dirname(path);
-      enclosingFolderPath =
-        enclosingFolderPath === '.' ? '' : enclosingFolderPath;
+    resourceCache.forEach((value, key) => {
+      let enclosingFolderPath = PathExt.dirname(key);
       if(path === enclosingFolderPath) {
         resourceCache.delete(key);
       }
-    }
+    });
   }
 
   /**
