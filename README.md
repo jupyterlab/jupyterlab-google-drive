@@ -4,6 +4,10 @@
 
 ## Realtime collaboration and cloud storage for JupyterLab through Google Drive.
 
+***As of November 28th, 2017, Google has [deprecated](https://developers.google.com/google-apps/realtime/deprecation) their Realtime API.
+Existing realtime applications (such as those you may have set up according to [these](docs/advanced.md) instructions) will still work until December 2018, but new applications will not be able to use the Realtime API.
+See the discussions [here](https://github.com/jupyterlab/jupyterlab-google-drive/issues/108) and [here](docs/advanced.md#Realtime-API) for more information.***
+
 **NOTE: this is alpha software and is rapidly changing.**
 **Files stored on Google Drive using this plugin should still be backed-up elsewhere.**
 
