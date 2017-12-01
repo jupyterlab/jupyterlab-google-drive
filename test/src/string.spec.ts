@@ -20,7 +20,7 @@ describe('GoogleString', () => {
   let str: gapi.drive.realtime.CollaborativeString;
 
   before((done) => {
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });

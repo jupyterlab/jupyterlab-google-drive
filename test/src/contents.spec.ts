@@ -60,7 +60,7 @@ describe('GoogleDrive', () => {
 
   before((done) => {
     registry = new DocumentRegistry();
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       authorizeGapiTesting().then(() => {
         done();
       }).catch( err => {

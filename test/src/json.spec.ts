@@ -24,7 +24,7 @@ describe('GoogleJSON', () => {
   let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
 
   before((done) => {
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });
