@@ -82,9 +82,7 @@ class GoogleDriveFileBrowser extends Widget {
 
     // Keep references to the createFileBrowser arguments for
     // when we need to construct it.
-    this._registry = registry;
     this._commands = commands;
-    this._manager = manager;
     this._factory = factory;
     this._driveName = driveName;
 
@@ -182,9 +180,7 @@ class GoogleDriveFileBrowser extends Widget {
   private _browser: FileBrowser;
   private _loginScreen: GoogleDriveLogin;
   private _logoutButton: ToolbarButton;
-  private _registry: DocumentRegistry;
   private _commands: CommandRegistry;
-  private _manager: IDocumentManager;
   private _factory: IFileBrowserFactory;
   private _driveName: string;
   private _hasOpenDocuments: () => boolean;

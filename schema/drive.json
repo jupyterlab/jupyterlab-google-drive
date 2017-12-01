@@ -6,6 +6,9 @@
   "properties": {
     "clientId": {
       "type": "string", "title": "Client ID", "default": ""
+    },
+    "realtime": {
+      "type": "boolean", "title": "Realtime", "default": true
     }
   },
   "type": "object"

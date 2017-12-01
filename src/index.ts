@@ -87,7 +87,17 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   const id = fileBrowserPlugin.id;
 
   // Load the gapi libraries onto the page.
-  loadGapi();
+  settingRegistry.load(id).then(settings => {
+    const realtime = settings.get('realtime').composite as boolean;
+    if (realtime === true) {
+      console.warn('Warning: Google Realtime has been deprecated. ' +
+                   'No new realtime applications may be registered, ' +
+                   'and existing ones will cease to work in December 2018');
+      loadGapi(true);
+    } else {
+      loadGapi(false);
+    }
+  });
 
   // Add the Google Drive backend to the contents manager.
   const drive = new GoogleDrive(app.docRegistry);

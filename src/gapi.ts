@@ -60,12 +60,21 @@ export
 let gapiAuthorized = new PromiseDelegate<void>();
 
 /**
+ * A boolean that is set if the deprecated realtime APIs
+ * have been loaded onto the page.
+ */
+export
+let realtimeLoaded = false;
+
+/**
  * Load the gapi scripts onto the page.
+ *
+ * @param realtime - whether to load the (deprecated) realtime libraries.
  *
  * @returns a promise that resolves when the gapi scripts are loaded.
  */
 export
-function loadGapi(): Promise<void> {
+function loadGapi(realtime: boolean): Promise<void> {
   return new Promise<void>( (resolve, reject) => {
     // Get the gapi script from Google.
     const gapiScript = document.createElement('script');
@@ -76,7 +85,11 @@ function loadGapi(): Promise<void> {
     // Load overall API scripts onto the page.
     gapiScript.onload = () => {
       // Load the specific client libraries we need.
-      gapi.load('client:auth2,drive-realtime,drive-share', () => {
+      const libs = realtime ?
+                   'client:auth2,drive-realtime,drive-share' :
+                   'client:auth2';
+      gapi.load(libs, () => {
+        if (realtime) { realtimeLoaded = true };
         gapiLoaded.resolve(void 0);
         resolve(void 0);
       });

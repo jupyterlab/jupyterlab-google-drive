@@ -24,7 +24,7 @@ import {
 import * as drive from './drive';
 
 import {
-  makeError
+  makeError, realtimeLoaded
 } from '../gapi';
 
 
@@ -57,18 +57,37 @@ class GoogleDrive implements Contents.IDrive {
     }
   }
 
+  /**
+   * The name of the drive.
+   */
   get name(): 'GDrive' {
     return 'GDrive';
   }
 
+  /**
+   * Getter for the IModelDB factory.
+   */
   get modelDBFactory(): ModelDB.IFactory {
-    return {
-      createNew: (path: string) => {
-        return new GoogleModelDB( {filePath: path} );
+    if (realtimeLoaded) {
+      return {
+        createNew: (path: string) => {
+          return new GoogleModelDB( {filePath: path} );
+        }
+      }
+    } else {
+      return {
+        // If the realtime APIs have not been loaded,
+        // make a new in-memory ModelDB.
+        createNew: (path: string) => {
+          return new ModelDB();
+        }
       }
     }
   }
 
+  /**
+   * Server settings (unused for interfacing with Google Drive).
+   */
   readonly serverSettings: ServerConnection.ISettings;
 
   /**
