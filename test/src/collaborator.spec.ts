@@ -5,7 +5,7 @@ import expect = require('expect.js');
 
 import {
   ICollaborator
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   CollaboratorMap

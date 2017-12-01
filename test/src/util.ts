@@ -2,12 +2,16 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IModelDB, uuid
+  uuid
 } from '@jupyterlab/coreutils';
 
 import {
   TextModelFactory, DocumentRegistry, Context
 } from '@jupyterlab/docregistry';
+
+import {
+  IModelDB
+} from '@jupyterlab/observables';
 
 import {
   IRenderMime, RenderMime, RenderedHTML, defaultRendererFactories

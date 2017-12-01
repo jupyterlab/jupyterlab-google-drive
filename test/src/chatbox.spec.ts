@@ -29,7 +29,7 @@ import {
 
 import {
   ModelDB, ObservableMap, ObservableList, ICollaborator
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   Chatbox, ChatEntry 
