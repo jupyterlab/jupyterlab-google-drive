@@ -16,7 +16,7 @@ import {
 import {
   IModelDB, IObservableValue, ObservableValue, IObservableString, 
   IObservable, IObservableUndoableList, IObservableJSON
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   CollaboratorMap

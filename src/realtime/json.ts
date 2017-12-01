@@ -7,7 +7,7 @@ import {
 
 import {
   IObservableJSON
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   GoogleMap

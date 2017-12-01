@@ -11,7 +11,7 @@ import {
 
 import {
   ICollaborator
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   MarkdownCell

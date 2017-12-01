@@ -7,7 +7,7 @@ import {
 
 import {
   ICollaborator, IObservableMap
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 
 export

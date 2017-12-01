@@ -7,7 +7,7 @@ import {
 
 import {
   IObservableMap
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   GoogleRealtimeObject, GoogleSynchronizable

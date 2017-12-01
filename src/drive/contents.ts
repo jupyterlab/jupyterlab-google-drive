@@ -6,12 +6,16 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  PathExt, ModelDB
+  PathExt
 } from '@jupyterlab/coreutils';
 
 import {
   DocumentRegistry
 } from '@jupyterlab/docregistry';
+
+import {
+  ModelDB
+} from '@jupyterlab/observables';
 
 import {
   Contents, ServerConnection,
