@@ -32,7 +32,7 @@ If you run into troubles, see if the [troubleshooting guide](docs/troubleshootin
 
 ## Prerequisites
 
-* JupyterLab 0.29
+* JupyterLab 0.30
 * A Google Drive account
 
 ## Installation
