@@ -21,7 +21,7 @@ describe('GoogleMap', () => {
   let map: gapi.drive.realtime.CollaborativeMap<number>;
 
   before((done) => {
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });

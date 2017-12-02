@@ -12,7 +12,7 @@ import {
 
 import {
   IObservableList
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   GoogleRealtimeObject, GoogleSynchronizable

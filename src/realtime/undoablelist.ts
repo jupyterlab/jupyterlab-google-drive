@@ -11,7 +11,7 @@ import {
 
 import {
   IObservableUndoableList, IObservableList,
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   GoogleList

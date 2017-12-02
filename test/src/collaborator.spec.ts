@@ -5,7 +5,7 @@ import expect = require('expect.js');
 
 import {
   ICollaborator
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/observables';
 
 import {
   CollaboratorMap
@@ -39,7 +39,7 @@ describe('CollaboratorMap', () => {
   let model: inMemoryModel;
 
   before((done) => {
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });

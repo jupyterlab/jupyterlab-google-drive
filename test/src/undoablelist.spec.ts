@@ -26,7 +26,7 @@ describe('GoogleUndoableList', () => {
   let glist: gapi.drive.realtime.CollaborativeList<JSONObject>;
 
   before((done) => {
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });

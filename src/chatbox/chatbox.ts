@@ -43,8 +43,12 @@ import {
 } from '@jupyterlab/cells';
 
 import {
-  IObservableList, ActivityMonitor
+  ActivityMonitor
 } from '@jupyterlab/coreutils';
+
+import {
+  IObservableList
+} from '@jupyterlab/observables';
 
 import {
   RenderMime

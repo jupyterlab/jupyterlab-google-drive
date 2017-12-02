@@ -24,7 +24,7 @@ describe('GoogleList', () => {
   let list: gapi.drive.realtime.CollaborativeList<number>;
 
   before((done) => {
-    loadGapi().then(() => {
+    loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });
