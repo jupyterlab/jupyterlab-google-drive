@@ -14,7 +14,7 @@ import {
 } from '@phosphor/signaling';
 
 import {
-  IModelDB, IObservableValue, ObservableValue, IObservableString, 
+  IModelDB, IObservableValue, ObservableValue, IObservableString,
   IObservable, IObservableUndoableList, IObservableJSON
 } from '@jupyterlab/observables';
 
@@ -23,7 +23,7 @@ import {
 } from './collaborator';
 
 import {
-  GoogleSynchronizable, GoogleRealtimeObject
+  GoogleSynchronizable, IGoogleRealtimeObject
 } from './googlerealtime';
 
 import {
@@ -80,7 +80,7 @@ class GoogleObservableValue implements IObservableValue {
           newValue: Private.resolveValue(evt.newValue)
         });
       }
-    }
+    };
 
     // Possibly set the initial value.
     if (initialValue)  {
@@ -196,7 +196,7 @@ class GoogleModelDB implements IModelDB {
   constructor(options: GoogleModelDB.ICreateOptions) {
     this._basePath = options.basePath || '';
     this._filePath = options.filePath;
-    if(options.baseDB) {
+    if (options.baseDB) {
       // Handle the case of a view on an already existing database.
       this._baseDB = options.baseDB;
     } else {
@@ -209,7 +209,7 @@ class GoogleModelDB implements IModelDB {
 
       this._connected = new PromiseDelegate<void>();
       this._localDB =
-        new Map<string, GoogleRealtimeObject | GoogleObservableValue>();
+        new Map<string, IGoogleRealtimeObject | GoogleObservableValue>();
 
       // If a testing documentLoader has been supplied, use that.
       const documentLoader = options.documentLoader || Private.documentLoader;
@@ -233,7 +233,7 @@ class GoogleModelDB implements IModelDB {
 
           // Iterate over the keys in the original, unconnected
           // model database. If there is a matching key in the
-          // new one, plug in the GoogleRealtimeObject associated
+          // new one, plug in the IGoogleRealtimeObject associated
           // with it. This takes care of updating the values
           // and sending the right signals.
           for (let key of oldDB.keys()) {
@@ -251,13 +251,13 @@ class GoogleModelDB implements IModelDB {
           }
         } else {
           // Handle the case where we populate the model.
-          for(let key of oldDB.keys()) {
+          for (let key of oldDB.keys()) {
             const val = this._localDB.get(key);
-            if(val.googleObject) {
+            if (val.googleObject) {
               // If the value is a string, map, or list,
               // swap out the underlying Collaborative Object.
               let newVal: gapi.drive.realtime.CollaborativeObject;
-              if(val.googleObject.type === 'EditableString') {
+              if (val.googleObject.type === 'EditableString') {
                 // Create a string.
                 newVal = this._model.createString(val.text);
               } else if (val.googleObject.type === 'List') {
@@ -266,7 +266,7 @@ class GoogleModelDB implements IModelDB {
               } else if (val.googleObject.type === 'Map') {
                 // Create a map.
                 newVal = this._model.createMap();
-                for(let item of val.keys()) {
+                for (let item of val.keys()) {
                   (newVal as gapi.drive.realtime.CollaborativeMap<JSONValue>)
                   .set(item, val.get(item));
                 }
@@ -387,7 +387,7 @@ class GoogleModelDB implements IModelDB {
    */
   get(path: string): IObservable {
     if (this._baseDB) {
-      return this._baseDB.get(this._basePath+'.'+path);
+      return this._baseDB.get(this._basePath + '.' + path);
     } else {
       return this._localDB.get(path);
     }
@@ -400,8 +400,8 @@ class GoogleModelDB implements IModelDB {
    * @param path: the path for the object.
    */
   getGoogleObject(path: string): GoogleSynchronizable | undefined {
-    if(this._baseDB) {
-      return this._baseDB.getGoogleObject(this._basePath+'.'+path);
+    if (this._baseDB) {
+      return this._baseDB.getGoogleObject(this._basePath + '.' + path);
     } else {
       return this._db.get(path);
     }
@@ -415,8 +415,8 @@ class GoogleModelDB implements IModelDB {
    * @returns a boolean for whether an object is at `path`.
    */
   has(path: string): boolean {
-    if(this._baseDB) {
-      return this._baseDB.has(this._basePath+'.'+path);
+    if (this._baseDB) {
+      return this._baseDB.has(this._basePath + '.' + path);
     } else {
       return this._db.has(path);
     }
@@ -431,13 +431,13 @@ class GoogleModelDB implements IModelDB {
    *
    * @param value: the value to set at the path.
    */
-  set(path: string, value: GoogleRealtimeObject | GoogleObservableValue): void {
-    if(this._baseDB) {
-      this._baseDB.set(this._basePath+'.'+path, value);
+  set(path: string, value: IGoogleRealtimeObject | GoogleObservableValue): void {
+    if (this._baseDB) {
+      this._baseDB.set(this._basePath + '.' + path, value);
     } else {
       this._localDB.set(path, value);
-      if(value && (value as GoogleRealtimeObject).googleObject) {
-        this._db.set(path, (value as GoogleRealtimeObject).googleObject);
+      if (value && (value as IGoogleRealtimeObject).googleObject) {
+        this._db.set(path, (value as IGoogleRealtimeObject).googleObject);
       } else if (value && value.type === 'Value') {
         // Do nothing, it has already been set
         // at object creation time.
@@ -456,7 +456,7 @@ class GoogleModelDB implements IModelDB {
    */
   createString(path: string): IObservableString {
     let str: gapi.drive.realtime.CollaborativeString;
-    if(this.has(path)) {
+    if (this.has(path)) {
       str = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeString;
     } else {
       str = this.model.createString();
@@ -480,7 +480,7 @@ class GoogleModelDB implements IModelDB {
    */
   createList<T extends JSONValue>(path: string): IObservableUndoableList<T> {
     let vec: gapi.drive.realtime.CollaborativeList<T>;
-    if(this.has(path)) {
+    if (this.has(path)) {
       vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<T>;
     } else {
       vec = this.model.createList<T>();
@@ -504,7 +504,7 @@ class GoogleModelDB implements IModelDB {
    */
   createMap(path: string): IObservableJSON {
     let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
-    if(this.has(path)) {
+    if (this.has(path)) {
       json = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<JSONValue>;
     } else {
       json = this.model.createMap<JSONValue>();
@@ -524,7 +524,7 @@ class GoogleModelDB implements IModelDB {
    */
   createValue(path: string): IObservableValue {
     let val: JSONValue = NULL_WRAPPER;
-    if(this.has(path)) {
+    if (this.has(path)) {
       val = this.getGoogleObject(path) as JSONValue;
     }
     const fullPath = this.fullPath(path);

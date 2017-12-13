@@ -1,6 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+// tslint:disable-next-line
 /// <reference path="./gapi.client.drive.d.ts" />
 
 import {
@@ -25,8 +26,8 @@ import {
 } from '../gapi';
 
 
-const RESOURCE_FIELDS = 'kind,id,name,mimeType,trashed,headRevisionId,'+
-                        'parents,modifiedTime,createdTime,capabilities,'+
+const RESOURCE_FIELDS = 'kind,id,name,mimeType,trashed,headRevisionId,' +
+                        'parents,modifiedTime,createdTime,capabilities,' +
                         'webContentLink,teamDriveId';
 
 const TEAMDRIVE_FIELDS = 'kind,id,name,capabilities';
@@ -80,7 +81,7 @@ const COLLECTIONS_DIRECTORY = '';
 const SHARED_DIRECTORY_RESOURCE: FileResource = {
   kind: 'dummy',
   name: SHARED_DIRECTORY,
-}
+};
 
 /**
  * A dummy files resource for the pseudo-root folder.
@@ -88,7 +89,7 @@ const SHARED_DIRECTORY_RESOURCE: FileResource = {
 const COLLECTIONS_DIRECTORY_RESOURCE: FileResource = {
   kind: 'dummy',
   name: '',
-}
+};
 
 
 /* ****** Functions for uploading/downloading files ******** */
@@ -128,7 +129,7 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
                     ' is not a valid save directory');
   }
   let resourceReadyPromise: Promise<FileResource>;
-  if(existing) {
+  if (existing) {
     resourceReadyPromise = getResourceForPath(path);
   } else {
     resourceReadyPromise = new Promise<FileResource>((resolve, reject) => {
@@ -136,10 +137,10 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
       const resource: FileResource = fileResourceFromContentsModel(model, fileType);
       getResourceForPath(enclosingFolderPath)
       .then((parentFolderResource: FileResource) => {
-        if(!isDirectory(parentFolderResource)) {
-           throw new Error("Google Drive: expected a folder: "+path);
+        if (!isDirectory(parentFolderResource)) {
+           throw new Error('Google Drive: expected a folder: ' + path);
         }
-        if(parentFolderResource.kind === 'drive#teamDrive') {
+        if (parentFolderResource.kind === 'drive#teamDrive') {
           resource.teamDriveId = parentFolderResource.id;
         } else if (parentFolderResource.teamDriveId) {
           resource.teamDriveId = parentFolderResource.teamDriveId;
@@ -157,9 +158,9 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     const closeDelim = '\r\n--' + MULTIPART_BOUNDARY + '--';
 
     // Metatdata part.
-    let body = delimiter+'Content-Type: application/json\r\n\r\n';
+    let body = delimiter + 'Content-Type: application/json\r\n\r\n';
     // Don't update metadata if the file already exists.
-    if(!existing) {
+    if (!existing) {
       body += JSON.stringify(resource);
     }
     body += delimiter;
@@ -171,21 +172,21 @@ function uploadFile(path: string, model: Partial<Contents.IModel>, fileType: Doc
     // notebook is a base64 encoded string.
     if (model.format === 'base64') {
       body += 'Content-Transfer-Encoding: base64\r\n';
-      body +='\r\n' + model.content + closeDelim;
+      body += '\r\n' + model.content + closeDelim;
     } else if (model.format === 'text') {
       // If it is already a text string, just send that.
-      body +='\r\n' + model.content + closeDelim;
+      body += '\r\n' + model.content + closeDelim;
     } else {
       // Notebook case.
-      body +='\r\n' + JSON.stringify(model.content) + closeDelim;
+      body += '\r\n' + JSON.stringify(model.content) + closeDelim;
     }
 
     let apiPath = '/upload/drive/v3/files';
     let method = 'POST';
 
-    if(existing) {
+    if (existing) {
       method = 'PATCH';
-      apiPath = apiPath+'/'+resource.id;
+      apiPath = apiPath + '/' + resource.id;
     }
 
     const createRequest = () => {
@@ -261,16 +262,16 @@ function contentsModelFromFileResource(resource: FileResource, path: string, fil
       }
       const fileList: FileResource[] = [];
       return searchDirectory(path).then((resources: FileResource[]) => {
-        //Update the cache.
+        // Update the cache.
         Private.clearCacheForDirectory(path);
         Private.populateCacheForDirectory(path, resources);
 
         let currentContents = Promise.resolve({});
 
-        for(let i = 0; i<resources.length; i++) {
+        for (let i = 0; i < resources.length; i++) {
           const currentResource = resources[i];
           const resourcePath = path ?
-                             path+'/'+currentResource.name! :
+                             path + '/' + currentResource.name! :
                              currentResource.name!;
           const resourceFileType = fileTypeForPath(resourcePath);
           currentContents = contentsModelFromFileResource(
@@ -300,7 +301,7 @@ function contentsModelFromFileResource(resource: FileResource, path: string, fil
       format: fileType.fileFormat
     };
     // Download the contents from the server if necessary.
-    if(includeContents) {
+    if (includeContents) {
       return downloadResource(resource).then((result: any) => {
         let content: any = result;
         if (contents.format === 'base64') {
@@ -347,7 +348,7 @@ function contentsModelFromDummyFileResource(resource: FileResource, path: string
     content: null,
     mimetype: '',
     format: 'json'
-  }
+  };
   if (includeContents && !fileTypeForPath) {
     throw Error('Must include fileTypeForPath argument to get directory listing');
   }
@@ -356,16 +357,16 @@ function contentsModelFromDummyFileResource(resource: FileResource, path: string
     // need the file listing for it, then get them.
     const fileList: Contents.IModel[] = [];
     return searchSharedFiles().then((resources: FileResource[]) => {
-      //Update the cache.
+      // Update the cache.
       Private.clearCacheForDirectory(path);
       Private.populateCacheForDirectory(path, resources);
 
       let currentContents = Promise.resolve({});
 
-      for(let i = 0; i<resources.length; i++) {
+      for (let i = 0; i < resources.length; i++) {
         const currentResource = resources[i];
         const resourcePath = path ?
-                           path+'/'+currentResource.name :
+                           path + '/' + currentResource.name :
                            currentResource.name!;
         const resourceFileType = fileTypeForPath!(resourcePath);
         currentContents = contentsModelFromFileResource(currentResource,
@@ -435,7 +436,8 @@ export
 function contentsModelForPath(path: string, includeContents: boolean, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   const fileType = fileTypeForPath(path);
   return getResourceForPath(path).then((resource: FileResource) => {
-    return contentsModelFromFileResource(resource, path, fileType, includeContents, fileTypeForPath)
+    return contentsModelFromFileResource(resource, path, fileType,
+      includeContents, fileTypeForPath);
   });
 }
 
@@ -468,7 +470,7 @@ function createPermissions (resource: FileResource, emailAddresses: string[] ): 
         'type': 'user',
         'role': 'writer',
         'emailAddress': address
-      }
+      };
       const request = gapi.client.drive.permissions.create({
         fileId: resource.id!,
         emailMessage: `${resource.name} has been shared with you`,
@@ -548,7 +550,7 @@ function deleteFile(path: string): Promise<void> {
     };
     return driveApiRequest<void>(createRequest, 204);
   }).then(() => {
-    //Update the cache
+    // Update the cache
     Private.resourceCache.delete(path);
     return void 0;
   });
@@ -574,13 +576,13 @@ export
 function searchDirectory(path: string, query: string = ''): Promise<FileResource[]> {
   return getResourceForPath(path).then((resource: FileResource) => {
     // Check to make sure this is a folder.
-    if(!isDirectory(resource)) {
-      throw new Error("Google Drive: expected a folder: "+path);
+    if (!isDirectory(resource)) {
+      throw new Error('Google Drive: expected a folder: ' + path);
     }
     // Construct the query.
-    let fullQuery: string = `\'${resource.id}\' in parents `+
+    let fullQuery: string = `\'${resource.id}\' in parents ` +
                             'and trashed = false';
-    if(query) fullQuery += ' and '+query;
+    if (query) { fullQuery += ' and ' + query; }
 
     let createRequest: () => gapi.client.HttpRequest<gapi.client.drive.FileList>;
     if (resource.teamDriveId) {
@@ -588,7 +590,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: fullQuery,
-          fields: 'files('+RESOURCE_FIELDS+')',
+          fields: 'files(' + RESOURCE_FIELDS + ')',
           corpora: 'teamDrive',
           includeTeamDriveItems: true,
           supportsTeamDrives: true,
@@ -600,7 +602,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: fullQuery,
-          fields: 'files('+RESOURCE_FIELDS+')',
+          fields: 'files(' + RESOURCE_FIELDS + ')',
           corpora: 'teamDrive',
           includeTeamDriveItems: true,
           supportsTeamDrives: true,
@@ -612,7 +614,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: fullQuery,
-          fields: 'files('+RESOURCE_FIELDS+')'
+          fields: 'files(' + RESOURCE_FIELDS + ')'
         });
       };
     }
@@ -641,12 +643,12 @@ function searchSharedFiles(query: string = ''): Promise<FileResource[]> {
   return gapiInitialized.promise.then(() => {
     // Construct the query.
     let fullQuery = 'sharedWithMe = true';
-    if(query) fullQuery += ' and '+query;
+    if (query) { fullQuery += ' and ' + query; }
 
     const createRequest = () => {
       return gapi.client.drive.files.list({
         q: fullQuery,
-        fields: 'files('+RESOURCE_FIELDS+')'
+        fields: 'files(' + RESOURCE_FIELDS + ')'
       });
     };
     return driveApiRequest(createRequest);
@@ -676,13 +678,13 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
     throw makeError(400, `Google Drive: "${newPath}" `
                     + 'is not a valid save directory');
   }
-  if( oldPath === newPath ) {
+  if (oldPath === newPath ) {
     return contentsModelForPath(oldPath, true, fileTypeForPath);
   } else {
     let newFolderPath = PathExt.dirname(newPath);
 
     // Get a promise that resolves with the resource in the current position.
-    const resourcePromise = getResourceForPath(oldPath)
+    const resourcePromise = getResourceForPath(oldPath);
     // Get a promise that resolves with the resource of the new folder.
     const newFolderPromise = getResourceForPath(newFolderPath);
 
@@ -690,7 +692,7 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
     // with the same name there.
     const newName = PathExt.basename(newPath);
     const directorySearchPromise =
-      searchDirectory(newFolderPath, 'name = \''+newName+'\'');
+      searchDirectory(newFolderPath, 'name = \'' + newName + '\'');
 
     // Once we have all the required information,
     // update the metadata with the new parent directory
@@ -701,9 +703,9 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       const newFolder = values[1];
       const directorySearch = values[2];
 
-      if(directorySearch.length !== 0) {
-        throw new Error("Google Drive: File with the same name "+
-                        "already exists in the destination directory");
+      if (directorySearch.length !== 0) {
+        throw new Error('Google Drive: File with the same name ' +
+                        'already exists in the destination directory');
       } else {
         const createRequest = () => {
           return gapi.client.drive.files.update({
@@ -749,17 +751,17 @@ function moveFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
 export
 function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: string) => DocumentRegistry.IFileType): Promise<Contents.IModel> {
   if (isDummy(PathExt.dirname(newPath))) {
-    throw makeError(400, `Google Drive: "${newPath}"`+
+    throw makeError(400, `Google Drive: "${newPath}"` +
                     ' is not a valid save directory');
   }
-  if( oldPath === newPath ) {
-    throw makeError(400, 'Google Drive: cannot copy a file with'+
+  if (oldPath === newPath ) {
+    throw makeError(400, 'Google Drive: cannot copy a file with' +
                          ' the same name to the same directory');
   } else {
     let newFolderPath = PathExt.dirname(newPath);
 
     // Get a promise that resolves with the resource in the current position.
-    const resourcePromise = getResourceForPath(oldPath)
+    const resourcePromise = getResourceForPath(oldPath);
     // Get a promise that resolves with the resource of the new folder.
     const newFolderPromise = getResourceForPath(newFolderPath);
 
@@ -767,7 +769,7 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
     // with the same name there.
     const newName = PathExt.basename(newPath);
     const directorySearchPromise =
-      searchDirectory(newFolderPath, 'name = \''+newName+'\'');
+      searchDirectory(newFolderPath, 'name = \'' + newName + '\'');
 
     // Once we have all the required information,
     // perform the copy.
@@ -777,9 +779,9 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
       const newFolder = values[1];
       const directorySearch = values[2];
 
-      if(directorySearch.length !== 0) {
-        throw new Error("Google Drive: File with the same name "+
-                        "already exists in the destination directory");
+      if (directorySearch.length !== 0) {
+        throw new Error('Google Drive: File with the same name ' +
+                        'already exists in the destination directory');
       } else {
         const createRequest = () => {
           return gapi.client.drive.files.copy({
@@ -791,7 +793,7 @@ function copyFile(oldPath: string, newPath: string, fileTypeForPath: (path: stri
             fields: RESOURCE_FIELDS,
             supportsTeamDrives: !!(newFolder.teamDriveId || resource.teamDriveId)
           });
-        }
+        };
         return driveApiRequest<FileResource>(createRequest);
       }
     }).then((response) => {
@@ -835,7 +837,7 @@ function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
     const createRequest = () => {
       return gapi.client.drive.revisions.list({
         fileId: resource.id!,
-        fields: 'revisions(id, modifiedTime, keepForever)' //NOT DOCUMENTED
+        fields: 'revisions(id, modifiedTime, keepForever)' // NOT DOCUMENTED.
       });
     };
     return driveApiRequest<gapi.client.drive.RevisionList>(createRequest);
@@ -843,7 +845,7 @@ function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
     const revisions = map(filter(result.revisions || [], (revision: RevisionResource) => {
       return revision.keepForever!;
     }), (revision: RevisionResource) => {
-      return { id: revision.id!, last_modified: revision.modifiedTime! }
+      return { id: revision.id!, last_modified: revision.modifiedTime! };
     });
     return toArray(revisions);
   });
@@ -976,7 +978,7 @@ function revertToRevision(path: string, revisionId: string, fileType: DocumentRe
  */
 function fileResourceFromContentsModel(contents: Partial<Contents.IModel>, fileType: DocumentRegistry.IFileType): FileResource {
   let mimeType: string;
-  switch(contents.type) {
+  switch (contents.type) {
     case 'notebook':
       // The Contents API does not specify a notebook mimetype,
       // but the Google Drive API requires one.
@@ -1022,7 +1024,7 @@ function getResourceForRelativePath(pathComponent: string, folderId: string, tea
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: query,
-          fields: 'files('+RESOURCE_FIELDS+')',
+          fields: 'files(' + RESOURCE_FIELDS + ')',
           supportsTeamDrives: true,
           includeTeamDriveItems: true,
           corpora: 'teamDrive',
@@ -1033,7 +1035,7 @@ function getResourceForRelativePath(pathComponent: string, folderId: string, tea
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: query,
-          fields: 'files('+RESOURCE_FIELDS+')'
+          fields: 'files(' + RESOURCE_FIELDS + ')'
         });
       };
     }
@@ -1043,12 +1045,12 @@ function getResourceForRelativePath(pathComponent: string, folderId: string, tea
       const files: FileResource[] = result.files || [];
       if (!files || files.length === 0) {
         throw Error(
-          "Google Drive: cannot find the specified file/folder: "
-          +pathComponent);
+          'Google Drive: cannot find the specified file/folder: '
+          + pathComponent);
       } else if (files.length > 1) {
         throw Error(
-          "Google Drive: multiple files/folders match: "
-          +pathComponent);
+          'Google Drive: multiple files/folders match: '
+          + pathComponent);
       }
       return files[0];
     });
@@ -1126,7 +1128,7 @@ function listTeamDrives(): Promise<TeamDriveResource[]> {
  * Split a path into path components
  */
 function splitPath(path: string): string[] {
-  return path.split('/').filter((s,i,a) => (Boolean(s)));
+  return path.split('/').filter((s, i, a) => (Boolean(s)));
 }
 
 /**
@@ -1163,7 +1165,7 @@ function isDirectory(resource: FileResource): boolean {
 export
 function getResourceForPath(path: string): Promise<FileResource> {
   // First check the cache.
-  if( Private.resourceCache.has(path)) {
+  if (Private.resourceCache.has(path)) {
     return Promise.resolve(Private.resourceCache.get(path)!);
   }
 
@@ -1190,16 +1192,16 @@ function getResourceForPath(path: string): Promise<FileResource> {
 
     if (components[0] === SHARED_DIRECTORY) {
       // Handle the case of the `Shared With Me` directory.
-      currentResource = searchSharedFiles('name = \''+components[1]+'\'')
+      currentResource = searchSharedFiles('name = \'' + components[1] + '\'')
       .then(files => {
         if (!files || files.length === 0) {
           throw Error(
-            "Google Drive: cannot find the specified file/folder: "
-            +components[1]);
+            'Google Drive: cannot find the specified file/folder: '
+            + components[1]);
         } else if (files.length > 1) {
           throw Error(
-            "Google Drive: multiple files/folders match: "
-            +components[1]);
+            'Google Drive: multiple files/folders match: '
+            + components[1]);
         }
         return files[0];
       });
@@ -1221,7 +1223,7 @@ function getResourceForPath(path: string): Promise<FileResource> {
     // one, verifying that the path corresponds to a valid drive object.
 
     // Utility function that gets the file resource object given its name,
-    // whether it is a file or a folder, and a promise for the resource 
+    // whether it is a file or a folder, and a promise for the resource
     // object of its containing folder.
     const getResource = (pathComponent: string, parentResource: Promise<FileResource>) => {
       return parentResource.then((resource: FileResource) => {
@@ -1229,7 +1231,7 @@ function getResourceForPath(path: string): Promise<FileResource> {
                                           resource.id!,
                                           teamDriveId);
       });
-    }
+    };
 
     // Loop over the components, updating the current resource.
     // Start the loop at one to skip the pseudo-root.
@@ -1286,7 +1288,7 @@ namespace Private {
   function clearCacheForDirectory(path: string): void {
     resourceCache.forEach((value, key) => {
       let enclosingFolderPath = PathExt.dirname(key);
-      if(path === enclosingFolderPath) {
+      if (path === enclosingFolderPath) {
         resourceCache.delete(key);
       }
     });

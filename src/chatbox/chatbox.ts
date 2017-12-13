@@ -631,11 +631,13 @@ class Chatbox extends Widget {
           each(args.newValues, entry => {
             const entryWidget = this._entryWidgetFromModel(entry);
             layout.insertWidget(index, entryWidget);
-            const toRemove = layout.widgets[index+1];
+            const toRemove = layout.widgets[index + 1];
             toRemove.parent = null;
             index++;
           });
         }
+        break;
+      default:
         break;
     }
     this.update();

@@ -15,7 +15,7 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  GoogleRealtimeObject, GoogleSynchronizable
+  IGoogleRealtimeObject, GoogleSynchronizable
 } from './googlerealtime';
 
 
@@ -23,7 +23,7 @@ import {
  * Realtime list type wrapping `gapi.drive.realtme.CollaborativeList`.
  */
 export
-class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, GoogleRealtimeObject {
+class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, IGoogleRealtimeObject {
 
   /**
    * Create a new GoogleList.
@@ -101,7 +101,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * No changes.
    */
   get back(): T {
-    return this.get(this.length-1);
+    return this.get(this.length - 1);
   }
 
   /**
@@ -119,7 +119,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
   set googleObject(vec: gapi.drive.realtime.CollaborativeList<T>) {
     // First, recreate the new list using the old list
     // to send the appropriate signals.
-    if(this._vec) {
+    if (this._vec) {
       this.clear();
       this.pushAll(vec.asArray());
       this._vec.removeAllEventListeners();
@@ -132,7 +132,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_ADDED,
       (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           const vals: T[] = evt.values;
           this._changed.emit({
             type: 'add',
@@ -147,7 +147,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_REMOVED,
       (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           const vals: T[] = evt.values;
           this._changed.emit({
             type: 'remove',
@@ -162,7 +162,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_SET,
       (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           const oldVals: T[] = evt.oldValues;
           const newVals: T[] = evt.newValues;
 
@@ -284,7 +284,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * Iterators pointing at the removed value are invalidated.
    */
   popBack(): T {
-    const last = this.length-1;
+    const last = this.length - 1;
     const value = this.get(last);
     this._vec.remove(last);
 
@@ -443,7 +443,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     // here (see Google Realtime API docs). Hence we have
     // to do some strange indexing to get the intended behavior.
     if (fromIndex < toIndex) {
-      this._vec.move(fromIndex, toIndex+1);
+      this._vec.move(fromIndex, toIndex + 1);
     } else {
       this._vec.move(fromIndex, toIndex);
     }
@@ -570,7 +570,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
    * Dispose of the resources held by the list.
    */
   dispose(): void {
-    if(this._isDisposed) {
+    if (this._isDisposed) {
       return;
     }
     this._isDisposed = true;

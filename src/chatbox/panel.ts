@@ -97,7 +97,7 @@ class ChatboxPanel extends Panel {
       return;
     }
     this._context = value;
-    this.chatbox.model = value ? value.model: undefined;
+    this.chatbox.model = value ? value.model : undefined;
     this._documentInfo.context = value;
   }
 

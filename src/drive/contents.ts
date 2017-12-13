@@ -53,12 +53,12 @@ class GoogleDrive implements Contents.IDrive {
       return fileTypes.length === 0 ?
              registry.getFileType('text')! :
              fileTypes[0];
-    }
+    };
     // Construct a function to return a best-guess IFileType
     // for a given contents model.
     this._fileTypeForContentsModel = (model: Partial<Contents.IModel>) => {
       return registry.getFileTypeForModel(model);
-    }
+    };
   }
 
   /**
@@ -77,7 +77,7 @@ class GoogleDrive implements Contents.IDrive {
         createNew: (path: string) => {
           return new GoogleModelDB( {filePath: path} );
         }
-      }
+      };
     } else {
       return {
         // If the realtime APIs have not been loaded,
@@ -85,7 +85,7 @@ class GoogleDrive implements Contents.IDrive {
         createNew: (path: string) => {
           return new ModelDB();
         }
-      }
+      };
     }
   }
 
@@ -175,12 +175,12 @@ class GoogleDrive implements Contents.IDrive {
   newUntitled(options: Contents.ICreateOptions = {}): Promise<Contents.IModel> {
     // Set default values.
     let ext = '';
-    let baseName = 'Untitled'
+    let baseName = 'Untitled';
     let path = '';
     let contentType: Contents.ContentType = 'notebook';
     let fileType: DocumentRegistry.IFileType;
 
-    if(options) {
+    if (options) {
       // Add leading `.` to extension if necessary.
       ext = options.ext ?
             PathExt.normalizeExtension(options.ext) : ext;
@@ -193,7 +193,7 @@ class GoogleDrive implements Contents.IDrive {
     if (contentType === 'notebook') {
       fileType = DocumentRegistry.defaultNotebookFileType;
       ext = ext || fileType.extensions[0];
-      baseName = 'Untitled'
+      baseName = 'Untitled';
       const modelFactory = this._docRegistry.getModelFactory('Notebook');
       if (!modelFactory) {
         throw Error('No model factory is registered with the DocRegistry');
@@ -222,9 +222,9 @@ class GoogleDrive implements Contents.IDrive {
         type: fileType.contentType,
         content: [],
         format: fileType.fileFormat
-      }
+      };
     } else {
-      throw new Error("Unrecognized type " + contentType);
+      throw new Error('Unrecognized type ' + contentType);
     }
 
     return this._getNewFilename(path, ext, baseName).then((name: string) => {
@@ -275,7 +275,7 @@ class GoogleDrive implements Contents.IDrive {
    *   the file is renamed.
    */
   rename(path: string, newPath: string): Promise<Contents.IModel> {
-    if(path === newPath) {
+    if (path === newPath) {
       return this.get(path);
     } else {
       return drive.moveFile(path, newPath, this._fileTypeForPath)
@@ -308,9 +308,9 @@ class GoogleDrive implements Contents.IDrive {
   save(path: string, options: Partial<Contents.IModel>): Promise<Contents.IModel> {
     const fileType = this._fileTypeForContentsModel(options);
     return this.get(path).then((contents) => {
-      //The file exists
-      if(options) {
-        //Overwrite the existing file
+      // The file exists.
+      if (options) {
+        // Overwrite the existing file.
         return drive.uploadFile(path, options, fileType, true, this._fileTypeForPath);
       } else {
         // File exists, but we are not saving anything
@@ -318,7 +318,7 @@ class GoogleDrive implements Contents.IDrive {
         return contents;
       }
     }, () => {
-      //The file does not exist already, create a new one.
+      // The file does not exist already, create a new one.
       return drive.uploadFile(path, options, fileType, false, this._fileTypeForPath);
     }).then((contents: Contents.IModel) => {
       try {
@@ -455,11 +455,11 @@ class GoogleDrive implements Contents.IDrive {
                      ' is not a valid save directory');
     }
     // Get the file listing for the directory.
-    const query = 'name contains \''+baseName+
-                '\' and name contains \''+ext+'\'';
+    const query = 'name contains \'' + baseName +
+                '\' and name contains \'' + ext + '\'';
     return drive.searchDirectory(path, query).then((resourceList) => {
       const existingNames: any = {};
-      for( let i = 0; i < resourceList.length; i++) {
+      for (let i = 0; i < resourceList.length; i++) {
         existingNames[resourceList[i].name!] = true;
       }
 
