@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  IRenderMime, RenderMime, RenderedHTML, defaultRendererFactories
+  IRenderMime, RenderMimeRegistry, RenderedHTML, standardRendererFactories
 } from '@jupyterlab/rendermime';
 
 import {
@@ -33,7 +33,7 @@ import {
  * Get a copy of the default rendermime instance.
  */
 export
-function defaultRenderMime(): RenderMime {
+function defaultRenderMime(): RenderMimeRegistry {
   return Private.rendermime.clone();
 }
 
@@ -161,7 +161,7 @@ namespace Private {
   const textFactory = new TextModelFactory();
 
   export
-  const rendermime = new RenderMime({
-    initialFactories: defaultRendererFactories
+  const rendermime = new RenderMimeRegistry({
+    initialFactories: standardRendererFactories
   });
 }

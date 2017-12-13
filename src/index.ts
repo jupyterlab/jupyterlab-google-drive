@@ -36,6 +36,10 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
+  IRenderMimeRegistry
+} from '@jupyterlab/rendermime';
+
+import {
   ChatboxPanel
 } from './chatbox';
 
@@ -172,7 +176,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
 export
 const chatboxPlugin: JupyterLabPlugin<void> = {
   id: '@jupyterlab/google-drive:chatbox',
-  requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer],
+  requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer, IRenderMimeRegistry],
   autoStart: true,
   activate: activateChatbox
 };
@@ -180,7 +184,7 @@ const chatboxPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the chatbox extension.
  */
-function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer): void {
+function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer, registry: IRenderMimeRegistry): void {
   const id = 'chatbox';
   const { commands, shell } = app;
   const category = 'Chatbox';
@@ -193,7 +197,7 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
     editorServices.factoryService);
   const contentFactory = new ChatboxPanel.ContentFactory({ editorFactory });
   const panel = new ChatboxPanel({
-    rendermime: app.rendermime.clone(),
+    rendermime: registry.clone(),
     contentFactory
   });
 

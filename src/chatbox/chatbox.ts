@@ -51,7 +51,7 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  RenderMime
+  IRenderMimeRegistry
 } from '@jupyterlab/rendermime';
 
 import {
@@ -697,7 +697,7 @@ class Chatbox extends Widget {
   }
 
   private _isDisposed = false;
-  private _rendermime: RenderMime;
+  private _rendermime: IRenderMimeRegistry;
   private _content: Panel;
   private _log: IObservableList<ChatEntry.IModel> | undefined;
   private _start: number;
@@ -731,7 +731,7 @@ namespace Chatbox {
     /**
      * The mime renderer for the chatbox widget.
      */
-    rendermime: RenderMime;
+    rendermime: IRenderMimeRegistry;
   }
 
   /**

@@ -18,7 +18,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  RenderMime
+  IRenderMimeRegistry
 } from '@jupyterlab/rendermime';
 
 import {
@@ -187,7 +187,7 @@ namespace ChatboxPanel {
     /**
      * The rendermime instance used by the panel.
      */
-    rendermime: RenderMime;
+    rendermime: IRenderMimeRegistry;
 
     /**
      * The content factory for the panel.
