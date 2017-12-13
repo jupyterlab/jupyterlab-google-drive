@@ -38,14 +38,15 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@jupyterlab/application": "^0.13.0",
-    "@jupyterlab/apputils": "^0.13.0",
+    "@jupyterlab/application": "^0.13.1",
+    "@jupyterlab/apputils": "^0.13.1",
     "@jupyterlab/cells": "^0.13.0",
     "@jupyterlab/codeeditor": "^0.13.0",
     "@jupyterlab/coreutils": "^0.13.0",
     "@jupyterlab/docmanager": "^0.13.0",
     "@jupyterlab/docregistry": "^0.13.0",
-    "@jupyterlab/filebrowser": "^0.13.0",
+    "@jupyterlab/filebrowser": "^0.13.2",
+    "@jupyterlab/observables": "^0.2.0",
     "@jupyterlab/rendermime": "^0.13.0",
     "@jupyterlab/services": "^0.52.0",
     "@phosphor/algorithm": "^1.1.2",

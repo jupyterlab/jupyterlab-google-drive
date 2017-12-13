@@ -143,7 +143,7 @@ export
 function expectAjaxError(promise: Promise<any>, done: () => void, message: string): Promise<any> {
   return promise.then((msg: any) => {
     throw Error('Expected failure did not occur');
-  }, (error: ServerConnection.IError) => {
+  }, (error: ServerConnection.ResponseError) => {
     if (error.message !== message) {
       throw Error(`Error "${message}" not equal to "${error.message}"`);
     }
