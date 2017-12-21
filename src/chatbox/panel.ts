@@ -18,7 +18,7 @@ import {
 } from '@jupyterlab/coreutils';
 
 import {
-  RenderMime
+  IRenderMimeRegistry
 } from '@jupyterlab/rendermime';
 
 import {
@@ -97,7 +97,7 @@ class ChatboxPanel extends Panel {
       return;
     }
     this._context = value;
-    this.chatbox.model = value ? value.model: undefined;
+    this.chatbox.model = value ? value.model : undefined;
     this._documentInfo.context = value;
   }
 
@@ -187,7 +187,7 @@ namespace ChatboxPanel {
     /**
      * The rendermime instance used by the panel.
      */
-    rendermime: RenderMime;
+    rendermime: IRenderMimeRegistry;
 
     /**
      * The content factory for the panel.

@@ -89,13 +89,13 @@ function loadGapi(realtime: boolean): Promise<void> {
                    'client:auth2,drive-realtime,drive-share' :
                    'client:auth2';
       gapi.load(libs, () => {
-        if (realtime) { realtimeLoaded = true };
+        if (realtime) { realtimeLoaded = true; }
         gapiLoaded.resolve(void 0);
         resolve(void 0);
       });
     };
     gapiScript.onerror = () => {
-      console.error("Unable to load Google APIs");
+      console.error('Unable to load Google APIs');
       gapiLoaded.reject(void 0);
       reject(void 0);
     };
@@ -155,7 +155,7 @@ function initializeGapi(clientId: string): Promise<boolean> {
  */
 const MAX_API_REQUESTS = 7;
 const BACKOFF_FACTOR = 2.0;
-const INITIAL_DELAY = 250; //250 ms
+const INITIAL_DELAY = 250; // 250 ms.
 
 /**
  * Wrapper function for making API requests to Google Drive.
@@ -175,14 +175,14 @@ const INITIAL_DELAY = 250; //250 ms
  */
 export
 function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, successCode: number = 200, attemptNumber: number = 0): Promise<T> {
-  if(attemptNumber === MAX_API_REQUESTS) {
+  if (attemptNumber === MAX_API_REQUESTS) {
     return Promise.reject('Maximum number of API retries reached.');
   }
   return new Promise<T>((resolve, reject) => {
     gapiAuthorized.promise.then(() => {
       const request = createRequest();
       request.then((response) => {
-        if(response.status !== successCode) {
+        if (response.status !== successCode) {
           // Handle an HTTP error.
           let result: any = response.result;
           reject(makeError(result.error.code, result.error.message));
@@ -191,7 +191,7 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
           // will be `false`, and the raw data will be in `response.body`.
           // This happens, e.g., in the case of downloading raw image
           // data. This fix is a bit of a hack, but seems to work.
-          if(response.result as any !== false) {
+          if (response.result as any !== false) {
             resolve(response.result);
           } else {
             resolve(response.body as any);
@@ -201,7 +201,7 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
         // Some error happened.
         if (response.status === BACKEND_ERROR ||
            (response.status === FORBIDDEN_ERROR &&
-            (<any>response.result.error).errors[0].reason
+            (response.result.error as any).errors[0].reason
              === RATE_LIMIT_REASON)) {
           // If we are being rate limited, or if there is a backend error,
           // attempt exponential backoff.
@@ -209,16 +209,16 @@ function driveApiRequest<T>( createRequest: () => gapi.client.HttpRequest<T>, su
                        `backoff attempt number ${attemptNumber}...`);
           window.setTimeout( () => {
             // Try again after a delay.
-            driveApiRequest<T>(createRequest, successCode, attemptNumber+1)
+            driveApiRequest<T>(createRequest, successCode, attemptNumber + 1)
             .then((result) => {
               resolve(result);
             });
-          }, INITIAL_DELAY*Math.pow(BACKOFF_FACTOR, attemptNumber));
+          }, INITIAL_DELAY * Math.pow(BACKOFF_FACTOR, attemptNumber));
         } else if (response.status === INVALID_CREDENTIALS_ERROR) {
           // If we have invalid credentials, try to refresh
           // the authorization, then retry the request.
           Private.refreshAuthToken().then(() => {
-            driveApiRequest<T>(createRequest, successCode, attemptNumber+1)
+            driveApiRequest<T>(createRequest, successCode, attemptNumber + 1)
             .then((result) => {
               resolve(result);
             }).catch(err => {
@@ -298,21 +298,12 @@ function getCurrentUserProfile(): gapi.auth2.BasicProfile {
 
 /**
  * Wrap an API error in a hacked-together error object
- * masquerading as an `ServerConnection.IError`.
+ * masquerading as an `ServerConnection.ResponseError`.
  */
 export
-function makeError(code: number, message: string): ServerConnection.IError {
-  const xhr = {
-    status: code,
-    responseText: message
-  };
-  return {
-    event: undefined,
-    xhr: xhr as XMLHttpRequest,
-    ajaxSettings: null,
-    throwError: xhr.responseText,
-    message: xhr.responseText
-  } as any as ServerConnection.IError;
+function makeError(code: number, message: string): ServerConnection.ResponseError {
+  const response = new Response(message, { status: code, statusText: message });
+  return new ServerConnection.ResponseError(response, message);
 }
 
 /**

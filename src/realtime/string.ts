@@ -10,7 +10,7 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  GoogleRealtimeObject
+  IGoogleRealtimeObject
 } from './googlerealtime';
 
 
@@ -18,7 +18,7 @@ import {
  * Realtime string which wraps `gapi.drive.realtime.CollaborativeString`.
  */
 export
-class GoogleString implements IObservableString, GoogleRealtimeObject {
+class GoogleString implements IObservableString, IGoogleRealtimeObject {
 
   /**
    * Constructor for the string.
@@ -38,7 +38,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
    * Set the value of the string.
    */
   set text( value: string ) {
-    if(this._str.length === value.length && this._str.getText() === value) {
+    if (this._str.length === value.length && this._str.getText() === value) {
       return;
     }
     this._str.setText(value);
@@ -71,7 +71,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
    */
   set googleObject(str: gapi.drive.realtime.CollaborativeString) {
     let prevText = '';
-    if(this._str) {
+    if (this._str) {
       prevText = this._str.getText();
       this._str.removeAllEventListeners();
     }
@@ -83,7 +83,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_INSERTED,
       (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           this._changed.emit({
             type: 'insert',
             start: evt.index,
@@ -96,7 +96,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_DELETED,
       (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           this._changed.emit({
             type: 'remove',
             start: evt.index,
@@ -178,7 +178,7 @@ class GoogleString implements IObservableString, GoogleRealtimeObject {
    * Dispose of the resources held by the string.
    */
   dispose(): void {
-    if(this._isDisposed) {
+    if (this._isDisposed) {
       return;
     }
     this._str.removeAllEventListeners();

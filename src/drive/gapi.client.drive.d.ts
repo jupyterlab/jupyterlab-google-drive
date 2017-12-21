@@ -2,6 +2,8 @@
 // Project: https://developers.google.com/drive/
 // Definitions by: Bolisov Alexey, modified by Ian Rose
 
+/* tslint:disable */
+
 declare module gapi.client.drive {
     
     interface About {

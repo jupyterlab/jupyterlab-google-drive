@@ -10,7 +10,7 @@ import {
  * maps, and lists.
  */
 export
-interface GoogleRealtimeObject {
+interface IGoogleRealtimeObject {
   readonly type: 'String' | 'Map' | 'List';
   /**
    * Access to the underlying collaborative object.

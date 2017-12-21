@@ -14,7 +14,7 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  IRenderMime, RenderMime, RenderedHTML, defaultRendererFactories
+  IRenderMime, RenderMimeRegistry, RenderedHTML, standardRendererFactories
 } from '@jupyterlab/rendermime';
 
 import {
@@ -33,7 +33,7 @@ import {
  * Get a copy of the default rendermime instance.
  */
 export
-function defaultRenderMime(): RenderMime {
+function defaultRenderMime(): RenderMimeRegistry {
   return Private.rendermime.clone();
 }
 
@@ -143,7 +143,7 @@ export
 function expectAjaxError(promise: Promise<any>, done: () => void, message: string): Promise<any> {
   return promise.then((msg: any) => {
     throw Error('Expected failure did not occur');
-  }, (error: ServerConnection.IError) => {
+  }, (error: ServerConnection.ResponseError) => {
     if (error.message !== message) {
       throw Error(`Error "${message}" not equal to "${error.message}"`);
     }
@@ -161,7 +161,7 @@ namespace Private {
   const textFactory = new TextModelFactory();
 
   export
-  const rendermime = new RenderMime({
-    initialFactories: defaultRendererFactories
+  const rendermime = new RenderMimeRegistry({
+    initialFactories: standardRendererFactories
   });
 }

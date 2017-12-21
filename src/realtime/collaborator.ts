@@ -21,7 +21,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     this._map = doc.getModel().getRoot().get(id);
 
     // We need to create the map
-    if(!this._map) {
+    if (!this._map) {
       this._map = doc.getModel().createMap<ICollaborator>();
       doc.getModel().getRoot().set(id, this._map);
     }
@@ -35,16 +35,16 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
 
     // Remove stale collaborators.
     const initialSessions = new Set<string>();
-    for(let i=0; i<initialCollaborators.length; i++) {
+    for (let i=0; i < initialCollaborators.length; i++) {
       initialSessions.add(initialCollaborators[i].sessionId);
     }
-    for(let k of this._map.keys()) {
-      if(!initialSessions.has(k)) {
+    for (let k of this._map.keys()) {
+      if (!initialSessions.has(k)) {
         this._map.delete(k);
       }
     }
     // Now add the remaining collaborators.
-    for(let i=0; i<initialCollaborators.length; i++) {
+    for (let i=0; i < initialCollaborators.length; i++) {
       const collaborator: ICollaborator = {
         userId: initialCollaborators[i].userId,
         sessionId: initialCollaborators[i].sessionId,
@@ -53,10 +53,10 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
         shortName: (initialCollaborators[i].displayName as string).split(' ')
                    .filter(s => s).map(s => s[0]).join('')
 
-      }
-      if(!this._map.has(collaborator.sessionId)) {
+      };
+      if (!this._map.has(collaborator.sessionId)) {
         this._map.set(collaborator.sessionId, collaborator);
-        if(initialCollaborators[i].isMe) {
+        if (initialCollaborators[i].isMe) {
           this._localCollaborator = collaborator;
         }
       }
@@ -73,9 +73,9 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
           color: evt.collaborator.color,
           shortName: (evt.collaborator.displayName as string).split(' ')
                      .filter(s => s).map(s => s[0]).join('')
-        }
+        };
         this.set(collaborator.sessionId, collaborator);
-        if(evt.collaborator.isMe) {
+        if (evt.collaborator.isMe) {
           this._localCollaborator = collaborator;
         }
       }
@@ -89,9 +89,9 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
 
     this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           let changeType: IObservableMap.ChangeType;
-          if(evt.oldValue && evt.newValue) {
+          if (evt.oldValue && evt.newValue) {
             changeType = 'change';
           } else if (evt.oldValue && !evt.newValue) {
             changeType = 'remove';
@@ -211,7 +211,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    * @param key - the key to remove.
    *
    * @returns the value of the given key,
-   *   or undefined if that does not exist. 
+   *   or undefined if that does not exist.
    */
   delete(key: string): ICollaborator | undefined {
     const oldVal = this.get(key);
@@ -240,7 +240,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
    * Dispose of the resources held by the map.
    */
   dispose(): void {
-    if(this._isDisposed) {
+    if (this._isDisposed) {
       return;
     }
     this._isDisposed = true;

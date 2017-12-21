@@ -36,6 +36,10 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
+  IRenderMimeRegistry
+} from '@jupyterlab/rendermime';
+
+import {
   ChatboxPanel
 } from './chatbox';
 
@@ -67,7 +71,7 @@ namespace CommandIDs {
 
   export
   const linebreak = 'chatbox:linebreak';
-};
+}
 
 /**
  * The JupyterLab plugin for the Google Drive Filebrowser.
@@ -107,15 +111,16 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   // associated with this filebrowser are currently open.
   const hasOpenDocuments = () => {
     const iterator = app.shell.widgets('main');
-    let widget: Widget | undefined;
-    while (widget = iterator.next()) {
+    let widget = iterator.next();
+    while (widget) {
       const context = manager.contextForWidget(widget);
       if (context && context.path.split(':')[0] === drive.name) {
         return true;
       }
+      widget = iterator.next();
     }
     return false;
-  }
+  };
 
   // Create the file browser.
   const browser = new GoogleDriveFileBrowser(
@@ -129,7 +134,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   // Add the share command to the command registry.
   const command = `google-drive:share`;
   commands.addCommand(command, {
-    execute: ()=> {
+    execute: () => {
       const widget = app.shell.currentWidget;
       const context = widget ? manager.contextForWidget(widget) : undefined;
       if (context) {
@@ -172,7 +177,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
 export
 const chatboxPlugin: JupyterLabPlugin<void> = {
   id: '@jupyterlab/google-drive:chatbox',
-  requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer],
+  requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer, IRenderMimeRegistry],
   autoStart: true,
   activate: activateChatbox
 };
@@ -180,7 +185,7 @@ const chatboxPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the chatbox extension.
  */
-function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer): void {
+function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer, registry: IRenderMimeRegistry): void {
   const id = 'chatbox';
   const { commands, shell } = app;
   const category = 'Chatbox';
@@ -193,7 +198,7 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
     editorServices.factoryService);
   const contentFactory = new ChatboxPanel.ContentFactory({ editorFactory });
   const panel = new ChatboxPanel({
-    rendermime: app.rendermime.clone(),
+    rendermime: registry.clone(),
     contentFactory
   });
 
@@ -250,8 +255,8 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
    */
   const maybeFindCollaborativeContext = () => {
     const iterator = shell.widgets('main');
-    let widget: Widget | undefined;
-    while (widget = iterator.next()) {
+    let widget = iterator.next();
+    while (widget) {
       // If the widget is a collaborative document,
       // reset the context and show the chatbox.
       const context = docManager.contextForWidget(widget);
@@ -264,6 +269,7 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
         context.disposed.connect(onContextDisposed);
         return;
       }
+      widget = iterator.next();
     }
     panel.context = undefined;
     panel.parent = null;
@@ -335,7 +341,7 @@ namespace Private {
     constructor() {
       super();
       const text = document.createElement('p');
-      text.textContent = 'Enter collaborator Gmail address. '+
+      text.textContent = 'Enter collaborator Gmail address. ' +
                          'Multiple addresses may be separated by commas';
       this._inputNode = document.createElement('input');
       this.node.appendChild(text);
@@ -371,7 +377,7 @@ namespace Private {
    * Return whether an email address is valid.
    * Uses a regexp given in the html spec here:
    * https://html.spec.whatwg.org/multipage/input.html#e-mail-state-(type=email)
-   * 
+   *
    * #### Notes: this is not a perfect test, but it should be
    *   good enough for most use cases.
    *

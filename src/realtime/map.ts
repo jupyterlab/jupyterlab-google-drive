@@ -10,14 +10,14 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  GoogleRealtimeObject, GoogleSynchronizable
+  IGoogleRealtimeObject, GoogleSynchronizable
 } from './googlerealtime';
 
 /**
  * Realtime map which wraps `gapi.drive.realtime.CollaborativeMap`
  */
 export
-class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, GoogleRealtimeObject {
+class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, IGoogleRealtimeObject {
 
   /**
    * Constructor
@@ -70,9 +70,9 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    */
   set googleObject(map: gapi.drive.realtime.CollaborativeMap<T>) {
     // Recreate the new map locally to fire the right signals.
-    if(this._map) {
+    if (this._map) {
       this.clear();
-      for(let key of map.keys()) {
+      for (let key of map.keys()) {
         this.set(key, map.get(key));
       }
       this._map.removeAllEventListeners();
@@ -84,9 +84,9 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
     // Hook up event listeners to the new map.
     this._map.addEventListener(
       gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any) => {
-        if(!evt.isLocal) {
+        if (!evt.isLocal) {
           let changeType: IObservableMap.ChangeType;
-          if(evt.oldValue && evt.newValue) {
+          if (evt.oldValue && evt.newValue) {
             changeType = 'change';
           } else if (evt.oldValue && !evt.newValue) {
             changeType = 'remove';
@@ -127,7 +127,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
       newValue: value
     });
     return oldVal;
-      
+
   }
 
   /**
@@ -177,7 +177,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * @param key - the key to remove.
    *
    * @returns the value of the given key,
-   *   or undefined if that does not exist. 
+   *   or undefined if that does not exist.
    */
   delete(key: string): T | undefined {
     const oldVal = this.get(key);
@@ -195,10 +195,10 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * Set the ObservableMap to an empty map.
    */
   clear(): void {
-    //delete one by one so that we send
-    //the appropriate signals.
+    // Delete one by one so that we send
+    // the appropriate signals.
     const keyList = this.keys();
-    for(let i=0; i<keyList.length; i++) {
+    for (let i=0; i < keyList.length; i++) {
       this.delete(keyList[i]);
     }
   }
@@ -207,7 +207,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, Go
    * Dispose of the resources held by the map.
    */
   dispose(): void {
-    if(this._isDisposed) {
+    if (this._isDisposed) {
       return;
     }
     this._isDisposed = true;

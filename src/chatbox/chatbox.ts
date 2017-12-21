@@ -51,7 +51,7 @@ import {
 } from '@jupyterlab/observables';
 
 import {
-  RenderMime
+  IRenderMimeRegistry
 } from '@jupyterlab/rendermime';
 
 import {
@@ -631,11 +631,13 @@ class Chatbox extends Widget {
           each(args.newValues, entry => {
             const entryWidget = this._entryWidgetFromModel(entry);
             layout.insertWidget(index, entryWidget);
-            const toRemove = layout.widgets[index+1];
+            const toRemove = layout.widgets[index + 1];
             toRemove.parent = null;
             index++;
           });
         }
+        break;
+      default:
         break;
     }
     this.update();
@@ -697,7 +699,7 @@ class Chatbox extends Widget {
   }
 
   private _isDisposed = false;
-  private _rendermime: RenderMime;
+  private _rendermime: IRenderMimeRegistry;
   private _content: Panel;
   private _log: IObservableList<ChatEntry.IModel> | undefined;
   private _start: number;
@@ -731,7 +733,7 @@ namespace Chatbox {
     /**
      * The mime renderer for the chatbox widget.
      */
-    rendermime: RenderMime;
+    rendermime: IRenderMimeRegistry;
   }
 
   /**
