@@ -32,6 +32,9 @@ const RESOURCE_FIELDS = 'kind,id,name,mimeType,trashed,headRevisionId,' +
 
 const TEAMDRIVE_FIELDS = 'kind,id,name,capabilities';
 
+const TEAMDRIVE_PAGE_SIZE = 100;
+const FILE_PAGE_SIZE = 1000;
+
 export
 const RT_MIMETYPE = 'application/vnd.google-apps.drive-sdk';
 export
@@ -59,6 +62,11 @@ type RevisionResource = gapi.client.drive.Revision;
  */
 export
 type TeamDriveResource = gapi.client.drive.TeamDrive;
+
+/**
+ * An API response which may be paginated.
+ */
+type PaginatedResponse = gapi.client.drive.FileList | gapi.client.drive.TeamDriveList;
 
 /**
  * Alias for directory IFileType.
@@ -584,43 +592,50 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
                             'and trashed = false';
     if (query) { fullQuery += ' and ' + query; }
 
-    let createRequest: () => gapi.client.HttpRequest<gapi.client.drive.FileList>;
-    if (resource.teamDriveId) {
-      // Case of a directory in a team drive.
-      createRequest = () => {
-        return gapi.client.drive.files.list({
-          q: fullQuery,
-          fields: 'files(' + RESOURCE_FIELDS + ')',
-          corpora: 'teamDrive',
-          includeTeamDriveItems: true,
-          supportsTeamDrives: true,
-          teamDriveId: resource.teamDriveId,
-        });
-      };
-    } else if (resource.kind === 'drive#teamDrive') {
-      // Case of the root of a team drive.
-      createRequest = () => {
-        return gapi.client.drive.files.list({
-          q: fullQuery,
-          fields: 'files(' + RESOURCE_FIELDS + ')',
-          corpora: 'teamDrive',
-          includeTeamDriveItems: true,
-          supportsTeamDrives: true,
-          teamDriveId: resource.id!,
-        });
-      };
-    } else {
-      // Case of the user directory.
-      createRequest = () => {
-        return gapi.client.drive.files.list({
-          q: fullQuery,
-          fields: 'files(' + RESOURCE_FIELDS + ')'
-        });
-      };
-    }
-    return driveApiRequest(createRequest);
-  }).then((result: gapi.client.drive.FileList) => {
-    return result.files || [];
+    const getPage = (pageToken?: string) => {
+      let createRequest: () => gapi.client.HttpRequest<gapi.client.drive.FileList>;
+      if (resource.teamDriveId) {
+        // Case of a directory in a team drive.
+        createRequest = () => {
+          return gapi.client.drive.files.list({
+            q: fullQuery,
+            pageSize: FILE_PAGE_SIZE,
+            pageToken,
+            fields: 'files(' + RESOURCE_FIELDS + ')',
+            corpora: 'teamDrive',
+            includeTeamDriveItems: true,
+            supportsTeamDrives: true,
+            teamDriveId: resource.teamDriveId,
+          });
+        };
+      } else if (resource.kind === 'drive#teamDrive') {
+        // Case of the root of a team drive.
+        createRequest = () => {
+          return gapi.client.drive.files.list({
+            q: fullQuery,
+            pageSize: FILE_PAGE_SIZE,
+            pageToken,
+            fields: 'files(' + RESOURCE_FIELDS + ')',
+            corpora: 'teamDrive',
+            includeTeamDriveItems: true,
+            supportsTeamDrives: true,
+            teamDriveId: resource.id!,
+          });
+        };
+      } else {
+        // Case of the user directory.
+        createRequest = () => {
+          return gapi.client.drive.files.list({
+            q: fullQuery,
+            pageSize: FILE_PAGE_SIZE,
+            pageToken,
+            fields: 'files(' + RESOURCE_FIELDS + ')'
+          });
+        };
+      }
+      return driveApiRequest(createRequest);
+    };
+    return depaginate(getPage, 'files');
   });
 }
 
@@ -1112,15 +1127,17 @@ function driveForName(name: string): Promise<TeamDriveResource | FileResource> {
  */
 function listTeamDrives(): Promise<TeamDriveResource[]> {
   return gapiAuthorized.promise.then(() => {
-    const createRequest = () => {
-      return gapi.client.drive.teamdrives.list({
-        fields: 'teamDrives(' + TEAMDRIVE_FIELDS + ')'
-      });
+    const getPage = (pageToken: string): Promise<gapi.client.drive.TeamDriveList> => {
+      const createRequest = () => {
+        return gapi.client.drive.teamdrives.list({
+          fields: 'teamDrives(' + TEAMDRIVE_FIELDS + ')',
+          pageSize: TEAMDRIVE_PAGE_SIZE,
+          pageToken
+        });
+      };
+      return driveApiRequest<gapi.client.drive.TeamDriveList>(createRequest);
     };
-    return driveApiRequest<gapi.client.drive.TeamDriveList>(createRequest)
-    .then(result => {
-      return result.teamDrives || [];
-    });
+    return depaginate(getPage, 'teamDrives');
   });
 }
 
@@ -1147,6 +1164,22 @@ export
 function isDirectory(resource: FileResource): boolean {
   return !!(resource.kind === 'drive#teamDrive' ||
             resource.mimeType === FOLDER_MIMETYPE);
+}
+
+/**
+ * Depaginate a series of requests into a single array.
+ */
+function depaginate<T extends FileResource | TeamDriveResource, L extends PaginatedResponse>(getPage: (pageToken?: string) => Promise<L>, listName: keyof L, pageToken?: string): Promise<T[]> {
+  return getPage(pageToken).then(list => {
+    const total = list[listName];
+    if (list.nextPageToken) {
+      return depaginate<T, L>(getPage, listName, list.nextPageToken).then(next => {
+        return [...total, ...next];
+      });
+    } else {
+      return total;
+    }
+  });
 }
 
 /**
