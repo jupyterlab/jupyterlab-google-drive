@@ -39,6 +39,11 @@ const RESOURCE_FIELDS = 'kind,id,name,mimeType,trashed,headRevisionId,' +
 const TEAMDRIVE_FIELDS = 'kind,id,name,capabilities';
 
 /**
+ * Fields to request for Revision resources.
+ */
+const REVISION_FIELDS = 'id, modifiedTime, keepForever';
+
+/**
  * Fields to request for File listings.
  */
 const FILE_LIST_FIELDS = 'nextPageToken';
@@ -49,6 +54,11 @@ const FILE_LIST_FIELDS = 'nextPageToken';
 const TEAMDRIVE_LIST_FIELDS = 'nextPageToken';
 
 /**
+ * Fields to reuest for Team Drive listings.
+ */
+const REVISION_LIST_FIELDS = 'nextPageToken';
+
+/**
  * Page size for file listing (max allowable).
  */
 const FILE_PAGE_SIZE = 1000;
@@ -57,6 +67,11 @@ const FILE_PAGE_SIZE = 1000;
  * Page size for team drive listing (max allowable).
  */
 const TEAMDRIVE_PAGE_SIZE = 100;
+
+/**
+ * Page size for revision listing (max allowable).
+ */
+const REVISION_PAGE_SIZE = 1000;
 
 export
 const RT_MIMETYPE = 'application/vnd.google-apps.drive-sdk';
@@ -89,7 +104,9 @@ type TeamDriveResource = gapi.client.drive.TeamDrive;
 /**
  * An API response which may be paginated.
  */
-type PaginatedResponse = gapi.client.drive.FileList | gapi.client.drive.TeamDriveList;
+type PaginatedResponse = gapi.client.drive.FileList |
+                         gapi.client.drive.TeamDriveList |
+                         gapi.client.drive.RevisionList;
 
 /**
  * Alias for directory IFileType.
@@ -875,15 +892,20 @@ function clearCache(): void {
 export
 function listRevisions(path: string): Promise<Contents.ICheckpointModel[]> {
   return getResourceForPath(path).then((resource: FileResource) => {
-    const createRequest = () => {
-      return gapi.client.drive.revisions.list({
-        fileId: resource.id!,
-        fields: 'revisions(id, modifiedTime, keepForever)' // NOT DOCUMENTED.
-      });
+    const getPage = (pageToken?: string) => {
+      const createRequest = () => {
+        return gapi.client.drive.revisions.list({
+          fileId: resource.id!,
+          pageSize: REVISION_PAGE_SIZE,
+          pageToken,
+          fields: `${REVISION_LIST_FIELDS}, revisions(${REVISION_FIELDS})`,
+        });
+      };
+      return driveApiRequest<gapi.client.drive.RevisionList>(createRequest);
     };
-    return driveApiRequest<gapi.client.drive.RevisionList>(createRequest);
-  }).then((result) => {
-    const revisions = map(filter(result.revisions || [], (revision: RevisionResource) => {
+    return depaginate(getPage, 'revisions');
+  }).then((listing) => {
+    const revisions = map(filter(listing || [], (revision: RevisionResource) => {
       return revision.keepForever!;
     }), (revision: RevisionResource) => {
       return { id: revision.id!, last_modified: revision.modifiedTime! };
