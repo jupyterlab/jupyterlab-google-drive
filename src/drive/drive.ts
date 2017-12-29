@@ -683,15 +683,18 @@ function searchSharedFiles(query: string = ''): Promise<FileResource[]> {
     let fullQuery = 'sharedWithMe = true';
     if (query) { fullQuery += ' and ' + query; }
 
-    const createRequest = () => {
-      return gapi.client.drive.files.list({
-        q: fullQuery,
-        fields: 'files(' + RESOURCE_FIELDS + ')'
-      });
+    const getPage = (pageToken?: string) => {
+      const createRequest = () => {
+        return gapi.client.drive.files.list({
+          q: fullQuery,
+          pageSize: FILE_PAGE_SIZE,
+          pageToken,
+          fields: `${FILE_LIST_FIELDS}, files(${RESOURCE_FIELDS})`
+        });
+      };
+      return driveApiRequest(createRequest);
     };
-    return driveApiRequest(createRequest);
-  }).then((result: gapi.client.drive.FileList) => {
-    return result.files || [];
+    return depaginate(getPage, 'files');
   });
 }
 
