@@ -26,14 +26,37 @@ import {
 } from '../gapi';
 
 
+/**
+ * Fields to request for File resources.
+ */
 const RESOURCE_FIELDS = 'kind,id,name,mimeType,trashed,headRevisionId,' +
                         'parents,modifiedTime,createdTime,capabilities,' +
                         'webContentLink,teamDriveId';
 
+/**
+ * Fields to request for Team Drive resources.
+ */
 const TEAMDRIVE_FIELDS = 'kind,id,name,capabilities';
 
-const TEAMDRIVE_PAGE_SIZE = 100;
+/**
+ * Fields to request for File listings.
+ */
+const FILE_LIST_FIELDS = 'nextPageToken';
+
+/**
+ * Fields to reuest for Team Drive listings.
+ */
+const TEAMDRIVE_LIST_FIELDS = 'nextPageToken';
+
+/**
+ * Page size for file listing (max allowable).
+ */
 const FILE_PAGE_SIZE = 1000;
+
+/**
+ * Page size for team drive listing (max allowable).
+ */
+const TEAMDRIVE_PAGE_SIZE = 100;
 
 export
 const RT_MIMETYPE = 'application/vnd.google-apps.drive-sdk';
@@ -601,7 +624,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
             q: fullQuery,
             pageSize: FILE_PAGE_SIZE,
             pageToken,
-            fields: 'files(' + RESOURCE_FIELDS + ')',
+            fields: `${FILE_LIST_FIELDS}, files(${RESOURCE_FIELDS})`,
             corpora: 'teamDrive',
             includeTeamDriveItems: true,
             supportsTeamDrives: true,
@@ -615,7 +638,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
             q: fullQuery,
             pageSize: FILE_PAGE_SIZE,
             pageToken,
-            fields: 'files(' + RESOURCE_FIELDS + ')',
+            fields: `${FILE_LIST_FIELDS}, files(${RESOURCE_FIELDS})`,
             corpora: 'teamDrive',
             includeTeamDriveItems: true,
             supportsTeamDrives: true,
@@ -629,7 +652,7 @@ function searchDirectory(path: string, query: string = ''): Promise<FileResource
             q: fullQuery,
             pageSize: FILE_PAGE_SIZE,
             pageToken,
-            fields: 'files(' + RESOURCE_FIELDS + ')'
+            fields: `${FILE_LIST_FIELDS}, files(${RESOURCE_FIELDS})`
           });
         };
       }
@@ -1039,7 +1062,8 @@ function getResourceForRelativePath(pathComponent: string, folderId: string, tea
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: query,
-          fields: 'files(' + RESOURCE_FIELDS + ')',
+          pageSize: FILE_PAGE_SIZE,
+          fields: `${FILE_LIST_FIELDS}, files(${RESOURCE_FIELDS})`,
           supportsTeamDrives: true,
           includeTeamDriveItems: true,
           corpora: 'teamDrive',
@@ -1050,7 +1074,8 @@ function getResourceForRelativePath(pathComponent: string, folderId: string, tea
       createRequest = () => {
         return gapi.client.drive.files.list({
           q: query,
-          fields: 'files(' + RESOURCE_FIELDS + ')'
+          pageSize: FILE_PAGE_SIZE,
+          fields: `${FILE_LIST_FIELDS}, files(${RESOURCE_FIELDS})`
         });
       };
     }
@@ -1130,7 +1155,7 @@ function listTeamDrives(): Promise<TeamDriveResource[]> {
     const getPage = (pageToken: string): Promise<gapi.client.drive.TeamDriveList> => {
       const createRequest = () => {
         return gapi.client.drive.teamdrives.list({
-          fields: 'teamDrives(' + TEAMDRIVE_FIELDS + ')',
+          fields: `${TEAMDRIVE_LIST_FIELDS}, teamDrives(${TEAMDRIVE_FIELDS})`,
           pageSize: TEAMDRIVE_PAGE_SIZE,
           pageToken
         });
