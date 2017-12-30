@@ -118,7 +118,8 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
     let widget = iterator.next();
     while (widget) {
       const context = manager.contextForWidget(widget);
-      if (context && context.path.split(':')[0] === drive.name) {
+      if (context &&
+          manager.services.contents.driveName(context.path) === drive.name) {
         return true;
       }
       widget = iterator.next();
@@ -144,7 +145,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
       if (context) {
         const path = context.path;
         // Do nothing if this file is not in the user's Google Drive.
-        if (path.split(':')[0] !== drive.name) {
+        if (manager.services.contents.driveName(context.path) !== drive.name) {
           console.warn('Cannot share a file outside of Google Drive');
           return;
         }
