@@ -36,6 +36,10 @@ import {
 } from '@jupyterlab/filebrowser';
 
 import {
+  IMainMenu
+} from '@jupyterlab/mainmenu';
+
+import {
   IRenderMimeRegistry
 } from '@jupyterlab/rendermime';
 
@@ -78,7 +82,7 @@ namespace CommandIDs {
  */
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: '@jupyterlab/google-drive:drive',
-  requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory, ILayoutRestorer, ISettingRegistry],
+  requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory, ILayoutRestorer, IMainMenu, ISettingRegistry],
   activate: activateFileBrowser,
   autoStart: true
 };
@@ -86,7 +90,7 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, factory: IFileBrowserFactory, restorer: ILayoutRestorer, settingRegistry: ISettingRegistry): void {
+function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, factory: IFileBrowserFactory, restorer: ILayoutRestorer, mainMenu: IMainMenu, settingRegistry: ISettingRegistry): void {
   const { commands } = app;
   const id = fileBrowserPlugin.id;
 
@@ -114,7 +118,8 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
     let widget = iterator.next();
     while (widget) {
       const context = manager.contextForWidget(widget);
-      if (context && context.path.split(':')[0] === drive.name) {
+      if (context &&
+          manager.services.contents.driveName(context.path) === drive.name) {
         return true;
       }
       widget = iterator.next();
@@ -140,7 +145,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
       if (context) {
         const path = context.path;
         // Do nothing if this file is not in the user's Google Drive.
-        if (path.split(':')[0] !== drive.name) {
+        if (manager.services.contents.driveName(context.path) !== drive.name) {
           console.warn('Cannot share a file outside of Google Drive');
           return;
         }
@@ -163,10 +168,34 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
         });
       }
     },
-    icon: 'jp-MaterialIcon jp-ShareIcon',
-    label: 'Share'
+    isEnabled: () => {
+      const { currentWidget } = app.shell;
+      if (!currentWidget) {
+        return false;
+      }
+      const context = manager.contextForWidget(currentWidget);
+      if (!context) {
+        return false;
+      }
+      return manager.services.contents.driveName(context.path) === drive.name;
+    },
+    label: () => {
+      const { currentWidget } = app.shell;
+      let fileType = 'File';
+      if (currentWidget) {
+        const context = manager.contextForWidget(currentWidget);
+        if (context) {
+          const fts = app.docRegistry.getFileTypesForPath(context.path);
+          if (fts.length && fts[0].displayName) {
+            fileType = fts[0].displayName;
+          }
+        }
+      }
+      return `Share ${fileType} With Google Drive…`;
+    }
   });
   palette.addItem({ command, category: 'File Operations' });
+  mainMenu.fileMenu.addGroup([{ command }], 20);
 
   return;
 }
