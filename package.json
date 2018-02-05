@@ -1,6 +1,6 @@
 {
   "name": "@jupyterlab/google-drive",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Realtime collaboration with JupyterLab through Google Drive",
   "keywords": [
     "google drive",
