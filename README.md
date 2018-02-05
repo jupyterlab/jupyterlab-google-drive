@@ -24,9 +24,16 @@ To see the extension in action, click on our live demo from PyData Seattle:
 For the time-being, all users running a notebook have independent kernels for
 code execution, and the outputs from running cells will reflect that.
 
-Google's servers expect traffic from computers using `http://localhost` on ports`8888` through `8899`,
-and other origins will be rejected, so drive integration will not work.
-See [advanced.md](docs/advanced.md) for instructions on how to set up your own credentials with Google's servers.
+The application sends a "client ID" to Google's servers to identify itself.
+The default client ID used by the app is set up to work on computers
+running JupyterLab using `http://localhost` on ports `8888` through `8899`.
+Other origins will be rejected, so drive integration will not work.
+
+Since this extension with the default client ID can be run by anyone,
+it is considered "unverified", and potentially unsafe,
+and Google will present a warning message to you.
+If you plan to use the extension extensively, you may want to set up your own client ID.
+See [advanced.md](docs/advanced.md) for instructions on how to set up credentials with Google's servers.
 
 If you run into troubles, see if the [troubleshooting guide](docs/troubleshooting.md) has a solution for you.
 
