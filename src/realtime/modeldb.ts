@@ -693,7 +693,10 @@ namespace Private {
     } else if (JSONExt.deepEqual(value, NULL_WRAPPER)) {
       return null;
     } else {
-      return value;
+      // The value coming out of the Google Realtime model can be
+      // readonly, but certain code paths in JupyterLab expect
+      // the value to be mutable, so create a copy of the value.
+      return JSONExt.deepCopy(value);
     }
   }
 }
