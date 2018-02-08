@@ -5,7 +5,8 @@
   "keywords": [
     "google drive",
     "jupyter",
-    "jupyterlab"
+    "jupyterlab",
+    "jupyterlab extension"
   ],
   "homepage": "https://github.com/jupyterlab/jupyterlab-google-drive",
   "bugs": {
