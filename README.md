@@ -8,7 +8,7 @@
 Existing realtime applications (such as those you may have set up according to [these](docs/advanced.md) instructions) will still work until December 2018, but new applications will not be able to use the Realtime API.
 See the discussions [here](https://github.com/jupyterlab/jupyterlab-google-drive/issues/108) and [here](docs/advanced.md#Realtime-API) for more information.***
 
-**NOTE: this is alpha software and is rapidly changing.**
+**NOTE: this is beta software and is rapidly changing.**
 **Files stored on Google Drive using this plugin should still be backed-up elsewhere.**
 
 This extension adds a Google Drive filebrowser to the left sidepanel of JupyterLab.
@@ -39,7 +39,7 @@ If you run into troubles, see if the [troubleshooting guide](docs/troubleshootin
 
 ## Prerequisites
 
-* JupyterLab 0.31
+* JupyterLab 0.32
 * A Google Drive account
 
 ## Installation
