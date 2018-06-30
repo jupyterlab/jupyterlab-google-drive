@@ -39,7 +39,7 @@ If you run into troubles, see if the [troubleshooting guide](docs/troubleshootin
 
 ## Prerequisites
 
-* JupyterLab 0.32
+* JupyterLab 0.33
 * A Google Drive account
 
 ## Installation
