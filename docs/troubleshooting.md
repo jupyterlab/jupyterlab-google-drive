@@ -24,7 +24,7 @@ If you cannot change your notebook server location, consider setting up your own
 
 If you have set up your own client ID for your JupyterLab deployment,
 then something is likely wrong with the configuration.
-Try looking through [advanced.md](./advanced.md) for a solution.
+Try looking through [setup.md](./setup.md) for a solution.
 
 ### `Failed to read the 'localStorage' property from 'Window'` error.
 
