@@ -3,42 +3,29 @@
 
 import expect = require('expect.js');
 
-import {
-  toArray
-} from '@phosphor/algorithm';
+import { toArray } from '@phosphor/algorithm';
+
+import { JSONValue, JSONExt, PromiseDelegate } from '@phosphor/coreutils';
 
 import {
-  JSONValue, JSONExt, PromiseDelegate
-} from '@phosphor/coreutils';
-
-import {
-  GoogleModelDB, GoogleObservableValue
+  GoogleModelDB,
+  GoogleObservableValue
 } from '../../lib/realtime/modeldb';
 
-import {
-  GoogleString
-} from '../../lib/realtime/string';
+import { GoogleString } from '../../lib/realtime/string';
 
-import {
-  GoogleUndoableList
-} from '../../lib/realtime/undoablelist';
+import { GoogleUndoableList } from '../../lib/realtime/undoablelist';
 
-import {
-  GoogleJSON
-} from '../../lib/realtime/json';
+import { GoogleJSON } from '../../lib/realtime/json';
 
-import {
-  loadGapi, initializeGapi, DEFAULT_CLIENT_ID
-} from '../../lib/gapi';
+import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import {
-  inMemoryModel, documentLoader
-} from './util';
+import { inMemoryModel, documentLoader } from './util';
 
 describe('GoogleObservableValue', () => {
   let model: inMemoryModel;
 
-  before((done) => {
+  before(done => {
     loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
@@ -53,17 +40,14 @@ describe('GoogleObservableValue', () => {
   });
 
   describe('#constructor', () => {
-
     it('should accept a path and a `gapi.drive.realtime.Model`', () => {
       let value = new GoogleObservableValue('value', model.model);
       expect(value instanceof GoogleObservableValue).to.be(true);
       expect(value.get()).to.be(undefined);
     });
-
   });
 
   describe('#type', () => {
-
     it('should return `Value`', () => {
       let value = new GoogleObservableValue('value', model.model);
       expect(value.type).to.be('Value');
@@ -71,22 +55,21 @@ describe('GoogleObservableValue', () => {
   });
 
   describe('#isDisposed', () => {
-
     it('should test whether the value is disposed', () => {
       let value = new GoogleObservableValue('value', model.model);
       expect(value.isDisposed).to.be(false);
       value.dispose();
       expect(value.isDisposed).to.be(true);
     });
-
   });
 
   describe('#changed', () => {
-
     it('should be emitted when the map changes state', () => {
       let called = false;
       let value = new GoogleObservableValue('value', model.model);
-      value.changed.connect(() => { called = true; });
+      value.changed.connect(() => {
+        called = true;
+      });
       value.set('set');
       expect(called).to.be(true);
     });
@@ -103,37 +86,31 @@ describe('GoogleObservableValue', () => {
       value.set('set');
       expect(called).to.be(true);
     });
-
   });
 
   describe('#get', () => {
-
     it('should get the value of the object', () => {
       let value = new GoogleObservableValue('value', model.model);
       value.set('value');
       expect(value.get()).to.be('value');
       let value2 = new GoogleObservableValue('value2', model.model);
       value2.set({ one: 'one', two: 2 });
-      expect(JSONExt.deepEqual(value2.get(), { one: 'one', two: 2 })).to.be(true);
+      expect(JSONExt.deepEqual(value2.get(), { one: 'one', two: 2 })).to.be(
+        true
+      );
     });
-
   });
 
   describe('#set', () => {
-
     it('should set the value of the object', () => {
       let value = new GoogleObservableValue('value', model.model);
       value.set('value');
       expect(value.get()).to.be('value');
     });
-
   });
-
 });
 
-
 describe('GoogleModelDB', () => {
-
   let defaultOptions: GoogleModelDB.ICreateOptions;
   let connector: PromiseDelegate<void>;
   let model: inMemoryModel;
@@ -148,7 +125,7 @@ describe('GoogleModelDB', () => {
           return model.doc;
         });
       }
-    }
+    };
   });
 
   afterEach(() => {
@@ -156,7 +133,6 @@ describe('GoogleModelDB', () => {
   });
 
   describe('#constructor()', () => {
-
     it('should accept no arguments', () => {
       let db = new GoogleModelDB(defaultOptions);
       expect(db instanceof GoogleModelDB).to.be(true);
@@ -173,7 +149,7 @@ describe('GoogleModelDB', () => {
       expect(db instanceof GoogleModelDB).to.be(true);
     });
 
-    it('should update DB values on file load', (done) => {
+    it('should update DB values on file load', done => {
       let db = new GoogleModelDB(defaultOptions);
       // Create empty placeholder values that will
       // be filled on file load
@@ -206,23 +182,18 @@ describe('GoogleModelDB', () => {
 
       connector.resolve(void 0);
     });
-
-
   });
 
   describe('#isDisposed', () => {
-
     it('should test whether it is disposed', () => {
       let db = new GoogleModelDB(defaultOptions);
       expect(db.isDisposed).to.be(false);
       db.dispose();
       expect(db.isDisposed).to.be(true);
     });
-
   });
 
   describe('#basePath', () => {
-
     it('should return an empty string for a model without a baseDB', () => {
       let db = new GoogleModelDB(defaultOptions);
       expect(db.basePath).to.be('');
@@ -232,21 +203,19 @@ describe('GoogleModelDB', () => {
       let db = new GoogleModelDB({ basePath: 'base', ...defaultOptions });
       expect(db.basePath).to.be('base');
     });
-
   });
 
   describe('#isPrepopulated', () => {
-
-    it('should return false for a fresh in-memory database', (done) => {
+    it('should return false for a fresh in-memory database', done => {
       let db = new GoogleModelDB(defaultOptions);
       db.connected.then(() => {
         expect(db.isPrepopulated).to.be(false);
         done();
       });
-      connector.resolve(void 0)
+      connector.resolve(void 0);
     });
 
-    it('should return true for a database that has values in it', (done) => {
+    it('should return true for a database that has values in it', done => {
       let db = new GoogleModelDB(defaultOptions);
       db.connected.then(() => {
         expect(db.isPrepopulated).to.be(true);
@@ -254,31 +223,26 @@ describe('GoogleModelDB', () => {
       });
       let str = model.model.createString('Hello, world');
       model.model.getRoot().set('value', str);
-      connector.resolve(void 0)
+      connector.resolve(void 0);
     });
   });
 
   describe('#isCollaborative', () => {
-
     it('should return true', () => {
       let db = new GoogleModelDB(defaultOptions);
       expect(db.isCollaborative).to.be(true);
     });
-
   });
 
   describe('#connected', () => {
-
-    it('should resolve after file loading', (done) => {
+    it('should resolve after file loading', done => {
       let db = new GoogleModelDB(defaultOptions);
       db.connected.then(done);
       connector.resolve(void 0);
     });
-
   });
 
   describe('#get', () => {
-
     it('should get a value that exists at a path', () => {
       let db = new GoogleModelDB(defaultOptions);
       let value = db.createValue('value');
@@ -290,11 +254,9 @@ describe('GoogleModelDB', () => {
       let db = new GoogleModelDB(defaultOptions);
       expect(db.get('value')).to.be(undefined);
     });
-
   });
 
   describe('#has', () => {
-
     it('should return true if a value exists at a path', () => {
       let db = new GoogleModelDB(defaultOptions);
       let value = db.createValue('value');
@@ -305,11 +267,9 @@ describe('GoogleModelDB', () => {
       let db = new GoogleModelDB(defaultOptions);
       expect(db.has('value')).to.be(false);
     });
-
   });
 
   describe('#createString', () => {
-
     it('should create an GoogleString`', () => {
       let db = new GoogleModelDB(defaultOptions);
       let str = db.createString('str');
@@ -321,11 +281,9 @@ describe('GoogleModelDB', () => {
       let str = db.createString('str');
       expect(db.get('str')).to.be(str);
     });
-
   });
 
   describe('#createList', () => {
-
     it('should create an GoogleUndoableList`', () => {
       let db = new GoogleModelDB(defaultOptions);
       let str = db.createList<JSONValue>('vec');
@@ -337,11 +295,9 @@ describe('GoogleModelDB', () => {
       let vec = db.createList<JSONValue>('vec');
       expect(db.get('vec')).to.be(vec);
     });
-
   });
 
   describe('#createMap', () => {
-
     it('should create an ObservableMap`', () => {
       let db = new GoogleModelDB(defaultOptions);
       let map = db.createMap('map');
@@ -353,11 +309,9 @@ describe('GoogleModelDB', () => {
       let map = db.createMap('map');
       expect(db.get('map')).to.be(map);
     });
-
   });
 
   describe('#createValue', () => {
-
     it('should create an GoogleObservableValue`', () => {
       let db = new GoogleModelDB(defaultOptions);
       let value = db.createValue('value');
@@ -369,33 +323,27 @@ describe('GoogleModelDB', () => {
       let value = db.createString('value');
       expect(db.get('value')).to.be(value);
     });
-
   });
 
   describe('#setValue', () => {
-
     it('should set a value at a path', () => {
       let db = new GoogleModelDB(defaultOptions);
       let value = db.createValue('value');
       db.setValue('value', 'set');
       expect(value.get()).to.be('set');
     });
-
   });
 
   describe('#getValue', () => {
-
     it('should get a value at a path', () => {
       let db = new GoogleModelDB(defaultOptions);
       let value = db.createValue('value');
       value.set('set');
       expect(db.getValue('value')).to.be('set');
     });
-
   });
 
   describe('#view', () => {
-
     it('should should return a GoogleModelDB', () => {
       let db = new GoogleModelDB(defaultOptions);
       let view = db.view('');
@@ -432,11 +380,9 @@ describe('GoogleModelDB', () => {
       expect(viewView.get('str')).to.be(view.get('two.str'));
       expect(viewView.get('str')).to.be(db.get('one.two.str'));
     });
-
   });
 
   describe('#dispose', () => {
-
     it('should dispose of the resources used by the model', () => {
       let db = new GoogleModelDB(defaultOptions);
       let str = db.createString('str');
@@ -475,7 +421,5 @@ describe('GoogleModelDB', () => {
       db.dispose();
       expect(db.isDisposed).to.be(true);
     });
-
   });
-
 });

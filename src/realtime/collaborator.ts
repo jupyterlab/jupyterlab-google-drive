@@ -1,29 +1,28 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Signal, ISignal
-} from '@phosphor/signaling';
+import { Signal, ISignal } from '@phosphor/signaling';
 
-import {
-  ICollaborator, IObservableMap
-} from '@jupyterlab/observables';
+import { ICollaborator, IObservableMap } from '@jupyterlab/observables';
 
-
-export
-class CollaboratorMap implements IObservableMap<ICollaborator> {
-
+export class CollaboratorMap implements IObservableMap<ICollaborator> {
   constructor(doc: gapi.drive.realtime.Document) {
     // Get the map with the collaborators, or
     // create it if it does not exist.
     const id = 'internal:collaborators';
     this._doc = doc;
-    this._map = doc.getModel().getRoot().get(id);
+    this._map = doc
+      .getModel()
+      .getRoot()
+      .get(id);
 
     // We need to create the map
     if (!this._map) {
       this._map = doc.getModel().createMap<ICollaborator>();
-      doc.getModel().getRoot().set(id, this._map);
+      doc
+        .getModel()
+        .getRoot()
+        .set(id, this._map);
     }
 
     // Populate the map with its initial values.
@@ -35,7 +34,7 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
 
     // Remove stale collaborators.
     const initialSessions = new Set<string>();
-    for (let i=0; i < initialCollaborators.length; i++) {
+    for (let i = 0; i < initialCollaborators.length; i++) {
       initialSessions.add(initialCollaborators[i].sessionId);
     }
     for (let k of this._map.keys()) {
@@ -44,15 +43,17 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
       }
     }
     // Now add the remaining collaborators.
-    for (let i=0; i < initialCollaborators.length; i++) {
+    for (let i = 0; i < initialCollaborators.length; i++) {
       const collaborator: ICollaborator = {
         userId: initialCollaborators[i].userId,
         sessionId: initialCollaborators[i].sessionId,
         displayName: initialCollaborators[i].displayName,
         color: initialCollaborators[i].color,
-        shortName: (initialCollaborators[i].displayName as string).split(' ')
-                   .filter(s => s).map(s => s[0]).join('')
-
+        shortName: (initialCollaborators[i].displayName as string)
+          .split(' ')
+          .filter(s => s)
+          .map(s => s[0])
+          .join('')
       };
       if (!this._map.has(collaborator.sessionId)) {
         this._map.set(collaborator.sessionId, collaborator);
@@ -71,8 +72,11 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
           sessionId: evt.collaborator.sessionId,
           displayName: evt.collaborator.displayName,
           color: evt.collaborator.color,
-          shortName: (evt.collaborator.displayName as string).split(' ')
-                     .filter(s => s).map(s => s[0]).join('')
+          shortName: (evt.collaborator.displayName as string)
+            .split(' ')
+            .filter(s => s)
+            .map(s => s[0])
+            .join('')
         };
         this.set(collaborator.sessionId, collaborator);
         if (evt.collaborator.isMe) {
@@ -88,7 +92,8 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
     );
 
     this._map.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any) => {
+      gapi.drive.realtime.EventType.VALUE_CHANGED,
+      (evt: any) => {
         if (!evt.isLocal) {
           let changeType: IObservableMap.ChangeType;
           if (evt.oldValue && evt.newValue) {
@@ -129,7 +134,6 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   get changed(): ISignal<this, IObservableMap.IChangedArgs<ICollaborator>> {
     return this._changed;
   }
-
 
   /**
    * Whether this map has been disposed.
@@ -252,5 +256,8 @@ class CollaboratorMap implements IObservableMap<ICollaborator> {
   private _doc: gapi.drive.realtime.Document;
   private _map: gapi.drive.realtime.CollaborativeMap<ICollaborator>;
   private _isDisposed: boolean = false;
-  private _changed = new Signal<this, IObservableMap.IChangedArgs<ICollaborator>>(this);
+  private _changed = new Signal<
+    this,
+    IObservableMap.IChangedArgs<ICollaborator>
+  >(this);
 }

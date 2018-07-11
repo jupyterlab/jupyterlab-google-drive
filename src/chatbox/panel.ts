@@ -1,34 +1,19 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Panel, Widget
-} from '@phosphor/widgets';
+import { Panel, Widget } from '@phosphor/widgets';
 
-import {
-  Message
-} from '@phosphor/messaging';
+import { Message } from '@phosphor/messaging';
 
-import {
-  CodeEditor
-} from '@jupyterlab/codeeditor';
+import { CodeEditor } from '@jupyterlab/codeeditor';
 
-import {
-  PathExt
-} from '@jupyterlab/coreutils';
+import { PathExt } from '@jupyterlab/coreutils';
 
-import {
-  IRenderMimeRegistry
-} from '@jupyterlab/rendermime';
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 
-import {
-  DocumentRegistry
-} from '@jupyterlab/docregistry';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 
-import {
-  Chatbox
-} from './chatbox';
-
+import { Chatbox } from './chatbox';
 
 /**
  * The class name added to chatbox panels.
@@ -55,12 +40,10 @@ const MATERIAL_CLASS = 'jp-MaterialIcon';
  */
 const CHAT_ICON = 'jp-ChatIcon';
 
-
 /**
  * A panel which contains a chatbox and the ability to add other children.
  */
-export
-class ChatboxPanel extends Panel {
+export class ChatboxPanel extends Panel {
   /**
    * Construct a chatbox panel.
    */
@@ -75,7 +58,8 @@ class ChatboxPanel extends Panel {
     this.addWidget(this._documentInfo);
 
     this.chatbox = new Chatbox({
-      rendermime, contentFactory
+      rendermime,
+      contentFactory
     });
     this.addWidget(this.chatbox);
     this.id = 'chatbox';
@@ -89,10 +73,14 @@ class ChatboxPanel extends Panel {
   /**
    * The current document context for the chat.
    */
-  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined {
+  get context():
+    | DocumentRegistry.IContext<DocumentRegistry.IModel>
+    | undefined {
     return this._context;
   }
-  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined) {
+  set context(
+    value: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined
+  ) {
     if (this._context === value) {
       return;
     }
@@ -126,15 +114,16 @@ class ChatboxPanel extends Panel {
   }
 
   private _documentInfo: ChatboxDocumentInfo;
-  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
+  private _context:
+    | DocumentRegistry.IContext<DocumentRegistry.IModel>
+    | undefined;
 }
 
 /**
  * A class representing a widget displaying document information
  * for the chatbox.
  */
-export
-class ChatboxDocumentInfo extends Widget {
+export class ChatboxDocumentInfo extends Widget {
   constructor() {
     super();
     this.addClass(DOCUMENT_INFO_CLASS);
@@ -149,16 +138,23 @@ class ChatboxDocumentInfo extends Widget {
   /**
    * The current document context for the chat.
    */
-  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined {
+  get context():
+    | DocumentRegistry.IContext<DocumentRegistry.IModel>
+    | undefined {
     return this._context;
   }
-  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined) {
+  set context(
+    value: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined
+  ) {
     if (this._context) {
       this._context.pathChanged.disconnect(this._onPathChanged, this);
     }
     this._context = value;
     if (this._context) {
-      this._context.pathChanged.connect(this._onPathChanged, this);
+      this._context.pathChanged.connect(
+        this._onPathChanged,
+        this
+      );
       this.node.children[1].textContent = PathExt.basename(this._context.path);
     }
   }
@@ -166,24 +162,26 @@ class ChatboxDocumentInfo extends Widget {
   /**
    * Handle a file moving/renaming.
    */
-  private _onPathChanged(sender: DocumentRegistry.IContext<DocumentRegistry.IModel>, path: string): void {
+  private _onPathChanged(
+    sender: DocumentRegistry.IContext<DocumentRegistry.IModel>,
+    path: string
+  ): void {
     this.node.children[1].textContent = PathExt.basename(path);
   }
 
-  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
+  private _context:
+    | DocumentRegistry.IContext<DocumentRegistry.IModel>
+    | undefined;
 }
-
 
 /**
  * A namespace for ChatboxPanel statics.
  */
-export
-namespace ChatboxPanel {
+export namespace ChatboxPanel {
   /**
    * The initialization options for a chatbox panel.
    */
-  export
-  interface IOptions {
+  export interface IOptions {
     /**
      * The rendermime instance used by the panel.
      */
@@ -198,8 +196,7 @@ namespace ChatboxPanel {
   /**
    * The chatbox panel renderer.
    */
-  export
-  interface IContentFactory {
+  export interface IContentFactory {
     /**
      * The editor factory used by the content factory.
      */
@@ -214,18 +211,17 @@ namespace ChatboxPanel {
   /**
    * Default implementation of `IContentFactory`.
    */
-  export
-  class ContentFactory implements IContentFactory {
+  export class ContentFactory implements IContentFactory {
     /**
      * Create a new content factory.
      */
     constructor(options: ContentFactory.IOptions) {
       this.editorFactory = options.editorFactory;
-      this.chatboxContentFactory = (options.chatboxContentFactory ||
+      this.chatboxContentFactory =
+        options.chatboxContentFactory ||
         new Chatbox.ContentFactory({
           editorFactory: this.editorFactory
-        })
-      );
+        });
     }
 
     /**
@@ -242,13 +238,11 @@ namespace ChatboxPanel {
   /**
    * The namespace for `ContentFactory`.
    */
-  export
-  namespace ContentFactory {
+  export namespace ContentFactory {
     /**
      * An initialization options for a chatbox panel factory.
      */
-    export
-    interface IOptions {
+    export interface IOptions {
       /**
        * The editor factory.  This will be used to create a
        * chatboxContentFactory if none is given.

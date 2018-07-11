@@ -3,24 +3,17 @@
 
 import expect = require('expect.js');
 
+import { GoogleMap } from '../../lib/realtime/map';
 
-import {
-  GoogleMap
-} from '../../lib/realtime/map';
+import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import {
-  loadGapi, initializeGapi, DEFAULT_CLIENT_ID
-} from '../../lib/gapi';
-
-import {
-  inMemoryModel
-} from './util';
+import { inMemoryModel } from './util';
 
 describe('GoogleMap', () => {
   let model: inMemoryModel;
   let map: gapi.drive.realtime.CollaborativeMap<number>;
 
-  before((done) => {
+  before(done => {
     loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
@@ -37,7 +30,6 @@ describe('GoogleMap', () => {
   });
 
   describe('#constructor()', () => {
-
     it('should accept no arguments', () => {
       let value = new GoogleMap<number>(map);
       expect(value instanceof GoogleMap).to.be(true);
@@ -45,7 +37,6 @@ describe('GoogleMap', () => {
   });
 
   describe('#type', () => {
-
     it('should return `Map`', () => {
       let value = new GoogleMap<number>(map);
       expect(value.type).to.be('Map');
@@ -94,11 +85,10 @@ describe('GoogleMap', () => {
       expect(called2).to.be(true);
       map2.removeAllEventListeners();
     });
-
   });
 
-  describe('#size', ()=>{
-    it('should return the number of entries in the map', ()=>{
+  describe('#size', () => {
+    it('should return the number of entries in the map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       value.set('two', 2);
@@ -107,12 +97,13 @@ describe('GoogleMap', () => {
   });
 
   describe('#changed', () => {
-
     it('should be emitted when the map changes state', () => {
       let called = false;
       let value = new GoogleMap<number>(map);
-      value.changed.connect(() => { called = true; });
-      value.set("entry", 1);
+      value.changed.connect(() => {
+        called = true;
+      });
+      value.set('entry', 1);
       expect(called).to.be(true);
     });
 
@@ -130,22 +121,18 @@ describe('GoogleMap', () => {
       value.set('entry', 0);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#isDisposed', () => {
-
     it('should test whether the map is disposed', () => {
       let value = new GoogleMap<number>(map);
       expect(value.isDisposed).to.be(false);
       value.dispose();
       expect(value.isDisposed).to.be(true);
     });
-
   });
 
   describe('#dispose()', () => {
-
     it('should dispose of the resources held by the map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
@@ -153,11 +140,9 @@ describe('GoogleMap', () => {
       value.dispose();
       expect(value.isDisposed).to.be(true);
     });
-
   });
 
   describe('#set()', () => {
-
     it('should set the item at a specific key', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
@@ -188,21 +173,21 @@ describe('GoogleMap', () => {
   });
 
   describe('#get()', () => {
-    it('should get the value for a key', ()=>{
+    it('should get the value for a key', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       expect(value.get('one')).to.be(1);
     });
 
-    it('should return undefined if the key does not exist', ()=>{
+    it('should return undefined if the key does not exist', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       expect(value.get('two')).to.be(undefined);
     });
   });
 
-  describe('#has()', ()=>{
-    it('should whether the key exists in a map', ()=>{
+  describe('#has()', () => {
+    it('should whether the key exists in a map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       expect(value.has('one')).to.be(true);
@@ -210,8 +195,8 @@ describe('GoogleMap', () => {
     });
   });
 
-  describe('#keys()', ()=>{
-    it('should return a list of the keys in the map', ()=>{
+  describe('#keys()', () => {
+    it('should return a list of the keys in the map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       value.set('two', 2);
@@ -221,8 +206,8 @@ describe('GoogleMap', () => {
     });
   });
 
-  describe('#values()', ()=>{
-    it('should return a list of the values in the map', ()=>{
+  describe('#values()', () => {
+    it('should return a list of the values in the map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       value.set('two', 2);
@@ -233,8 +218,7 @@ describe('GoogleMap', () => {
   });
 
   describe('#delete()', () => {
-
-    it('should remove an item from the map', ()=>{
+    it('should remove an item from the map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       value.set('two', 2);
@@ -244,7 +228,7 @@ describe('GoogleMap', () => {
       expect(value.get('two')).to.be(undefined);
     });
 
-    it('should return the value of the key it removed', ()=>{
+    it('should return the value of the key it removed', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);
       expect(value.delete('one')).to.be(1);
@@ -269,11 +253,9 @@ describe('GoogleMap', () => {
       value.delete('two');
       expect(called).to.be(true);
     });
-
   });
 
   describe('#clear()', () => {
-
     it('should remove all items from the map', () => {
       let value = new GoogleMap<number>(map);
       value.set('one', 1);

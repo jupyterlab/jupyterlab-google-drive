@@ -3,7 +3,6 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 
-
 .jp-GoogleDriveFileBrowser {
   background-color: var(--jp-layout-color1);
   height: 100%;
@@ -35,7 +34,6 @@
   padding: 12px;
 }
 
-
 .jp-GoogleDrive-tablogo {
   background-size: 100%;
   width: var(--jp-private-sidebar-tab-width);
@@ -49,7 +47,7 @@
 }
 
 .jp-GoogleUserBadge {
-  background-color: #F37626;
+  background-color: #f37626;
   color: white;
   border-radius: 50%;
   height: 18px;

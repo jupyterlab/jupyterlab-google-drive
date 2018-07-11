@@ -5,10 +5,14 @@
   "description": "Settings for the Google Drive plugin.",
   "properties": {
     "clientId": {
-      "type": "string", "title": "Client ID", "default": ""
+      "type": "string",
+      "title": "Client ID",
+      "default": ""
     },
     "realtime": {
-      "type": "boolean", "title": "Realtime", "default": true
+      "type": "boolean",
+      "title": "Realtime",
+      "default": true
     }
   },
   "type": "object"

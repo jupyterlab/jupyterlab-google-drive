@@ -3,21 +3,13 @@
 
 import expect = require('expect.js');
 
-import {
-  JSONObject
-} from '@phosphor/coreutils';
+import { JSONObject } from '@phosphor/coreutils';
 
-import {
-  GoogleUndoableList
-} from '../../lib/realtime/undoablelist';
+import { GoogleUndoableList } from '../../lib/realtime/undoablelist';
 
-import {
-  loadGapi, initializeGapi, DEFAULT_CLIENT_ID
-} from '../../lib/gapi';
+import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import {
-  inMemoryModel
-} from './util';
+import { inMemoryModel } from './util';
 
 const value: JSONObject = { name: 'foo' };
 
@@ -25,7 +17,7 @@ describe('GoogleUndoableList', () => {
   let model: inMemoryModel;
   let glist: gapi.drive.realtime.CollaborativeList<JSONObject>;
 
-  before((done) => {
+  before(done => {
     loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
@@ -41,18 +33,14 @@ describe('GoogleUndoableList', () => {
     model.dispose();
   });
 
-
   describe('#constructor', () => {
-
     it('should create a new GoogleUndoableList', () => {
       let list = new GoogleUndoableList(glist);
       expect(list).to.be.an(GoogleUndoableList);
     });
-
   });
 
   describe('#canRedo', () => {
-
     it('should return false if there is no history', () => {
       let list = new GoogleUndoableList(glist);
       expect(list.canRedo).to.be(false);
@@ -64,11 +52,9 @@ describe('GoogleUndoableList', () => {
       list.undo();
       expect(list.canRedo).to.be(true);
     });
-
   });
 
   describe('#canUndo', () => {
-
     it('should return false if there is no history', () => {
       let list = new GoogleUndoableList(glist);
       expect(list.canUndo).to.be(false);
@@ -79,11 +65,9 @@ describe('GoogleUndoableList', () => {
       list.push(value);
       expect(list.canUndo).to.be(true);
     });
-
   });
 
   describe('#dispose()', () => {
-
     it('should dispose of the resources used by the list', () => {
       let list = new GoogleUndoableList(glist);
       list.dispose();
@@ -91,11 +75,9 @@ describe('GoogleUndoableList', () => {
       list.dispose();
       expect(list.isDisposed).to.be(true);
     });
-
   });
 
   describe('#beginCompoundOperation()', () => {
-
     it('should begin a compound operation', () => {
       let list = new GoogleUndoableList(glist);
       list.beginCompoundOperation();
@@ -115,11 +97,9 @@ describe('GoogleUndoableList', () => {
       list.endCompoundOperation();
       expect(list.canUndo).to.be(false);
     });
-
   });
 
   describe('#endCompoundOperation()', () => {
-
     it('should end a compound operation', () => {
       let list = new GoogleUndoableList(glist);
       list.beginCompoundOperation();
@@ -130,11 +110,9 @@ describe('GoogleUndoableList', () => {
       list.undo();
       expect(list.canUndo).to.be(false);
     });
-
   });
 
   describe('#undo()', () => {
-
     it('should undo a push', () => {
       let list = new GoogleUndoableList(glist);
       list.push(value);
@@ -150,11 +128,11 @@ describe('GoogleUndoableList', () => {
     });
 
     it('should undo a remove', () => {
-       let list = new GoogleUndoableList(glist);
-       list.pushAll([value, value]);
-       list.remove(0);
-       list.undo();
-       expect(list.length).to.be(2);
+      let list = new GoogleUndoableList(glist);
+      list.pushAll([value, value]);
+      list.remove(0);
+      list.undo();
+      expect(list.length).to.be(2);
     });
 
     it('should undo a removeRange', () => {
@@ -173,11 +151,9 @@ describe('GoogleUndoableList', () => {
       list.undo();
       expect((list.get(1) as any)['count']).to.be((items[1] as any)['count']);
     });
-
   });
 
   describe('#redo()', () => {
-
     it('should redo a push', () => {
       let list = new GoogleUndoableList(glist);
       list.push(value);
@@ -221,18 +197,14 @@ describe('GoogleUndoableList', () => {
       list.redo();
       expect((list.get(2) as any)['count']).to.be((items[1] as any)['count']);
     });
-
   });
 
   describe('#clearUndo()', () => {
-
     it('should clear the undo stack', () => {
       let list = new GoogleUndoableList(glist);
       list.push(value);
       list.clearUndo();
       expect(list.canUndo).to.be(false);
     });
-
   });
-
 });

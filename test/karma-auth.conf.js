@@ -1,4 +1,4 @@
-module.exports = function (config) {
+module.exports = function(config) {
   config.set({
     basePath: '.',
     frameworks: ['mocha'],
@@ -12,13 +12,13 @@ module.exports = function (config) {
     ],
     client: {
       mocha: {
-        timeout : 10000, // 10 seconds: Google Drive can be slow.
+        timeout: 10000, // 10 seconds: Google Drive can be slow.
         retries: 3 // Allow for slow server on CI.
       }
     },
     files: [
       '../node_modules/es6-promise/dist/es6-promise.js',
-      './build/bundle-auth.js',
+      './build/bundle-auth.js'
     ],
     preprocessors: {
       'build/bundle-auth.js': ['sourcemap']

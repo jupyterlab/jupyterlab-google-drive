@@ -3,27 +3,19 @@
 
 import expect = require('expect.js');
 
-import {
-  toArray
-} from '@phosphor/algorithm';
+import { toArray } from '@phosphor/algorithm';
 
-import {
-  GoogleList
-} from '../../lib/realtime/list';
+import { GoogleList } from '../../lib/realtime/list';
 
-import {
-  loadGapi, initializeGapi, DEFAULT_CLIENT_ID
-} from '../../lib/gapi';
+import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import {
-  inMemoryModel
-} from './util';
+import { inMemoryModel } from './util';
 
 describe('GoogleList', () => {
   let model: inMemoryModel;
   let list: gapi.drive.realtime.CollaborativeList<number>;
 
-  before((done) => {
+  before(done => {
     loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
@@ -40,16 +32,13 @@ describe('GoogleList', () => {
   });
 
   describe('#constructor()', () => {
-
     it('should accept a `gapi.drive.realtime.CollaborativeList', () => {
       let value = new GoogleList<number>(list);
       expect(value instanceof GoogleList).to.be(true);
     });
-
   });
 
   describe('#type', () => {
-
     it('should return `List`', () => {
       let value = new GoogleList<number>(list);
       expect(value.type).to.be('List');
@@ -89,15 +78,15 @@ describe('GoogleList', () => {
       expect(called).to.be(true);
       list2.removeAllEventListeners();
     });
-
   });
 
   describe('#changed', () => {
-
     it('should be emitted when the list changes state', () => {
       let called = false;
       let value = new GoogleList<number>(list);
-      value.changed.connect(() => { called = true; });
+      value.changed.connect(() => {
+        called = true;
+      });
       value.insert(0, 1);
       expect(called).to.be(true);
     });
@@ -117,43 +106,35 @@ describe('GoogleList', () => {
       value.push(1);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#isDisposed', () => {
-
     it('should test whether the list is disposed', () => {
       let value = new GoogleList<number>(list);
       expect(value.isDisposed).to.be(false);
       value.dispose();
       expect(value.isDisposed).to.be(true);
     });
-
   });
 
   describe('#dispose()', () => {
-
     it('should dispose of the resources held by the list', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
       value.dispose();
       expect(value.isDisposed).to.be(true);
     });
-
   });
 
   describe('#get()', () => {
-
     it('should get the value at the specified index', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
       expect(value.get(1)).to.be(2);
     });
-
   });
 
   describe('#set()', () => {
-
     it('should set the item at a specific index', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -177,11 +158,9 @@ describe('GoogleList', () => {
       value.set(1, 4);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#push()', () => {
-
     it('should add an item to the end of the list', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -211,11 +190,9 @@ describe('GoogleList', () => {
       value.push(4);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#insert()', () => {
-
     it('should insert an item into the list at a specific index', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -239,11 +216,9 @@ describe('GoogleList', () => {
       value.insert(1, 4);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#move()', () => {
-
     it('should move an item from one index to another', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -270,11 +245,9 @@ describe('GoogleList', () => {
       value.move(0, 1);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#removeValue()', () => {
-
     it('should remove the first occurrence of a specific item from the list', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -311,11 +284,9 @@ describe('GoogleList', () => {
       value.removeValue(2);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#remove()', () => {
-
     it('should remove the item at a specific index', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -352,11 +323,9 @@ describe('GoogleList', () => {
       value.remove(1);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#clear()', () => {
-
     it('should remove all items from the list', () => {
       let values = [1, 2, 3, 4, 5, 6];
       let value = new GoogleList<number>(list);
@@ -384,11 +353,9 @@ describe('GoogleList', () => {
       value.clear();
       expect(called).to.be(true);
     });
-
   });
 
   describe('#pushAll()', () => {
-
     it('should push an array of items to the end of the list', () => {
       let value = new GoogleList<number>(list);
       value.push(1);
@@ -418,11 +385,9 @@ describe('GoogleList', () => {
       value.pushAll([4, 5, 6]);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#insertAll()', () => {
-
     it('should push an array of items into a list', () => {
       let value = new GoogleList<number>(list);
       value.pushAll([1, 2, 3]);
@@ -446,11 +411,9 @@ describe('GoogleList', () => {
       value.insertAll(1, [4, 5, 6]);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#removeRange()', () => {
-
     it('should remove a range of items from the list', () => {
       let values = [1, 2, 3, 4, 5, 6];
       let value = new GoogleList<number>(list);
@@ -483,7 +446,5 @@ describe('GoogleList', () => {
       value.removeRange(1, 3);
       expect(called).to.be(true);
     });
-
   });
-
 });

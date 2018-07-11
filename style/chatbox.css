@@ -3,11 +3,9 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 
-
 :root {
   --jp-private-console-cell-padding: 5px;
 }
-
 
 .jp-ChatboxPanel {
   display: flex;
@@ -72,7 +70,6 @@
   cursor: move;
 }
 
-
 .jp-Chatbox .jp-ChatEntry {
   display: flex;
   flex-direction: row;
@@ -80,11 +77,9 @@
   padding: 4px 12px;
 }
 
-
 .jp-Chatbox .jp-ChatEntry .jp-Cell-inputCollapser {
   display: none;
 }
-
 
 .jp-Chatbox .jp-ChatEntry-badge {
   color: white;
@@ -109,7 +104,8 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent transparent var(--jp-layout-color4) var(--jp-layout-color4);
+  border-color: transparent transparent var(--jp-layout-color4)
+    var(--jp-layout-color4);
   left: 100%;
   bottom: -1px;
 }
@@ -120,7 +116,8 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent transparent var(--jp-layout-color3) var(--jp-layout-color3);
+  border-color: transparent transparent var(--jp-layout-color3)
+    var(--jp-layout-color3);
   left: calc(100% - 2px);
   bottom: 0px;
 }
@@ -138,7 +135,8 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent var(--jp-border-color2) var(--jp-border-color2) transparent;
+  border-color: transparent var(--jp-border-color2) var(--jp-border-color2)
+    transparent;
   left: -15px;
   bottom: -1px;
 }
@@ -149,7 +147,8 @@
   width: 0;
   height: 0;
   border: 7px solid;
-  border-color: transparent var(--jp-layout-color2) var(--jp-layout-color2) transparent;
+  border-color: transparent var(--jp-layout-color2) var(--jp-layout-color2)
+    transparent;
   left: -13px;
   bottom: 0px;
 }
@@ -159,28 +158,26 @@
   border-color: transparent;
 }
 
-
 /* TODO: we should be able to use notebook styles for this */
 .jp-Chatbox-input .jp-Chatbox-prompt.jp-Cell {
   border-left-width: var(--jp-border-width);
 }
 
-
 .jp-Chatbox-input .jp-Chatbox-prompt .jp-Cell-inputCollapser {
   display: none;
 }
-
 
 .jp-Chatbox-input .jp-Chatbox-prompt .jp-InputArea {
   height: 100%;
   min-height: 100%;
 }
 
-
-.jp-Chatbox-input .jp-InputArea-prompt .CodeMirror.CodeMirror-focused > .jp-InputArea-editor {
+.jp-Chatbox-input
+  .jp-InputArea-prompt
+  .CodeMirror.CodeMirror-focused
+  > .jp-InputArea-editor {
   box-shadow: var(--jp-input-box-shadow);
 }
-
 
 .jp-Chatbox-input .jp-Cell-inputArea .jp-InputArea-editor {
   border: 1px solid var(--jp-border-color2);

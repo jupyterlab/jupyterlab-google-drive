@@ -1,51 +1,40 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  DisposableSet
-} from '@phosphor/disposable';
+import { DisposableSet } from '@phosphor/disposable';
 
 import {
-  JSONValue, PromiseDelegate, JSONExt, JSONObject
+  JSONValue,
+  PromiseDelegate,
+  JSONExt,
+  JSONObject
 } from '@phosphor/coreutils';
 
-import {
-  Signal, ISignal
-} from '@phosphor/signaling';
+import { Signal, ISignal } from '@phosphor/signaling';
 
 import {
-  IModelDB, IObservableValue, ObservableValue, IObservableString,
-  IObservable, IObservableUndoableList, IObservableJSON
+  IModelDB,
+  IObservableValue,
+  ObservableValue,
+  IObservableString,
+  IObservable,
+  IObservableUndoableList,
+  IObservableJSON
 } from '@jupyterlab/observables';
 
-import {
-  CollaboratorMap
-} from './collaborator';
+import { CollaboratorMap } from './collaborator';
 
-import {
-  GoogleSynchronizable, IGoogleRealtimeObject
-} from './googlerealtime';
+import { GoogleSynchronizable, IGoogleRealtimeObject } from './googlerealtime';
 
-import {
-  GoogleString
-} from './string';
+import { GoogleString } from './string';
 
-import {
-  GoogleUndoableList
-} from './undoablelist';
+import { GoogleUndoableList } from './undoablelist';
 
-import {
-  GoogleMap
-} from './map';
+import { GoogleMap } from './map';
 
-import {
-  GoogleJSON
-} from './json';
+import { GoogleJSON } from './json';
 
-import {
-  getResourceForPath, loadRealtimeDocument
-} from '../drive/drive';
-
+import { getResourceForPath, loadRealtimeDocument } from '../drive/drive';
 
 /**
  * Wrapper for bare null values, which do not
@@ -57,8 +46,7 @@ const NULL_WRAPPER: JSONObject = { _internalNullObject3141592654: null };
  * A class representing an IObservableValue, which
  * listens for changes to a `gapi.drive.realtime.Model`.
  */
-export
-class GoogleObservableValue implements IObservableValue {
+export class GoogleObservableValue implements IObservableValue {
   /**
    * Constructor for the value.
    *
@@ -68,7 +56,11 @@ class GoogleObservableValue implements IObservableValue {
    *
    * @param initialValue: the starting value for the `ObservableValue`.
    */
-  constructor(path: string, model: gapi.drive.realtime.Model, initialValue?: JSONValue) {
+  constructor(
+    path: string,
+    model: gapi.drive.realtime.Model,
+    initialValue?: JSONValue
+  ) {
     this._path = path;
     this._model = model;
 
@@ -83,14 +75,17 @@ class GoogleObservableValue implements IObservableValue {
     };
 
     // Possibly set the initial value.
-    if (initialValue)  {
+    if (initialValue) {
       model.getRoot().set(path, initialValue);
     }
 
     // Listen for changes to the value.
-    model.getRoot().addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED,
-      this._onValueChanged);
+    model
+      .getRoot()
+      .addEventListener(
+        gapi.drive.realtime.EventType.VALUE_CHANGED,
+        this._onValueChanged
+      );
   }
 
   /**
@@ -115,12 +110,18 @@ class GoogleObservableValue implements IObservableValue {
     this._model = model;
 
     // Hook up the right listeners.
-    oldModel.getRoot().removeEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED,
-      this._onValueChanged);
-    model.getRoot().addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED,
-      this._onValueChanged);
+    oldModel
+      .getRoot()
+      .removeEventListener(
+        gapi.drive.realtime.EventType.VALUE_CHANGED,
+        this._onValueChanged
+      );
+    model
+      .getRoot()
+      .addEventListener(
+        gapi.drive.realtime.EventType.VALUE_CHANGED,
+        this._onValueChanged
+      );
   }
   get model(): gapi.drive.realtime.Model {
     return this._model;
@@ -172,9 +173,12 @@ class GoogleObservableValue implements IObservableValue {
       return;
     }
     this._isDisposed = true;
-    this._model.getRoot().removeEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED,
-      this._onValueChanged);
+    this._model
+      .getRoot()
+      .removeEventListener(
+        gapi.drive.realtime.EventType.VALUE_CHANGED,
+        this._onValueChanged
+      );
     Signal.clearData(this);
   }
 
@@ -188,8 +192,7 @@ class GoogleObservableValue implements IObservableValue {
 /**
  * Google Drive-based Model database that implements `IModelDB`.
  */
-export
-class GoogleModelDB implements IModelDB {
+export class GoogleModelDB implements IModelDB {
   /**
    * Constructor for the database.
    */
@@ -208,8 +211,10 @@ class GoogleModelDB implements IModelDB {
       this._model = this._doc.getModel();
 
       this._connected = new PromiseDelegate<void>();
-      this._localDB =
-        new Map<string, IGoogleRealtimeObject | GoogleObservableValue>();
+      this._localDB = new Map<
+        string,
+        IGoogleRealtimeObject | GoogleObservableValue
+      >();
 
       // If a testing documentLoader has been supplied, use that.
       const documentLoader = options.documentLoader || Private.documentLoader;
@@ -267,8 +272,9 @@ class GoogleModelDB implements IModelDB {
                 // Create a map.
                 newVal = this._model.createMap();
                 for (let item of val.keys()) {
-                  (newVal as gapi.drive.realtime.CollaborativeMap<JSONValue>)
-                  .set(item, val.get(item));
+                  (newVal as gapi.drive.realtime.CollaborativeMap<
+                    JSONValue
+                  >).set(item, val.get(item));
                 }
               } else {
                 // Should not get here.
@@ -364,7 +370,7 @@ class GoogleModelDB implements IModelDB {
    * connected to Google Drive.
    */
   get connected(): Promise<void> {
-    if (this._baseDB ) {
+    if (this._baseDB) {
       return this._baseDB.connected;
     } else {
       return this._connected.promise;
@@ -431,7 +437,10 @@ class GoogleModelDB implements IModelDB {
    *
    * @param value: the value to set at the path.
    */
-  set(path: string, value: IGoogleRealtimeObject | GoogleObservableValue): void {
+  set(
+    path: string,
+    value: IGoogleRealtimeObject | GoogleObservableValue
+  ): void {
     if (this._baseDB) {
       this._baseDB.set(this._basePath + '.' + path, value);
     } else {
@@ -457,7 +466,9 @@ class GoogleModelDB implements IModelDB {
   createString(path: string): IObservableString {
     let str: gapi.drive.realtime.CollaborativeString;
     if (this.has(path)) {
-      str = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeString;
+      str = this.getGoogleObject(
+        path
+      ) as gapi.drive.realtime.CollaborativeString;
     } else {
       str = this.model.createString();
     }
@@ -481,7 +492,9 @@ class GoogleModelDB implements IModelDB {
   createList<T extends JSONValue>(path: string): IObservableUndoableList<T> {
     let vec: gapi.drive.realtime.CollaborativeList<T>;
     if (this.has(path)) {
-      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<T>;
+      vec = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeList<
+        T
+      >;
     } else {
       vec = this.model.createList<T>();
     }
@@ -505,7 +518,9 @@ class GoogleModelDB implements IModelDB {
   createMap(path: string): IObservableJSON {
     let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
     if (this.has(path)) {
-      json = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<JSONValue>;
+      json = this.getGoogleObject(path) as gapi.drive.realtime.CollaborativeMap<
+        JSONValue
+      >;
     } else {
       json = this.model.createMap<JSONValue>();
     }
@@ -528,8 +543,7 @@ class GoogleModelDB implements IModelDB {
       val = this.getGoogleObject(path) as JSONValue;
     }
     const fullPath = this.fullPath(path);
-    const newVal = new GoogleObservableValue(fullPath,
-                                           this.model, val);
+    const newVal = new GoogleObservableValue(fullPath, this.model, val);
     this.set(path, newVal);
     this._disposables.add(newVal);
     return newVal;
@@ -544,7 +558,7 @@ class GoogleModelDB implements IModelDB {
   getValue(path: string): JSONValue | undefined {
     const val = this.get(path);
     if (val.type !== 'Value') {
-        throw Error('Can only call getValue for an IObservableValue');
+      throw Error('Can only call getValue for an IObservableValue');
     }
     return (val as GoogleObservableValue).get();
   }
@@ -560,7 +574,7 @@ class GoogleModelDB implements IModelDB {
   setValue(path: string, value: JSONValue): void {
     const val = this.get(path);
     if (val.type !== 'Value') {
-        throw Error('Can only call setValue on an IObservableValue');
+      throw Error('Can only call setValue on an IObservableValue');
     }
     (val as GoogleObservableValue).set(value);
   }
@@ -574,7 +588,11 @@ class GoogleModelDB implements IModelDB {
    *   `GoogleModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): GoogleModelDB {
-    const view = new GoogleModelDB({filePath: this._filePath, basePath, baseDB: this});
+    const view = new GoogleModelDB({
+      filePath: this._filePath,
+      basePath,
+      baseDB: this
+    });
     this._disposables.add(view);
     return view;
   }
@@ -633,13 +651,11 @@ class GoogleModelDB implements IModelDB {
 /**
  * A namespace for the `GoogleModelDB` class statics.
  */
-export
-namespace GoogleModelDB {
+export namespace GoogleModelDB {
   /**
    * Options for creating a `ModelDB` object.
    */
-  export
-  interface ICreateOptions {
+  export interface ICreateOptions {
     /**
      * The path for the location on Google Drive
      * to store the model.
@@ -674,8 +690,9 @@ namespace Private {
    * Default document loader for the GoogleModelDB: load it
    * from the user's Google Drive account.
    */
-  export
-  function documentLoader(path: string): Promise<gapi.drive.realtime.Document> {
+  export function documentLoader(
+    path: string
+  ): Promise<gapi.drive.realtime.Document> {
     return getResourceForPath(path).then((resource: any) => {
       return loadRealtimeDocument(resource);
     });
@@ -686,8 +703,7 @@ namespace Private {
    * If `null` return `undefined`. If NULL_WRAPPER,
    * return `null`.
    */
-  export
-  function resolveValue(value: JSONValue): JSONValue | undefined {
+  export function resolveValue(value: JSONValue): JSONValue | undefined {
     if (value === undefined || value === null) {
       return undefined;
     } else if (JSONExt.deepEqual(value, NULL_WRAPPER)) {

@@ -1,29 +1,20 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Signal, ISignal
-} from '@phosphor/signaling';
+import { Signal, ISignal } from '@phosphor/signaling';
 
-import {
-  IObservableString
-} from '@jupyterlab/observables';
+import { IObservableString } from '@jupyterlab/observables';
 
-import {
-  IGoogleRealtimeObject
-} from './googlerealtime';
-
+import { IGoogleRealtimeObject } from './googlerealtime';
 
 /**
  * Realtime string which wraps `gapi.drive.realtime.CollaborativeString`.
  */
-export
-class GoogleString implements IObservableString, IGoogleRealtimeObject {
-
+export class GoogleString implements IObservableString, IGoogleRealtimeObject {
   /**
    * Constructor for the string.
    */
-  constructor (str: gapi.drive.realtime.CollaborativeString) {
+  constructor(str: gapi.drive.realtime.CollaborativeString) {
     this.googleObject = str;
   }
 
@@ -37,7 +28,7 @@ class GoogleString implements IObservableString, IGoogleRealtimeObject {
   /**
    * Set the value of the string.
    */
-  set text( value: string ) {
+  set text(value: string) {
     if (this._str.length === value.length && this._str.getText() === value) {
       return;
     }
@@ -91,7 +82,8 @@ class GoogleString implements IObservableString, IGoogleRealtimeObject {
             value: evt.text
           });
         }
-      });
+      }
+    );
 
     this._str.addEventListener(
       gapi.drive.realtime.EventType.TEXT_DELETED,
@@ -104,7 +96,8 @@ class GoogleString implements IObservableString, IGoogleRealtimeObject {
             value: evt.text
           });
         }
-    });
+      }
+    );
 
     // Trigger text set event if necessary.
     if (prevText !== this._str.getText()) {
@@ -123,7 +116,6 @@ class GoogleString implements IObservableString, IGoogleRealtimeObject {
   get changed(): ISignal<this, IObservableString.IChangedArgs> {
     return this._changed;
   }
-
 
   /**
    * Insert a substring.

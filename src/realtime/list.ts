@@ -2,33 +2,31 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  IterableOrArrayLike, ArrayIterator,
-  IIterator, each, toArray
+  IterableOrArrayLike,
+  ArrayIterator,
+  IIterator,
+  each,
+  toArray
 } from '@phosphor/algorithm';
 
-import {
-  Signal, ISignal
-} from '@phosphor/signaling';
+import { Signal, ISignal } from '@phosphor/signaling';
 
-import {
-  IObservableList
-} from '@jupyterlab/observables';
+import { IObservableList } from '@jupyterlab/observables';
 
-import {
-  IGoogleRealtimeObject, GoogleSynchronizable
-} from './googlerealtime';
-
+import { IGoogleRealtimeObject, GoogleSynchronizable } from './googlerealtime';
 
 /**
  * Realtime list type wrapping `gapi.drive.realtme.CollaborativeList`.
  */
-export
-class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, IGoogleRealtimeObject {
-
+export class GoogleList<T extends GoogleSynchronizable>
+  implements IObservableList<T>, IGoogleRealtimeObject {
   /**
    * Create a new GoogleList.
    */
-  constructor(list: gapi.drive.realtime.CollaborativeList<T>, itemCmp?: (first: T, second: T) => boolean) {
+  constructor(
+    list: gapi.drive.realtime.CollaborativeList<T>,
+    itemCmp?: (first: T, second: T) => boolean
+  ) {
     this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = list;
   }
@@ -142,7 +140,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
             newValues: vals
           });
         }
-      });
+      }
+    );
 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_REMOVED,
@@ -157,7 +156,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
             newValues: []
           });
         }
-      });
+      }
+    );
 
     this._vec.addEventListener(
       gapi.drive.realtime.EventType.VALUES_SET,
@@ -174,7 +174,8 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
             newValues: newVals
           });
         }
-      });
+      }
+    );
   }
 
   /**
@@ -410,7 +411,7 @@ class GoogleList<T extends GoogleSynchronizable> implements IObservableList<T>, 
     this._changed.emit({
       type: 'remove',
       oldIndex: 0,
-       newIndex: 0,
+      newIndex: 0,
       oldValues,
       newValues: []
     });
@@ -591,8 +592,7 @@ namespace Private {
   /**
    * The default strict equality item cmp.
    */
-  export
-  function itemCmp(first: any, second: any): boolean {
+  export function itemCmp(first: any, second: any): boolean {
     return first === second;
   }
 }

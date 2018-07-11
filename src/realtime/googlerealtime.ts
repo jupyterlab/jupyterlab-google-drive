@@ -1,16 +1,13 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  JSONValue
-} from '@phosphor/coreutils';
+import { JSONValue } from '@phosphor/coreutils';
 
 /**
  * An base class for wrappers around collaborative strings,
  * maps, and lists.
  */
-export
-interface IGoogleRealtimeObject {
+export interface IGoogleRealtimeObject {
   readonly type: 'String' | 'Map' | 'List';
   /**
    * Access to the underlying collaborative object.
@@ -24,5 +21,6 @@ interface IGoogleRealtimeObject {
  * models/objects will not work, and must be converted to/from one
  * of these types before insertion.
  */
-export
-type GoogleSynchronizable = JSONValue | gapi.drive.realtime.CollaborativeObject;
+export type GoogleSynchronizable =
+  | JSONValue
+  | gapi.drive.realtime.CollaborativeObject;

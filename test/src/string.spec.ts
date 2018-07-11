@@ -3,23 +3,17 @@
 
 import expect = require('expect.js');
 
-import {
-  GoogleString
-} from '../../lib/realtime/string';
+import { GoogleString } from '../../lib/realtime/string';
 
-import {
-  loadGapi, initializeGapi, DEFAULT_CLIENT_ID
-} from '../../lib/gapi';
+import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import {
-  inMemoryModel
-} from './util';
+import { inMemoryModel } from './util';
 
 describe('GoogleString', () => {
   let model: inMemoryModel;
   let str: gapi.drive.realtime.CollaborativeString;
 
-  before((done) => {
+  before(done => {
     loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
@@ -36,16 +30,13 @@ describe('GoogleString', () => {
   });
 
   describe('#constructor()', () => {
-
     it('should accept no arguments', () => {
       let value = new GoogleString(str);
       expect(value instanceof GoogleString).to.be(true);
     });
-
   });
 
   describe('#type', () => {
-
     it('should return `String`', () => {
       let value = new GoogleString(str);
       expect(value.type).to.be('String');
@@ -53,12 +44,13 @@ describe('GoogleString', () => {
   });
 
   describe('#changed', () => {
-
     it('should be emitted when the string changes', () => {
       let called = false;
       let value = new GoogleString(str);
-      value.changed.connect(() => { called = true; });
-      value.text = "change";
+      value.changed.connect(() => {
+        called = true;
+      });
+      value.text = 'change';
       expect(called).to.be(true);
     });
 
@@ -76,7 +68,6 @@ describe('GoogleString', () => {
       value.text = 'new';
       expect(called).to.be(true);
     });
-
   });
 
   describe('#googleObject', () => {
@@ -118,22 +109,18 @@ describe('GoogleString', () => {
       str2.removeAllEventListeners();
       str3.removeAllEventListeners();
     });
-
   });
 
   describe('#isDisposed', () => {
-
     it('should test whether the string is disposed', () => {
       let value = new GoogleString(str);
       expect(value.isDisposed).to.be(false);
       value.dispose();
       expect(value.isDisposed).to.be(true);
     });
-
   });
 
   describe('#setter()', () => {
-
     it('should set the item at a specific index', () => {
       let value = new GoogleString(str);
       value.text = 'new';
@@ -155,11 +142,9 @@ describe('GoogleString', () => {
       value.text = 'new';
       expect(called).to.be(true);
     });
-
   });
 
   describe('#insert()', () => {
-
     it('should insert an substring into the string at a specific index', () => {
       let value = new GoogleString(str);
       value.text = 'one three';
@@ -182,15 +167,13 @@ describe('GoogleString', () => {
       value.insert(4, 'two ');
       expect(called).to.be(true);
     });
-
   });
 
   describe('#remove()', () => {
-
     it('should remove a substring from the string', () => {
       let value = new GoogleString(str);
       value.text = 'one two two three';
-      value.remove(4,8);
+      value.remove(4, 8);
       expect(value.text).to.eql('one two three');
     });
 
@@ -206,14 +189,12 @@ describe('GoogleString', () => {
         expect(args.value).to.be('two ');
         called = true;
       });
-      value.remove(4,8);
+      value.remove(4, 8);
       expect(called).to.be(true);
     });
-
   });
 
   describe('#clear()', () => {
-
     it('should empty the string', () => {
       let value = new GoogleString(str);
       value.text = 'full';
@@ -237,8 +218,5 @@ describe('GoogleString', () => {
       value.clear();
       expect(called).to.be(true);
     });
-
   });
-
 });
-

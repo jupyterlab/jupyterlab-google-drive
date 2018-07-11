@@ -4,9 +4,9 @@
 
 ## Cloud storage for JupyterLab through Google Drive.
 
-***As of November 28th, 2017, Google has [deprecated](https://developers.google.com/google-apps/realtime/deprecation) their Realtime API.
+**_As of November 28th, 2017, Google has [deprecated](https://developers.google.com/google-apps/realtime/deprecation) their Realtime API.
 Existing realtime applications (such as those you may have set up according to [these](docs/setup.md) instructions) will still work until December 2018, but new applications will not be able to use the Realtime API.
-See the discussions [here](https://github.com/jupyterlab/jupyterlab-google-drive/issues/108) and [here](docs/setup.md#Realtime-API) for more information.***
+See the discussions [here](https://github.com/jupyterlab/jupyterlab-google-drive/issues/108) and [here](docs/setup.md#Realtime-API) for more information._**
 
 **NOTE: this is beta software and is rapidly changing.**
 **Files stored on Google Drive using this plugin should still be backed-up elsewhere.**
@@ -24,13 +24,12 @@ To see the extension in action, click on our live demo from PyData Seattle:
 For the time-being, all users running a notebook have independent kernels for
 code execution, and the outputs from running cells will reflect that.
 
-
 If you run into troubles, see if the [troubleshooting guide](docs/troubleshooting.md) has a solution for you.
 
 ## Prerequisites
 
-* JupyterLab 0.33
-* A Google Drive account
+- JupyterLab 0.33
+- A Google Drive account
 
 ## Setting up credentials with Google
 
@@ -61,13 +60,17 @@ jupyter labextension install .
 
 You can then run JupyterLab in watch mode to automatically pick up changes to `@jupyterlab/google-drive`.
 Open a terminal in the `@jupyterlab/google-drive` repository directory and enter
+
 ```bash
 jlpm run watch
 ```
+
 Then launch JupyterLab using
+
 ```bash
 jupyter lab --watch
 ```
+
 This will automatically recompile `@jupyterlab/google-drive` upon changes,
 and JupyterLab will rebuild itself. You should then be able to refresh the
 page and see your changes.
@@ -76,23 +79,23 @@ page and see your changes.
 
 - Install JupyterLab
 
-   ```
-   pip install jupyterlab
-   ```
+  ```
+  pip install jupyterlab
+  ```
 
 - Install the jupyterlab-google-drive extension
 
-   ```
-   jupyter labextension install @jupyterlab/google-drive
-   ```
+  ```
+  jupyter labextension install @jupyterlab/google-drive
+  ```
 
 - Set up your application credentials according to [this](docs/setup.md) guide.
 
 - Start JupyterLab
 
-   ```
-   jupyter lab
-   ```
+  ```
+  jupyter lab
+  ```
 
 - Click on Google Drive tab (on left side) in JupyterLab interface and login to
   your Google Drive account.

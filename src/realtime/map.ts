@@ -1,28 +1,24 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Signal, ISignal
-} from '@phosphor/signaling';
+import { Signal, ISignal } from '@phosphor/signaling';
 
-import {
-  IObservableMap
-} from '@jupyterlab/observables';
+import { IObservableMap } from '@jupyterlab/observables';
 
-import {
-  IGoogleRealtimeObject, GoogleSynchronizable
-} from './googlerealtime';
+import { IGoogleRealtimeObject, GoogleSynchronizable } from './googlerealtime';
 
 /**
  * Realtime map which wraps `gapi.drive.realtime.CollaborativeMap`
  */
-export
-class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, IGoogleRealtimeObject {
-
+export class GoogleMap<T extends GoogleSynchronizable>
+  implements IObservableMap<T>, IGoogleRealtimeObject {
   /**
    * Constructor
    */
-  constructor(map: gapi.drive.realtime.CollaborativeMap<T>, itemCmp?: (first: T, second: T) => boolean) {
+  constructor(
+    map: gapi.drive.realtime.CollaborativeMap<T>,
+    itemCmp?: (first: T, second: T) => boolean
+  ) {
     this._itemCmp = itemCmp || Private.itemCmp;
     this.googleObject = map;
   }
@@ -33,7 +29,6 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, IG
   get type(): 'Map' {
     return 'Map';
   }
-
 
   /**
    * A signal emitted when the map has changed.
@@ -83,7 +78,8 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, IG
 
     // Hook up event listeners to the new map.
     this._map.addEventListener(
-      gapi.drive.realtime.EventType.VALUE_CHANGED, (evt: any) => {
+      gapi.drive.realtime.EventType.VALUE_CHANGED,
+      (evt: any) => {
         if (!evt.isLocal) {
           let changeType: IObservableMap.ChangeType;
           if (evt.oldValue && evt.newValue) {
@@ -127,7 +123,6 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, IG
       newValue: value
     });
     return oldVal;
-
   }
 
   /**
@@ -198,7 +193,7 @@ class GoogleMap<T extends GoogleSynchronizable> implements IObservableMap<T>, IG
     // Delete one by one so that we send
     // the appropriate signals.
     const keyList = this.keys();
-    for (let i=0; i < keyList.length; i++) {
+    for (let i = 0; i < keyList.length; i++) {
       this.delete(keyList[i]);
     }
   }
@@ -228,8 +223,7 @@ namespace Private {
   /**
    * The default strict equality item comparator.
    */
-  export
-  function itemCmp(first: any, second: any): boolean {
+  export function itemCmp(first: any, second: any): boolean {
     return first === second;
   }
 }
