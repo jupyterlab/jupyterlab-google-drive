@@ -485,7 +485,7 @@ function contentsModelFromDummyFileResource(
       rootResource => {
         return contentsModelFromFileResource(
           rootResource,
-          rootResource.name,
+          rootResource.name || '',
           directoryFileType,
           false,
           undefined
@@ -1188,7 +1188,7 @@ function fileResourceFromContentsModel(
       break;
   }
   return {
-    name: contents.name || PathExt.basename(contents.path),
+    name: contents.name || PathExt.basename(contents.path || ''),
     mimeType
   };
 }
@@ -1371,7 +1371,7 @@ function depaginate<
   pageToken?: string
 ): Promise<T[]> {
   return getPage(pageToken).then(list => {
-    const total = list[listName];
+    const total = list[listName] as T[];
     if (list.nextPageToken) {
       return depaginate<T, L>(getPage, listName, list.nextPageToken).then(
         next => {

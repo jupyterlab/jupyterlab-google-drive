@@ -183,7 +183,7 @@ function activateFileBrowser(
         if (context) {
           const fts = app.docRegistry.getFileTypesForPath(context.path);
           if (fts.length && fts[0].displayName) {
-            fileType = fts[0].displayName;
+            fileType = fts[0].displayName!;
           }
         }
       }
