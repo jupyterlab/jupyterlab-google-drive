@@ -158,7 +158,7 @@ describe('chatbox/chatbox', () => {
         expect(chatbox.widgets.length).to.be(0);
       });
 
-      //TODO: fix this test
+      // TODO: fix this test
       /*it('should be able to recall chat logs of other models', (done) => {
         Widget.attach(chatbox, document.body);
         chatbox.prompt.model.value.text = 'A: 1';
