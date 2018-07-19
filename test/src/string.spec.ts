@@ -7,10 +7,10 @@ import { GoogleString } from '../../lib/realtime/string';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel } from './util';
+import { InMemoryModel } from './util';
 
 describe('GoogleString', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
   let str: gapi.drive.realtime.CollaborativeString;
 
   before(done => {
@@ -20,7 +20,7 @@ describe('GoogleString', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     str = model.model.createString();
   });
 

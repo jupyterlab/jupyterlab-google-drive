@@ -1,7 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { uuid } from '@jupyterlab/coreutils';
+import { UUID } from '@phosphor/coreutils';
 
 import {
   TextModelFactory,
@@ -40,7 +40,7 @@ export function createFileContext(
 ): Context<DocumentRegistry.IModel> {
   manager = manager || Private.manager;
   let factory = Private.textFactory;
-  path = path || uuid() + '.txt';
+  path = path || UUID.uuid4() + '.txt';
   return new Context({ manager, factory, path });
 }
 
@@ -48,7 +48,7 @@ export function createFileContext(
  * Class for an in memory `gapi.drive.realtime.Model`,
  * for use in testing without having to hit Google's servers.
  */
-export class inMemoryModel {
+export class InMemoryModel {
   constructor() {
     this._doc = gapi.drive.realtime.newInMemoryDocument();
     this._model = this._doc.getModel();
@@ -81,7 +81,7 @@ export class inMemoryModel {
  */
 export function documentLoader(path: string, connect: PromiseDelegate<void>) {
   return connect.promise.then(() => {
-    let model = new inMemoryModel();
+    let model = new InMemoryModel();
     return model.doc;
   });
 }

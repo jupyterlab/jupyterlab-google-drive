@@ -9,7 +9,7 @@ import { CollaboratorMap } from '../../lib/realtime/collaborator';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel } from './util';
+import { InMemoryModel } from './util';
 
 const collaborator: ICollaborator = {
   userId: '1234',
@@ -28,7 +28,7 @@ const adversary: ICollaborator = {
 };
 
 describe('CollaboratorMap', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
 
   before(done => {
     loadGapi(true).then(() => {
@@ -37,7 +37,7 @@ describe('CollaboratorMap', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
   });
 
   afterEach(() => {

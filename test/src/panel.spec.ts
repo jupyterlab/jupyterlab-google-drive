@@ -13,7 +13,7 @@ import { Context, DocumentRegistry } from '@jupyterlab/docregistry';
 
 import { ServiceManager, Contents } from '@jupyterlab/services';
 
-import { uuid } from '@jupyterlab/coreutils';
+import { UUID } from '@phosphor/coreutils';
 
 import { Chatbox, ChatboxPanel, ChatboxDocumentInfo } from '../../lib/chatbox';
 
@@ -23,7 +23,7 @@ import { createFileContext, defaultRenderMime } from './util';
  * The common file model.
  */
 const FILE: Partial<Contents.IModel> = {
-  path: uuid() + '.txt',
+  path: UUID.uuid4() + '.txt',
   type: 'file',
   mimetype: 'text/plain',
   content: 'Hello, world',

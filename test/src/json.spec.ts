@@ -9,10 +9,10 @@ import { GoogleJSON } from '../../lib/realtime/json';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel } from './util';
+import { InMemoryModel } from './util';
 
 describe('GoogleJSON', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
   let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
 
   before(done => {
@@ -22,7 +22,7 @@ describe('GoogleJSON', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     json = model.model.createMap<JSONValue>();
   });
 

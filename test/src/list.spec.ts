@@ -9,10 +9,10 @@ import { GoogleList } from '../../lib/realtime/list';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel } from './util';
+import { InMemoryModel } from './util';
 
 describe('GoogleList', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
   let list: gapi.drive.realtime.CollaborativeList<number>;
 
   before(done => {
@@ -22,7 +22,7 @@ describe('GoogleList', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     list = model.model.createList<number>();
   });
 

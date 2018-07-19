@@ -20,10 +20,10 @@ import { GoogleJSON } from '../../lib/realtime/json';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel, documentLoader } from './util';
+import { InMemoryModel, documentLoader } from './util';
 
 describe('GoogleObservableValue', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
 
   before(done => {
     loadGapi(true).then(() => {
@@ -32,7 +32,7 @@ describe('GoogleObservableValue', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
   });
 
   afterEach(() => {
@@ -113,11 +113,11 @@ describe('GoogleObservableValue', () => {
 describe('GoogleModelDB', () => {
   let defaultOptions: GoogleModelDB.ICreateOptions;
   let connector: PromiseDelegate<void>;
-  let model: inMemoryModel;
+  let model: InMemoryModel;
 
   beforeEach(() => {
     connector = new PromiseDelegate<void>();
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     defaultOptions = {
       filePath: 'path',
       documentLoader: (path: string) => {

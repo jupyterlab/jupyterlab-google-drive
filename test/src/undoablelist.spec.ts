@@ -9,12 +9,12 @@ import { GoogleUndoableList } from '../../lib/realtime/undoablelist';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel } from './util';
+import { InMemoryModel } from './util';
 
 const value: JSONObject = { name: 'foo' };
 
 describe('GoogleUndoableList', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
   let glist: gapi.drive.realtime.CollaborativeList<JSONObject>;
 
   before(done => {
@@ -24,7 +24,7 @@ describe('GoogleUndoableList', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     glist = model.model.createList<JSONObject>();
   });
 

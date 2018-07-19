@@ -7,10 +7,10 @@ import { GoogleMap } from '../../lib/realtime/map';
 
 import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import { inMemoryModel } from './util';
+import { InMemoryModel } from './util';
 
 describe('GoogleMap', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
   let map: gapi.drive.realtime.CollaborativeMap<number>;
 
   before(done => {
@@ -20,7 +20,7 @@ describe('GoogleMap', () => {
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     map = model.model.createMap<number>();
   });
 

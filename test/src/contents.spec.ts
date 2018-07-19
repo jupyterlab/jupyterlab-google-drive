@@ -7,9 +7,9 @@ import { loadGapi } from '../../lib/gapi';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
-import { uuid } from '@jupyterlab/coreutils';
-
 import { Contents } from '@jupyterlab/services';
+
+import { UUID } from '@phosphor/coreutils';
 
 import { GoogleDrive } from '../../lib/drive/contents';
 
@@ -110,7 +110,7 @@ describe('GoogleDrive', () => {
     });
 
     it('should fail for an incorrect model', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -135,7 +135,7 @@ describe('GoogleDrive', () => {
 
   describe('#save()', () => {
     it('should save a file', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -149,7 +149,7 @@ describe('GoogleDrive', () => {
     });
 
     it('should emit the fileChanged signal', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -176,7 +176,7 @@ describe('GoogleDrive', () => {
     });
 
     it('should fail for an incorrect model', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -240,7 +240,7 @@ describe('GoogleDrive', () => {
     let contents: Contents.IModel;
 
     before(done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -328,7 +328,7 @@ describe('GoogleDrive', () => {
 
   describe('#delete()', () => {
     it('should delete a file', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -340,7 +340,7 @@ describe('GoogleDrive', () => {
     });
 
     it('should emit the fileChanged signal', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
@@ -359,8 +359,8 @@ describe('GoogleDrive', () => {
 
   describe('#rename()', () => {
     it('should rename a file', done => {
-      let id1 = uuid();
-      let id2 = uuid();
+      let id1 = UUID.uuid4();
+      let id2 = UUID.uuid4();
       let path2 = DEFAULT_TEXT_FILE.path + id2;
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -378,8 +378,8 @@ describe('GoogleDrive', () => {
     });
 
     it('should emit the fileChanged signal', done => {
-      let id1 = uuid();
-      let id2 = uuid();
+      let id1 = UUID.uuid4();
+      let id2 = UUID.uuid4();
       let path2 = DEFAULT_TEXT_FILE.path + id2;
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -410,8 +410,8 @@ describe('GoogleDrive', () => {
     });
 
     it('should fail for an incorrect model', done => {
-      let id1 = uuid();
-      let id2 = uuid();
+      let id1 = UUID.uuid4();
+      let id2 = UUID.uuid4();
       let path2 = DEFAULT_TEXT_FILE.path + id2;
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -437,7 +437,7 @@ describe('GoogleDrive', () => {
 
   describe('#copy()', () => {
     it('should copy a file', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
@@ -459,7 +459,7 @@ describe('GoogleDrive', () => {
     });
 
     it('should emit the fileChanged signal', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
@@ -493,7 +493,7 @@ describe('GoogleDrive', () => {
     });
 
     it('should fail for an incorrect model', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
@@ -522,7 +522,7 @@ describe('GoogleDrive', () => {
 
   describe('#createCheckpoint()', () => {
     it('should create a checkpoint', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
@@ -540,7 +540,7 @@ describe('GoogleDrive', () => {
 
   describe('#listCheckpoints()', () => {
     it('should list the checkpoints', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
@@ -561,7 +561,7 @@ describe('GoogleDrive', () => {
 
   describe('#restoreCheckpoint()', () => {
     it('should restore a checkpoint', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
@@ -600,7 +600,7 @@ describe('GoogleDrive', () => {
 
   describe('#deleteCheckpoint()', () => {
     it('should delete a checkpoint', done => {
-      let id = uuid();
+      let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
