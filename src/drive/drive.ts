@@ -1371,7 +1371,7 @@ function depaginate<
   pageToken?: string
 ): Promise<T[]> {
   return getPage(pageToken).then(list => {
-    const total = list[listName] as T[];
+    const total = (list[listName] as any) as T[];
     if (list.nextPageToken) {
       return depaginate<T, L>(getPage, listName, list.nextPageToken).then(
         next => {
