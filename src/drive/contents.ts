@@ -1,44 +1,28 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Signal, ISignal
-} from '@phosphor/signaling';
+import { Signal, ISignal } from '@phosphor/signaling';
 
-import {
-  PathExt
-} from '@jupyterlab/coreutils';
+import { PathExt } from '@jupyterlab/coreutils';
 
-import {
-  DocumentRegistry
-} from '@jupyterlab/docregistry';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 
-import {
-  ModelDB
-} from '@jupyterlab/observables';
+import { ModelDB } from '@jupyterlab/observables';
 
-import {
-  Contents, ServerConnection,
-} from '@jupyterlab/services';
+import { Contents, ServerConnection } from '@jupyterlab/services';
 
-import {
-  GoogleModelDB
-} from '../realtime/modeldb';
+import { GoogleModelDB } from '../realtime/modeldb';
 
 import * as drive from './drive';
 
-import {
-  makeError, realtimeLoaded
-} from '../gapi';
-
+import { makeError, realtimeLoaded } from '../gapi';
 
 /**
  * A contents manager that passes file operations to the server.
  *
  * This includes checkpointing with the normal file operations.
  */
-export
-class GoogleDrive implements Contents.IDrive {
+export class GoogleDrive implements Contents.IDrive {
   /**
    * Construct a new contents manager object.
    *
@@ -50,9 +34,9 @@ class GoogleDrive implements Contents.IDrive {
     // for a given path.
     this._fileTypeForPath = (path: string) => {
       const fileTypes = registry.getFileTypesForPath(path);
-      return fileTypes.length === 0 ?
-             registry.getFileType('text')! :
-             fileTypes[0];
+      return fileTypes.length === 0
+        ? registry.getFileType('text')!
+        : fileTypes[0];
     };
     // Construct a function to return a best-guess IFileType
     // for a given contents model.
@@ -75,7 +59,7 @@ class GoogleDrive implements Contents.IDrive {
     if (realtimeLoaded) {
       return {
         createNew: (path: string) => {
-          return new GoogleModelDB( {filePath: path} );
+          return new GoogleModelDB({ filePath: path });
         }
       };
     } else {
@@ -135,19 +119,23 @@ class GoogleDrive implements Contents.IDrive {
    *
    * @returns A promise which resolves with the file content.
    */
-  get(path: string, options?: Contents.IFetchOptions): Promise<Contents.IModel> {
+  get(
+    path: string,
+    options?: Contents.IFetchOptions
+  ): Promise<Contents.IModel> {
     const getContent = options ? !!options.content : true;
     // TODO: the contents manager probably should not be passing in '.'.
     path = path === '.' ? '' : path;
-    return drive.contentsModelForPath(path, getContent, this._fileTypeForPath)
-    .then(contents => {
-      try {
-        Contents.validateContentsModel(contents);
-      } catch (error) {
-        throw makeError(200, error.message);
-      }
-      return contents;
-    });
+    return drive
+      .contentsModelForPath(path, getContent, this._fileTypeForPath)
+      .then(contents => {
+        try {
+          Contents.validateContentsModel(contents);
+        } catch (error) {
+          throw makeError(200, error.message);
+        }
+        return contents;
+      });
   }
 
   /**
@@ -182,8 +170,7 @@ class GoogleDrive implements Contents.IDrive {
 
     if (options) {
       // Add leading `.` to extension if necessary.
-      ext = options.ext ?
-            PathExt.normalizeExtension(options.ext) : ext;
+      ext = options.ext ? PathExt.normalizeExtension(options.ext) : ext;
       // If we are not creating in the root directory.
       path = options.path || '';
       contentType = options.type || 'notebook';
@@ -227,23 +214,31 @@ class GoogleDrive implements Contents.IDrive {
       throw new Error('Unrecognized type ' + contentType);
     }
 
-    return this._getNewFilename(path, ext, baseName).then((name: string) => {
-      const m = { ...model, name };
-      path = PathExt.join(path, name);
-      return drive.uploadFile(path, m, fileType, false, this._fileTypeForPath);
-    }).then((contents: Contents.IModel) => {
-      try {
-        Contents.validateContentsModel(contents);
-      } catch (error) {
-        throw makeError(201, error.message);
-      }
-      this._fileChanged.emit({
-        type: 'new',
-        oldValue: null,
-        newValue: contents
+    return this._getNewFilename(path, ext, baseName)
+      .then((name: string) => {
+        const m = { ...model, name };
+        path = PathExt.join(path, name);
+        return drive.uploadFile(
+          path,
+          m,
+          fileType,
+          false,
+          this._fileTypeForPath
+        );
+      })
+      .then((contents: Contents.IModel) => {
+        try {
+          Contents.validateContentsModel(contents);
+        } catch (error) {
+          throw makeError(201, error.message);
+        }
+        this._fileChanged.emit({
+          type: 'new',
+          oldValue: null,
+          newValue: contents
+        });
+        return contents;
       });
-      return contents;
-    });
   }
 
   /**
@@ -278,20 +273,21 @@ class GoogleDrive implements Contents.IDrive {
     if (path === newPath) {
       return this.get(path);
     } else {
-      return drive.moveFile(path, newPath, this._fileTypeForPath)
-      .then((contents: Contents.IModel) => {
-        try {
-          Contents.validateContentsModel(contents);
-        } catch (error) {
-          throw makeError(200, error.message);
-        }
-        this._fileChanged.emit({
-          type: 'rename',
-          oldValue: { path },
-          newValue: contents
+      return drive
+        .moveFile(path, newPath, this._fileTypeForPath)
+        .then((contents: Contents.IModel) => {
+          try {
+            Contents.validateContentsModel(contents);
+          } catch (error) {
+            throw makeError(200, error.message);
+          }
+          this._fileChanged.emit({
+            type: 'rename',
+            oldValue: { path },
+            newValue: contents
+          });
+          return contents;
         });
-        return contents;
-      });
     }
   }
 
@@ -305,34 +301,54 @@ class GoogleDrive implements Contents.IDrive {
    * @returns A promise which resolves with the file content model when the
    *   file is saved.
    */
-  save(path: string, options: Partial<Contents.IModel>): Promise<Contents.IModel> {
+  save(
+    path: string,
+    options: Partial<Contents.IModel>
+  ): Promise<Contents.IModel> {
     const fileType = this._fileTypeForContentsModel(options);
-    return this.get(path).then((contents) => {
-      // The file exists.
-      if (options) {
-        // Overwrite the existing file.
-        return drive.uploadFile(path, options, fileType, true, this._fileTypeForPath);
-      } else {
-        // File exists, but we are not saving anything
-        // to it? Just return the contents.
+    return this.get(path)
+      .then(
+        contents => {
+          // The file exists.
+          if (options) {
+            // Overwrite the existing file.
+            return drive.uploadFile(
+              path,
+              options,
+              fileType,
+              true,
+              this._fileTypeForPath
+            );
+          } else {
+            // File exists, but we are not saving anything
+            // to it? Just return the contents.
+            return contents;
+          }
+        },
+        () => {
+          // The file does not exist already, create a new one.
+          return drive.uploadFile(
+            path,
+            options,
+            fileType,
+            false,
+            this._fileTypeForPath
+          );
+        }
+      )
+      .then((contents: Contents.IModel) => {
+        try {
+          Contents.validateContentsModel(contents);
+        } catch (error) {
+          throw makeError(200, error.message);
+        }
+        this._fileChanged.emit({
+          type: 'save',
+          oldValue: null,
+          newValue: contents
+        });
         return contents;
-      }
-    }, () => {
-      // The file does not exist already, create a new one.
-      return drive.uploadFile(path, options, fileType, false, this._fileTypeForPath);
-    }).then((contents: Contents.IModel) => {
-      try {
-         Contents.validateContentsModel(contents);
-      } catch (error) {
-         throw makeError(200, error.message);
-      }
-      this._fileChanged.emit({
-        type: 'save',
-        oldValue: null,
-        newValue: contents
       });
-      return contents;
-    });
   }
 
   /**
@@ -350,21 +366,22 @@ class GoogleDrive implements Contents.IDrive {
     fileBasename += '-Copy';
     const ext = PathExt.extname(fromFile);
 
-    return this._getNewFilename(toDir, ext, fileBasename).then((name) => {
-      return drive.copyFile(fromFile, PathExt.join(toDir, name), this._fileTypeForPath)
-      .then( contents => {
-        try {
-          Contents.validateContentsModel(contents);
-        } catch (error) {
-          throw makeError(201, error.message);
-        }
-        this._fileChanged.emit({
-          type: 'new',
-          oldValue: null,
-          newValue: contents
+    return this._getNewFilename(toDir, ext, fileBasename).then(name => {
+      return drive
+        .copyFile(fromFile, PathExt.join(toDir, name), this._fileTypeForPath)
+        .then(contents => {
+          try {
+            Contents.validateContentsModel(contents);
+          } catch (error) {
+            throw makeError(201, error.message);
+          }
+          this._fileChanged.emit({
+            type: 'new',
+            oldValue: null,
+            newValue: contents
+          });
+          return contents;
         });
-        return contents;
-      });
     });
   }
 
@@ -446,18 +463,24 @@ class GoogleDrive implements Contents.IDrive {
    * @param baseName - The base name of the new file
    * @return A promise fullfilled with the new filename.
    */
-  private _getNewFilename(path: string, ext: string, baseName: string): Promise<string> {
+  private _getNewFilename(
+    path: string,
+    ext: string,
+    baseName: string
+  ): Promise<string> {
     // Check that the target directory is a valid
     // directory (i.e., not the pseudo-root or
     // the "Shared with me" directory).
     if (drive.isDummy(path)) {
-      throw makeError(400, `Google Drive: "${path}"` +
-                     ' is not a valid save directory');
+      throw makeError(
+        400,
+        `Google Drive: "${path}"` + ' is not a valid save directory'
+      );
     }
     // Get the file listing for the directory.
-    const query = 'name contains \'' + baseName +
-                '\' and name contains \'' + ext + '\'';
-    return drive.searchDirectory(path, query).then((resourceList) => {
+    const query =
+      "name contains '" + baseName + "' and name contains '" + ext + "'";
+    return drive.searchDirectory(path, query).then(resourceList => {
       const existingNames: any = {};
       for (let i = 0; i < resourceList.length; i++) {
         existingNames[resourceList[i].name!] = true;
@@ -482,6 +505,8 @@ class GoogleDrive implements Contents.IDrive {
   private _isDisposed = false;
   private _docRegistry: DocumentRegistry;
   private _fileTypeForPath: (path: string) => DocumentRegistry.IFileType;
-  private _fileTypeForContentsModel: (model: Partial<Contents.IModel>) => DocumentRegistry.IFileType;
+  private _fileTypeForContentsModel: (
+    model: Partial<Contents.IModel>
+  ) => DocumentRegistry.IFileType;
   private _fileChanged = new Signal<this, Contents.IChangedArgs>(this);
 }

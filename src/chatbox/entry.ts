@@ -1,27 +1,18 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Widget, PanelLayout
-} from '@phosphor/widgets';
+import { Widget, PanelLayout } from '@phosphor/widgets';
 
-import {
-  JSONObject
-} from '@phosphor/coreutils';
+import { JSONObject } from '@phosphor/coreutils';
 
-import {
-  ICollaborator
-} from '@jupyterlab/observables';
+import { ICollaborator } from '@jupyterlab/observables';
 
-import {
-  MarkdownCell
-} from '@jupyterlab/cells';
+import { MarkdownCell } from '@jupyterlab/cells';
 
 /**
  * The class name added to the chatbox entries.
  */
-export
-const CHAT_ENTRY_CLASS = 'jp-ChatEntry';
+export const CHAT_ENTRY_CLASS = 'jp-ChatEntry';
 
 /**
  * The class name added to chatbox badges.
@@ -38,12 +29,10 @@ const CHAT_ENTRY_SELF_CLASS = 'jp-ChatEntry-self';
  */
 const CHAT_ENTRY_RECEIVED_CLASS = 'jp-ChatEntry-receieved';
 
-
 /**
  * A chat entry widget, which hosts a user badge and a markdown cell.
  */
-export
-class ChatEntry extends Widget {
+export class ChatEntry extends Widget {
   /**
    * Construct a chat entry widget.
    */
@@ -97,17 +86,14 @@ class ChatEntry extends Widget {
   private _badge: Widget;
 }
 
-
 /**
  * The namespace for `InputAreaWidget` statics.
  */
-export
-namespace ChatEntry {
+export namespace ChatEntry {
   /**
    * Options for creating a chat entry widget.
    */
-  export
-  interface IOptions {
+  export interface IOptions {
     /**
      * A chat entry model for the widget.
      */
@@ -127,8 +113,7 @@ namespace ChatEntry {
   /**
    * An interface for an entry in the chat log.
    */
-  export
-  interface IModel extends JSONObject {
+  export interface IModel extends JSONObject {
     /**
      * The text of the chat entry.
      */

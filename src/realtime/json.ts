@@ -1,24 +1,17 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  JSONExt, JSONObject, JSONValue
-} from '@phosphor/coreutils';
+import { JSONExt, JSONObject, JSONValue } from '@phosphor/coreutils';
 
-import {
-  IObservableJSON
-} from '@jupyterlab/observables';
+import { IObservableJSON } from '@jupyterlab/observables';
 
-import {
-  GoogleMap
-} from './map';
-
+import { GoogleMap } from './map';
 
 /**
  * A collaborative map for JSON data.
  */
-export
-class GoogleJSON extends GoogleMap<JSONValue> implements IObservableJSON {
+export class GoogleJSON extends GoogleMap<JSONValue>
+  implements IObservableJSON {
   /**
    * Constructor for a collaborative JSON object.
    */

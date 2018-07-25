@@ -4,9 +4,9 @@
     "noEmitOnError": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES5",
+    "target": "ES6",
     "outDir": "./build",
-    "lib": ["ES5", "ES2015.Promise", "DOM", "ES2015.Collection"],
+    "lib": ["ES6", "DOM"],
     "types": ["mocha", "expect.js", "node"]
   },
   "include": ["src/*"]

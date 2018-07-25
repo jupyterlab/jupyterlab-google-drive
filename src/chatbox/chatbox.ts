@@ -1,63 +1,33 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  each, ArrayExt
-} from '@phosphor/algorithm';
+import { each, ArrayExt } from '@phosphor/algorithm';
 
-import {
-  MimeData
-} from '@phosphor/coreutils';
+import { MimeData } from '@phosphor/coreutils';
 
-import {
-  Signal
-} from '@phosphor/signaling';
+import { Signal } from '@phosphor/signaling';
 
-import {
-  DisposableSet
-} from '@phosphor/disposable';
+import { DisposableSet } from '@phosphor/disposable';
 
-import {
-  Message
-} from '@phosphor/messaging';
+import { Message } from '@phosphor/messaging';
 
-import {
-  Panel, PanelLayout, Widget
-} from '@phosphor/widgets';
+import { Panel, PanelLayout, Widget } from '@phosphor/widgets';
 
-import {
-  Drag
-} from '@phosphor/dragdrop';
+import { Drag } from '@phosphor/dragdrop';
 
-import {
-  DocumentRegistry
-} from '@jupyterlab/docregistry';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 
-import {
-  CodeEditor
-} from '@jupyterlab/codeeditor';
+import { CodeEditor } from '@jupyterlab/codeeditor';
 
-import {
-  Cell,
-  MarkdownCellModel, MarkdownCell
-} from '@jupyterlab/cells';
+import { Cell, MarkdownCellModel, MarkdownCell } from '@jupyterlab/cells';
 
-import {
-  ActivityMonitor
-} from '@jupyterlab/coreutils';
+import { ActivityMonitor } from '@jupyterlab/coreutils';
 
-import {
-  IObservableList
-} from '@jupyterlab/observables';
+import { IObservableList } from '@jupyterlab/observables';
 
-import {
-  IRenderMimeRegistry
-} from '@jupyterlab/rendermime';
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 
-import {
-  ChatEntry, CHAT_ENTRY_CLASS
-} from './entry';
-
+import { ChatEntry, CHAT_ENTRY_CLASS } from './entry';
 
 /**
  * The class name added to chatbox widgets.
@@ -115,7 +85,6 @@ const NEW_PAGE_POSITION = 300;
  */
 const SCROLL_THROTTLE = 1000;
 
-
 /**
  * A widget containing a Jupyter chatbox.
  *
@@ -123,8 +92,7 @@ const SCROLL_THROTTLE = 1000;
  * The Chatbox class is intended to be used within a ChatboxPanel
  * instance. Under most circumstances, it is not instantiated by user code.
  */
-export
-class Chatbox extends Widget {
+export class Chatbox extends Widget {
   /**
    * Construct a chatbox widget.
    */
@@ -133,7 +101,7 @@ class Chatbox extends Widget {
     this.addClass(CHATBOX_CLASS);
 
     // Create the panels that hold the content and input.
-    const layout = this.layout = new PanelLayout();
+    const layout = (this.layout = new PanelLayout());
     this._content = new Panel();
     this._input = new Panel();
 
@@ -153,7 +121,10 @@ class Chatbox extends Widget {
       signal: this._scrollSignal,
       timeout: SCROLL_THROTTLE
     });
-    this._monitor.activityStopped.connect(this._handleScroll, this);
+    this._monitor.activityStopped.connect(
+      this._handleScroll,
+      this
+    );
   }
 
   /**
@@ -172,7 +143,7 @@ class Chatbox extends Widget {
    * The chatbox input prompt.
    */
   get prompt(): MarkdownCell {
-    const inputLayout = (this._input.layout as PanelLayout);
+    const inputLayout = this._input.layout as PanelLayout;
     return inputLayout.widgets[0] as MarkdownCell;
   }
 
@@ -205,8 +176,13 @@ class Chatbox extends Widget {
     modelDB.connected.then(() => {
       // Update the chatlog vector.
       modelDB.createList('internal:chat');
-      this._log = modelDB.get('internal:chat') as IObservableList<ChatEntry.IModel>;
-      this._log.changed.connect(this._onLogChanged, this);
+      this._log = modelDB.get('internal:chat') as IObservableList<
+        ChatEntry.IModel
+      >;
+      this._log.changed.connect(
+        this._onLogChanged,
+        this
+      );
       this._start = this._log.length;
 
       if (this.isVisible) {
@@ -305,23 +281,23 @@ class Chatbox extends Widget {
    */
   handleEvent(event: Event): void {
     switch (event.type) {
-    case 'keydown':
-      this._evtKeyDown(event as KeyboardEvent);
-      break;
-    case 'mousedown':
-      this._evtMouseDown(event as MouseEvent);
-      break;
-    case 'mouseup':
-      this._evtMouseup(event as MouseEvent);
-      break;
-    case 'mousemove':
-      this._evtMousemove(event as MouseEvent);
-      break;
-    case 'scroll':
-      this._scrollSignal.emit(void 0);
-      break;
-    default:
-      break;
+      case 'keydown':
+        this._evtKeyDown(event as KeyboardEvent);
+        break;
+      case 'mousedown':
+        this._evtMouseDown(event as MouseEvent);
+        break;
+      case 'mouseup':
+        this._evtMouseup(event as MouseEvent);
+        break;
+      case 'mousemove':
+        this._evtMousemove(event as MouseEvent);
+        break;
+      case 'scroll':
+        this._scrollSignal.emit(void 0);
+        break;
+      default:
+        break;
     }
   }
 
@@ -426,7 +402,6 @@ class Chatbox extends Widget {
     this._start = index + 1;
   }
 
-
   /**
    * Handle a `'scroll'` event for the content panel.
    */
@@ -470,7 +445,10 @@ class Chatbox extends Widget {
     // Then find the corresponding child and select it.
     while (node && node !== this.node) {
       if (node.classList.contains(CHAT_ENTRY_CLASS)) {
-        let i = ArrayExt.findFirstIndex(this._content.widgets, widget => widget.node === node);
+        let i = ArrayExt.findFirstIndex(
+          this._content.widgets,
+          widget => widget.node === node
+        );
         if (i !== -1) {
           return i;
         }
@@ -492,7 +470,11 @@ class Chatbox extends Widget {
 
     // Left mouse press for drag start.
     if (event.button === 0 && i !== -1) {
-      this._dragData = { pressX: event.clientX, pressY: event.clientY, index: i};
+      this._dragData = {
+        pressX: event.clientX,
+        pressY: event.clientY,
+        index: i
+      };
       document.addEventListener('mouseup', this, true);
       document.addEventListener('mousemove', this, true);
       event.preventDefault();
@@ -569,7 +551,10 @@ class Chatbox extends Widget {
   /**
    * Update the chat view after a change in the log vector.
    */
-  private _onLogChanged(log: IObservableList<ChatEntry.IModel>, args: IObservableList.IChangedArgs<ChatEntry.IModel>) {
+  private _onLogChanged(
+    log: IObservableList<ChatEntry.IModel>,
+    args: IObservableList.IChangedArgs<ChatEntry.IModel>
+  ) {
     let index = 0;
     const layout = this._content.layout as PanelLayout;
     switch (args.type) {
@@ -664,7 +649,6 @@ class Chatbox extends Widget {
     prompt.dispose();
   }
 
-
   /**
    * Given a chat entry model, create a new entry widget.
    */
@@ -674,9 +658,9 @@ class Chatbox extends Widget {
     this._disposables.add(cellWidget);
     cellWidget.readOnly = true;
     cellWidget.rendered = true;
-    const isMe = this._model ?
-      this._model.modelDB.collaborators!.localCollaborator.userId
-      === entry.author.userId
+    const isMe = this._model
+      ? this._model.modelDB.collaborators!.localCollaborator.userId ===
+        entry.author.userId
       : false;
     const entryWidget = new ChatEntry({
       model: entry,
@@ -691,7 +675,7 @@ class Chatbox extends Widget {
    */
   private _createMarkdownCellOptions(text: string = ''): MarkdownCell.IOptions {
     const contentFactory = this.contentFactory.markdownCellContentFactory;
-    const model = new MarkdownCellModel({ });
+    const model = new MarkdownCellModel({});
     this._disposables.add(model);
     const rendermime = this._rendermime;
     model.value.text = text || '';
@@ -711,20 +695,17 @@ class Chatbox extends Widget {
   private _model: DocumentRegistry.IModel | undefined;
   private _disposables = new DisposableSet();
   private _drag: Drag | null;
-  private _dragData: { pressX: number, pressY: number, index: number };
+  private _dragData: { pressX: number; pressY: number; index: number };
 }
-
 
 /**
  * A namespace for Chatbox statics.
  */
-export
-namespace Chatbox {
+export namespace Chatbox {
   /**
    * The initialization options for a chatbox widget.
    */
-  export
-  interface IOptions {
+  export interface IOptions {
     /**
      * The content factory for the chatbox widget.
      */
@@ -739,8 +720,7 @@ namespace Chatbox {
   /**
    * A content factory for chatbox children.
    */
-  export
-  interface IContentFactory {
+  export interface IContentFactory {
     /**
      * The editor factory.
      */
@@ -755,14 +735,12 @@ namespace Chatbox {
      * Create a new cell widget.
      */
     createCell(options: MarkdownCell.IOptions): MarkdownCell;
-
   }
 
   /**
    * Default implementation of `IContentFactory`.
    */
-  export
-  class ContentFactory implements IContentFactory {
+  export class ContentFactory implements IContentFactory {
     /**
      * Create a new content factory.
      */
@@ -770,7 +748,7 @@ namespace Chatbox {
       this.editorFactory = options.editorFactory;
 
       this.markdownCellContentFactory = new MarkdownCell.ContentFactory({
-        editorFactory: this.editorFactory,
+        editorFactory: this.editorFactory
       });
     }
 
@@ -794,15 +772,13 @@ namespace Chatbox {
   /**
    * An initialize options for `ContentFactory`.
    */
-  export
-  interface IContentFactoryOptions {
+  export interface IContentFactoryOptions {
     /**
      * The editor factory.
      */
     editorFactory: CodeEditor.Factory;
   }
 }
-
 
 /**
  * A namespace for chatbox widget private data.
@@ -813,8 +789,7 @@ namespace Private {
    *
    * @param node - The scrollable element.
    */
-  export
-  function scrollToBottom(node: HTMLElement): void {
+  export function scrollToBottom(node: HTMLElement): void {
     node.scrollTop = node.scrollHeight - node.clientHeight;
   }
 }
@@ -826,8 +801,7 @@ namespace Private {
   /**
    * Create a chat entry drag image.
    */
-  export
-  function createDragImage(): HTMLElement {
+  export function createDragImage(): HTMLElement {
     const node = document.createElement('div');
     const span = document.createElement('span');
     span.textContent = '1';

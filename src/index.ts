@@ -3,78 +3,49 @@
 
 import '../style/index.css';
 
-import {
-  Widget
-} from '@phosphor/widgets';
+import { Widget } from '@phosphor/widgets';
 
 import {
-  ILayoutRestorer, JupyterLab, JupyterLabPlugin
+  ILayoutRestorer,
+  JupyterLab,
+  JupyterLabPlugin
 } from '@jupyterlab/application';
 
-import {
-  showDialog, Dialog, ICommandPalette
-} from '@jupyterlab/apputils';
+import { showDialog, Dialog, ICommandPalette } from '@jupyterlab/apputils';
 
-import {
-  ISettingRegistry, PathExt
-} from '@jupyterlab/coreutils';
+import { ISettingRegistry, PathExt } from '@jupyterlab/coreutils';
 
-import {
-  IEditorServices
-} from '@jupyterlab/codeeditor';
+import { IEditorServices } from '@jupyterlab/codeeditor';
 
-import {
-  IDocumentManager
-} from '@jupyterlab/docmanager';
+import { IDocumentManager } from '@jupyterlab/docmanager';
 
-import {
-  DocumentRegistry, Context
-} from '@jupyterlab/docregistry';
+import { DocumentRegistry, Context } from '@jupyterlab/docregistry';
 
-import {
-  IFileBrowserFactory
-} from '@jupyterlab/filebrowser';
+import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 
-import {
-  IMainMenu
-} from '@jupyterlab/mainmenu';
+import { IMainMenu } from '@jupyterlab/mainmenu';
 
-import {
-  IRenderMimeRegistry
-} from '@jupyterlab/rendermime';
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 
-import {
-  ChatboxPanel
-} from './chatbox';
+import { ChatboxPanel } from './chatbox';
 
-import {
-  GoogleDriveFileBrowser, NAMESPACE
-} from './drive/browser';
+import { GoogleDriveFileBrowser, NAMESPACE } from './drive/browser';
 
-import {
-  getResourceForPath, createPermissions
-} from './drive/drive';
+import { getResourceForPath, createPermissions } from './drive/drive';
 
-import {
-  GoogleDrive
-} from './drive/contents';
+import { GoogleDrive } from './drive/contents';
 
-import {
-  loadGapi
-} from './gapi';
+import { loadGapi } from './gapi';
 
 /**
  * The command IDs used by the chatbox plugin.
  */
 namespace CommandIDs {
-  export
-  const clear = 'chatbox:clear';
+  export const clear = 'chatbox:clear';
 
-  export
-  const run = 'chatbox:post';
+  export const run = 'chatbox:post';
 
-  export
-  const linebreak = 'chatbox:linebreak';
+  export const linebreak = 'chatbox:linebreak';
 }
 
 /**
@@ -82,7 +53,14 @@ namespace CommandIDs {
  */
 const fileBrowserPlugin: JupyterLabPlugin<void> = {
   id: '@jupyterlab/google-drive:drive',
-  requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory, ILayoutRestorer, IMainMenu, ISettingRegistry],
+  requires: [
+    ICommandPalette,
+    IDocumentManager,
+    IFileBrowserFactory,
+    ILayoutRestorer,
+    IMainMenu,
+    ISettingRegistry
+  ],
   activate: activateFileBrowser,
   autoStart: true
 };
@@ -90,7 +68,15 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the file browser.
  */
-function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager: IDocumentManager, factory: IFileBrowserFactory, restorer: ILayoutRestorer, mainMenu: IMainMenu, settingRegistry: ISettingRegistry): void {
+function activateFileBrowser(
+  app: JupyterLab,
+  palette: ICommandPalette,
+  manager: IDocumentManager,
+  factory: IFileBrowserFactory,
+  restorer: ILayoutRestorer,
+  mainMenu: IMainMenu,
+  settingRegistry: ISettingRegistry
+): void {
   const { commands } = app;
   const id = fileBrowserPlugin.id;
 
@@ -98,9 +84,11 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
   settingRegistry.load(id).then(settings => {
     const realtime = settings.get('realtime').composite as boolean;
     if (realtime === true) {
-      console.warn('Warning: Google Realtime has been deprecated. ' +
-                   'No new realtime applications may be registered, ' +
-                   'and existing ones will cease to work in December 2018');
+      console.warn(
+        'Warning: Google Realtime has been deprecated. ' +
+          'No new realtime applications may be registered, ' +
+          'and existing ones will cease to work in December 2018'
+      );
       loadGapi(true);
     } else {
       loadGapi(false);
@@ -118,8 +106,10 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
     let widget = iterator.next();
     while (widget) {
       const context = manager.contextForWidget(widget);
-      if (context &&
-          manager.services.contents.driveName(context.path) === drive.name) {
+      if (
+        context &&
+        manager.services.contents.driveName(context.path) === drive.name
+      ) {
         return true;
       }
       widget = iterator.next();
@@ -129,8 +119,14 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
 
   // Create the file browser.
   const browser = new GoogleDriveFileBrowser(
-    drive.name, app.docRegistry, commands, manager, factory,
-    settingRegistry.load(id), hasOpenDocuments);
+    drive.name,
+    app.docRegistry,
+    commands,
+    manager,
+    factory,
+    settingRegistry.load(id),
+    hasOpenDocuments
+  );
 
   // Add the file browser widget to the application restorer.
   restorer.add(browser, NAMESPACE);
@@ -154,14 +150,14 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
           title: `Share "${PathExt.basename(path)}"`,
           body: new Private.EmailAddressWidget(),
           focusNodeSelector: 'input',
-          buttons: [Dialog.cancelButton(), Dialog.okButton({label: 'ADD'})]
-        }).then( result => {
+          buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'ADD' })]
+        }).then(result => {
           if (result.button.accept) {
             // Get the file resource for the path and create
             // permissions for the valid email addresses.
             const addresses = result.value!;
             const localPath = path.split(':').pop();
-            getResourceForPath(localPath!).then((resource) => {
+            getResourceForPath(localPath!).then(resource => {
               createPermissions(resource, addresses);
             });
           }
@@ -187,7 +183,7 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
         if (context) {
           const fts = app.docRegistry.getFileTypesForPath(context.path);
           if (fts.length && fts[0].displayName) {
-            fileType = fts[0].displayName;
+            fileType = fts[0].displayName!;
           }
         }
       }
@@ -203,10 +199,15 @@ function activateFileBrowser(app: JupyterLab, palette: ICommandPalette, manager:
 /**
  * The chatbox widget content factory.
  */
-export
-const chatboxPlugin: JupyterLabPlugin<void> = {
+export const chatboxPlugin: JupyterLabPlugin<void> = {
   id: '@jupyterlab/google-drive:chatbox',
-  requires: [ICommandPalette, IEditorServices, IDocumentManager, ILayoutRestorer, IRenderMimeRegistry],
+  requires: [
+    ICommandPalette,
+    IEditorServices,
+    IDocumentManager,
+    ILayoutRestorer,
+    IRenderMimeRegistry
+  ],
   autoStart: true,
   activate: activateChatbox
 };
@@ -214,7 +215,14 @@ const chatboxPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the chatbox extension.
  */
-function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServices: IEditorServices, docManager: IDocumentManager, restorer: ILayoutRestorer, registry: IRenderMimeRegistry): void {
+function activateChatbox(
+  app: JupyterLab,
+  palette: ICommandPalette,
+  editorServices: IEditorServices,
+  docManager: IDocumentManager,
+  restorer: ILayoutRestorer,
+  registry: IRenderMimeRegistry
+): void {
   const id = 'chatbox';
   const { commands, shell } = app;
   const category = 'Chatbox';
@@ -224,7 +232,8 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
    * Create a chatbox for a given path.
    */
   const editorFactory = editorServices.factoryService.newInlineEditor.bind(
-    editorServices.factoryService);
+    editorServices.factoryService
+  );
   const contentFactory = new ChatboxPanel.ContentFactory({ editorFactory });
   const panel = new ChatboxPanel({
     rendermime: registry.clone(),
@@ -268,7 +277,7 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
   commands.addKeyBinding({
     command: 'chatbox:post',
     selector: '.jp-Chatbox-prompt',
-     keys: ['Enter']
+    keys: ['Enter']
   });
   commands.addKeyBinding({
     command: 'chatbox:linebreak',
@@ -289,8 +298,11 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
       // If the widget is a collaborative document,
       // reset the context and show the chatbox.
       const context = docManager.contextForWidget(widget);
-      if (context && !context.isDisposed &&
-          context.model.modelDB.isCollaborative) {
+      if (
+        context &&
+        !context.isDisposed &&
+        context.model.modelDB.isCollaborative
+      ) {
         if (!panel.isAttached) {
           shell.addToLeftArea(panel);
         }
@@ -322,11 +334,14 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
    * check if it has a collaborative context. If
    * so, set that to be the active chatbox context.
    */
-  const onCurrentWidgetChanged = () =>  {
+  const onCurrentWidgetChanged = () => {
     const widget = shell.currentWidget;
     const context = widget ? docManager.contextForWidget(widget) : undefined;
-    if (context && !context.isDisposed &&
-        context.model.modelDB.isCollaborative) {
+    if (
+      context &&
+      !context.isDisposed &&
+      context.model.modelDB.isCollaborative
+    ) {
       // If the new widget is a collaborative document,
       // reset the context and show the chatbox.
       if (!panel.isAttached) {
@@ -344,16 +359,11 @@ function activateChatbox(app: JupyterLab, palette: ICommandPalette, editorServic
   shell.currentChanged.connect(onCurrentWidgetChanged);
 }
 
-
 /**
  * Export the plugins as default.
  */
-const plugins: JupyterLabPlugin<any>[] = [
-  fileBrowserPlugin,
-  chatboxPlugin
-];
+const plugins: JupyterLabPlugin<any>[] = [fileBrowserPlugin, chatboxPlugin];
 export default plugins;
-
 
 /**
  * A namespace for private data.
@@ -362,16 +372,16 @@ namespace Private {
   /**
    * A widget the reads and parses email addresses.
    */
-  export
-  class EmailAddressWidget extends Widget {
+  export class EmailAddressWidget extends Widget {
     /**
      * Construct a new EmailAddressWidget.
      */
     constructor() {
       super();
       const text = document.createElement('p');
-      text.textContent = 'Enter collaborator Gmail address. ' +
-                         'Multiple addresses may be separated by commas';
+      text.textContent =
+        'Enter collaborator Gmail address. ' +
+        'Multiple addresses may be separated by commas';
       this._inputNode = document.createElement('input');
       this.node.appendChild(text);
       this.node.appendChild(this._inputNode);
@@ -391,7 +401,7 @@ namespace Private {
       const addresses: string[] = [];
       for (let address of candidateAddresses) {
         if (isEmail(address)) {
-         addresses.push(address);
+          addresses.push(address);
         } else {
           console.warn(`"${address}" is not a valid email address`);
         }
@@ -415,7 +425,9 @@ namespace Private {
    * @returns a boolean for whether it is a valid email.
    */
   function isEmail(email: string): boolean {
-    const re = RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
+    const re = RegExp(
+      /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+    );
     return re.test(email);
   }
 }

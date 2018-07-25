@@ -3,34 +3,26 @@
 
 import expect = require('expect.js');
 
-import {
-  JSONValue
-} from '@phosphor/coreutils';
+import { JSONValue } from '@phosphor/coreutils';
 
-import {
-  GoogleJSON
-} from '../../lib/realtime/json';
+import { GoogleJSON } from '../../lib/realtime/json';
 
-import {
-  loadGapi, initializeGapi, DEFAULT_CLIENT_ID
-} from '../../lib/gapi';
+import { loadGapi, initializeGapi, DEFAULT_CLIENT_ID } from '../../lib/gapi';
 
-import {
-  inMemoryModel
-} from './util';
+import { InMemoryModel } from './util';
 
 describe('GoogleJSON', () => {
-  let model: inMemoryModel;
+  let model: InMemoryModel;
   let json: gapi.drive.realtime.CollaborativeMap<JSONValue>;
 
-  before((done) => {
+  before(done => {
     loadGapi(true).then(() => {
       initializeGapi(DEFAULT_CLIENT_ID).then(done);
     });
   });
 
   beforeEach(() => {
-    model = new inMemoryModel();
+    model = new InMemoryModel();
     json = model.model.createMap<JSONValue>();
   });
 
@@ -40,16 +32,13 @@ describe('GoogleJSON', () => {
   });
 
   describe('#constructor()', () => {
-
     it('should create an observable JSON object', () => {
       let item = new GoogleJSON(json);
       expect(item).to.be.an(GoogleJSON);
     });
-
   });
 
   describe('#toJSON()', () => {
-
     it('should serialize the model to JSON', () => {
       let item = new GoogleJSON(json);
       item.set('foo', 1);
@@ -58,12 +47,10 @@ describe('GoogleJSON', () => {
 
     it('should return a copy of the data', () => {
       let item = new GoogleJSON(json);
-      item.set('foo', { 'bar': 1 });
+      item.set('foo', { bar: 1 });
       let value = item.toJSON();
       value['bar'] = 2;
       expect((item.get('foo') as any)['bar']).to.be(1);
     });
-
   });
-
 });
