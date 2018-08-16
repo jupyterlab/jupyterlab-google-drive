@@ -25,8 +25,12 @@
   background-image: url(drive.png);
 }
 
-.jp-GoogleDrive-icon {
-  background-image: url(drive_monochrome.png);
+[data-theme-light='true'] .jp-GoogleDrive-icon {
+  background-image: url(drive_light.png);
+}
+
+[data-theme-light='false'] .jp-GoogleDrive-icon {
+  background-image: url(drive_dark.png);
 }
 
 #setting-editor .jp-PluginList-icon.jp-GoogleDrive-logo {
