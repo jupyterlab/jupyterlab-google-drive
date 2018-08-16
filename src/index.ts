@@ -128,6 +128,10 @@ function activateFileBrowser(
     hasOpenDocuments
   );
 
+  browser.title.iconClass = 'jp-GoogleDrive-icon jp-SideBar-tabIcon';
+  browser.title.caption = 'Google Drive';
+  browser.id = 'google-drive-file-browser';
+
   // Add the file browser widget to the application restorer.
   restorer.add(browser, NAMESPACE);
   app.shell.addToLeftArea(browser, { rank: 101 });
