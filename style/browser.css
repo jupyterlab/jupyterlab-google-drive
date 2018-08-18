@@ -22,7 +22,14 @@
 }
 
 .jp-GoogleDrive-logo {
+  background-size: 100%;
+  background-position: center;
   background-image: url(drive.png);
+}
+
+.jp-GoogleLoginScreen .jp-GoogleDrive-logo {
+  width: 150px;
+  height: 150px;
 }
 
 [data-theme-light='true'] .jp-GoogleDrive-icon {
