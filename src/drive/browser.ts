@@ -39,16 +39,6 @@ const GOOGLE_DRIVE_FILEBROWSER_CLASS = 'jp-GoogleDriveFileBrowser';
 const LOGIN_SCREEN = 'jp-GoogleLoginScreen';
 
 /**
- * Class for a user badge UI button.
- */
-const USER_BADGE = 'jp-GoogleUserBadge';
-
-/**
- * Class for a container for the user badge.
- */
-const USER_BADGE_CONTAINER = 'jp-GoogleUserBadge-container';
-
-/**
  * Widget for hosting the Google Drive filebrowser.
  */
 export class GoogleDriveFileBrowser extends Widget {
@@ -85,9 +75,6 @@ export class GoogleDriveFileBrowser extends Widget {
     gapiAuthorized.promise.then(() => {
       this._createBrowser();
     });
-
-    this.title.iconClass = 'jp-GoogleDrive-tablogo';
-    this.id = 'google-drive-file-browser';
   }
 
   /**
@@ -119,20 +106,13 @@ export class GoogleDriveFileBrowser extends Widget {
 
     // Create the logout button.
     const userProfile = getCurrentUserProfile();
-    const initial = userProfile.getGivenName()[0];
     this._logoutButton = new ToolbarButton({
       onClick: () => {
         this._onLogoutClicked();
       },
-      tooltip: `Sign Out (${userProfile.getEmail()})`
+      tooltip: `Sign Out (${userProfile.getEmail()})`,
+      iconClassName: 'jp-GoogleUserBadge jp-Icon jp-Icon-16'
     });
-    const badgeContainer = document.createElement('div');
-    badgeContainer.className = USER_BADGE_CONTAINER;
-    const badge = document.createElement('div');
-    badge.className = USER_BADGE;
-    badge.textContent = initial;
-    badgeContainer.appendChild(badge);
-    this._logoutButton.node.appendChild(badgeContainer);
 
     this._browser.toolbar.addItem('logout', this._logoutButton);
     this._loginScreen.parent = null;

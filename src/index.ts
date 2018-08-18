@@ -128,6 +128,10 @@ function activateFileBrowser(
     hasOpenDocuments
   );
 
+  browser.title.iconClass = 'jp-GoogleDrive-icon jp-SideBar-tabIcon';
+  browser.title.caption = 'Google Drive';
+  browser.id = 'google-drive-file-browser';
+
   // Add the file browser widget to the application restorer.
   restorer.add(browser, NAMESPACE);
   app.shell.addToLeftArea(browser, { rank: 101 });
@@ -206,7 +210,8 @@ export const chatboxPlugin: JupyterLabPlugin<void> = {
     IEditorServices,
     IDocumentManager,
     ILayoutRestorer,
-    IRenderMimeRegistry
+    IRenderMimeRegistry,
+    ISettingRegistry
   ],
   autoStart: true,
   activate: activateChatbox
@@ -215,18 +220,26 @@ export const chatboxPlugin: JupyterLabPlugin<void> = {
 /**
  * Activate the chatbox extension.
  */
-function activateChatbox(
+async function activateChatbox(
   app: JupyterLab,
   palette: ICommandPalette,
   editorServices: IEditorServices,
   docManager: IDocumentManager,
   restorer: ILayoutRestorer,
-  registry: IRenderMimeRegistry
-): void {
+  registry: IRenderMimeRegistry,
+  settingRegistry: ISettingRegistry
+): Promise<void> {
   const id = 'chatbox';
   const { commands, shell } = app;
   const category = 'Chatbox';
   let command: string;
+
+  // Don't activate the chatbox if realtime is not enabled.
+  const settings = await settingRegistry.load(fileBrowserPlugin.id);
+  const realtime = settings.get('realtime').composite as boolean;
+  if (!realtime) {
+    return;
+  }
 
   /**
    * Create a chatbox for a given path.

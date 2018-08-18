@@ -23,9 +23,27 @@
 
 .jp-GoogleDrive-logo {
   background-size: 100%;
+  background-position: center;
+  background-image: url(drive.png);
+}
+
+.jp-GoogleLoginScreen .jp-GoogleDrive-logo {
   width: 150px;
   height: 150px;
-  background-image: url(drive.png);
+}
+
+[data-theme-light='true'] .jp-GoogleDrive-icon {
+  background-image: url(drive_light.png);
+}
+
+[data-theme-light='false'] .jp-GoogleDrive-icon {
+  background-image: url(drive_dark.png);
+}
+
+#setting-editor .jp-PluginList-icon.jp-GoogleDrive-logo {
+  background-size: 85%;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .jp-GoogleDrive-text {
@@ -34,25 +52,12 @@
   padding: 12px;
 }
 
-.jp-GoogleDrive-tablogo {
-  background-size: 100%;
-  width: var(--jp-private-sidebar-tab-width);
-  height: var(--jp-private-sidebar-tab-width);
-  background-image: url(drive_monochrome.png);
+[data-theme-light='true'] .jp-GoogleUserBadge {
+  background-image: url(account-light.svg);
 }
 
-.jp-GoogleUserBadge-container {
-  display: flex;
-  justify-content: center;
-}
-
-.jp-GoogleUserBadge {
-  background-color: #f37626;
-  color: white;
-  border-radius: 50%;
-  height: 18px;
-  width: 18px;
-  line-height: 18px;
+[data-theme-light='false'] .jp-GoogleUserBadge {
+  background-image: url(account-dark.svg);
 }
 
 .jp-ShareIcon {
