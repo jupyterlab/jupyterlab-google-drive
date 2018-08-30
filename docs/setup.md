@@ -102,5 +102,5 @@ singleuser
   lifecycleHooks:
     postStart:
       exec:
-        command: ["/bin/sh", "-c", "echo '{\"clientId\":\"${GOOGLE_DRIVE_CLIENT_ID}\"}' > /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive/drive.jupyterlab-settings"]
+        command: ["/bin/sh", "-c", "mkdir -p /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive; echo '{\"clientId\":\"${GOOGLE_DRIVE_CLIENT_ID}\"}' > /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/google-drive/drive.jupyterlab-settings"]
 ```
