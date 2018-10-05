@@ -92,7 +92,7 @@ export function loadGapi(realtime: boolean): Promise<void> {
       gapiLoaded.reject(void 0);
       reject(void 0);
     };
-    document.head.appendChild(gapiScript);
+    document.head!.appendChild(gapiScript);
   });
 }
 
