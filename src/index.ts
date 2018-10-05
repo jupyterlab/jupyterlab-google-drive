@@ -5,6 +5,8 @@ import '../style/index.css';
 
 import { Widget } from '@phosphor/widgets';
 
+import { map, toArray } from '@phosphor/algorithm';
+
 import {
   ILayoutRestorer,
   JupyterLab,
@@ -38,7 +40,7 @@ import { GoogleDrive } from './drive/contents';
 import { loadGapi } from './gapi';
 
 /**
- * The command IDs used by the chatbox plugin.
+ * The command IDs used by the plugins.
  */
 namespace CommandIDs {
   export const clear = 'chatbox:clear';
@@ -46,6 +48,10 @@ namespace CommandIDs {
   export const run = 'chatbox:post';
 
   export const linebreak = 'chatbox:linebreak';
+
+  export const shareCurrent = `google-drive:share-current`;
+
+  export const shareBrowser = `google-drive:share-browser-item`;
 }
 
 /**
@@ -136,36 +142,39 @@ function activateFileBrowser(
   restorer.add(browser, NAMESPACE);
   app.shell.addToLeftArea(browser, { rank: 101 });
 
-  // Add the share command to the command registry.
-  const command = `google-drive:share`;
-  commands.addCommand(command, {
+  // Share a file with another Google Drive user.
+  const shareFile = (path: string): Promise<void> => {
+    // Do nothing if this file is not in the user's Google Drive.
+    if (manager.services.contents.driveName(path) !== drive.name) {
+      console.warn('Cannot share a file outside of Google Drive');
+      return Promise.resolve(void 0);
+    }
+    // Otherwise open the sharing dialog.
+    return showDialog({
+      title: `Share "${PathExt.basename(path)}"`,
+      body: new Private.EmailAddressWidget(),
+      focusNodeSelector: 'input',
+      buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'ADD' })]
+    }).then(result => {
+      if (result.button.accept) {
+        // Get the file resource for the path and create
+        // permissions for the valid email addresses.
+        const addresses = result.value!;
+        const localPath = path.split(':').pop();
+        return getResourceForPath(localPath!).then(resource => {
+          createPermissions(resource, addresses);
+        });
+      }
+    });
+  };
+
+  // Add the share-current command to the command registry.
+  commands.addCommand(CommandIDs.shareCurrent, {
     execute: () => {
       const widget = app.shell.currentWidget;
       const context = widget ? manager.contextForWidget(widget) : undefined;
       if (context) {
-        const path = context.path;
-        // Do nothing if this file is not in the user's Google Drive.
-        if (manager.services.contents.driveName(context.path) !== drive.name) {
-          console.warn('Cannot share a file outside of Google Drive');
-          return;
-        }
-        // Otherwise open the sharing dialog.
-        showDialog({
-          title: `Share "${PathExt.basename(path)}"`,
-          body: new Private.EmailAddressWidget(),
-          focusNodeSelector: 'input',
-          buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'ADD' })]
-        }).then(result => {
-          if (result.button.accept) {
-            // Get the file resource for the path and create
-            // permissions for the valid email addresses.
-            const addresses = result.value!;
-            const localPath = path.split(':').pop();
-            getResourceForPath(localPath!).then(resource => {
-              createPermissions(resource, addresses);
-            });
-          }
-        });
+        return shareFile(context.path);
       }
     },
     isEnabled: () => {
@@ -191,11 +200,45 @@ function activateFileBrowser(
           }
         }
       }
-      return `Share ${fileType} With Google Drive…`;
+      return `Share ${fileType} with Google Drive…`;
     }
   });
-  palette.addItem({ command, category: 'File Operations' });
-  mainMenu.fileMenu.addGroup([{ command }], 20);
+
+  // Add the share-browser command to the command registry.
+  commands.addCommand(CommandIDs.shareBrowser, {
+    execute: () => {
+      const browser = factory.tracker.currentWidget;
+      if (!browser || browser.model.driveName !== drive.name) {
+        return;
+      }
+      return Promise.all(
+        toArray(map(browser.selectedItems(), item => shareFile(item.path)))
+      );
+    },
+    iconClass: 'jp-MaterialIcon jp-GoogleDrive-icon',
+    isEnabled: () => {
+      const browser = factory.tracker.currentWidget;
+      return !!browser && browser.model.driveName === drive.name;
+    },
+    label: 'Share with Google Drive…'
+  });
+
+  // matches only non-directory items in the Google Drive browser.
+  const selector =
+    '.jp-GoogleDriveFileBrowser .jp-DirListing-item[data-isdir="false"]';
+
+  app.contextMenu.addItem({
+    command: CommandIDs.shareBrowser,
+    selector,
+    rank: 100
+  });
+
+  palette.addItem({
+    command: CommandIDs.shareCurrent,
+    category: 'File Operations'
+  });
+
+  mainMenu.fileMenu.addGroup([{ command: CommandIDs.shareCurrent }], 20);
 
   return;
 }
