@@ -32,10 +32,25 @@
   height: 150px;
 }
 
+/**
+ * The application context menu is outside of the application shell,
+ * so the normal CSS selector for themeing the icon won't work.
+ * We *can* accomplish it, however, by using a CSS sibling selector.
+ * Not pretty, but it works.
+ */
+.jp-ApplicationShell[data-theme-light='true'] ~ .p-Menu .jp-GoogleDrive-icon {
+  background-image: url(drive_light.png);
+}
+.jp-ApplicationShell[data-theme-light='false'] ~ .p-Menu .jp-GoogleDrive-icon {
+  background-image: url(drive_dark.png);
+}
+
+/**
+ * Choose the google drive icon depending on the theme.
+ */
 [data-theme-light='true'] .jp-GoogleDrive-icon {
   background-image: url(drive_light.png);
 }
-
 [data-theme-light='false'] .jp-GoogleDrive-icon {
   background-image: url(drive_dark.png);
 }
