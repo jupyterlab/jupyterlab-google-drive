@@ -18,10 +18,10 @@ module.exports = function(config) {
     },
     files: [
       '../node_modules/es6-promise/dist/es6-promise.js',
-      './build/bundle-auth.js'
+      './build/bundle.js'
     ],
     preprocessors: {
-      'build/bundle-auth.js': ['sourcemap']
+      'build/bundle.js': ['sourcemap']
     },
     port: 8888,
     colors: true,
