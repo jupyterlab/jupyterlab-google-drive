@@ -1,10 +1,10 @@
 var path = require('path');
 
 module.exports = {
-  entry: './build/index.js',
+  entry: './build/index-auth.js',
   output: {
     path: __dirname + '/build',
-    filename: 'bundle.js',
+    filename: 'bundle-auth.js',
     publicPath: './build/'
   },
   bail: true,

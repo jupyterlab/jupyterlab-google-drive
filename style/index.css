@@ -1,8 +1,80 @@
 /*-----------------------------------------------------------------------------
-| Copyright (c) 2014-2017, Jupyter Development Team.
-|
+| Copyright (c) Jupyter Development Team.
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 
-@import './chatbox.css';
-@import './browser.css';
+.jp-GoogleDriveFileBrowser {
+  background-color: var(--jp-layout-color1);
+  height: 100%;
+}
+
+.jp-GoogleDriveFileBrowser .jp-FileBrowser {
+  flex-grow: 1;
+  height: 100%;
+}
+
+.jp-GoogleLoginScreen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.jp-GoogleDrive-logo {
+  background-size: 100%;
+  background-position: center;
+  background-image: url(drive.png);
+}
+
+.jp-GoogleLoginScreen .jp-GoogleDrive-logo {
+  width: 150px;
+  height: 150px;
+}
+
+/**
+ * The application context menu is outside of the application shell,
+ * so the normal CSS selector for themeing the icon won't work.
+ * We *can* accomplish it, however, by using a CSS sibling selector.
+ * Not pretty, but it works.
+ */
+.jp-ApplicationShell[data-theme-light='true'] ~ .p-Menu .jp-GoogleDrive-icon {
+  background-image: url(drive_light.png);
+}
+.jp-ApplicationShell[data-theme-light='false'] ~ .p-Menu .jp-GoogleDrive-icon {
+  background-image: url(drive_dark.png);
+}
+
+/**
+ * Choose the google drive icon depending on the theme.
+ */
+[data-theme-light='true'] .jp-GoogleDrive-icon {
+  background-image: url(drive_light.png);
+}
+[data-theme-light='false'] .jp-GoogleDrive-icon {
+  background-image: url(drive_dark.png);
+}
+
+#setting-editor .jp-PluginList-icon.jp-GoogleDrive-logo {
+  background-size: 85%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.jp-GoogleDrive-text {
+  font-size: var(--jp-ui-font-size3);
+  color: var(--jp-ui-font-color1);
+  padding: 12px;
+}
+
+[data-theme-light='true'] .jp-GoogleUserBadge {
+  background-image: url(account-light.svg);
+}
+
+[data-theme-light='false'] .jp-GoogleUserBadge {
+  background-image: url(account-dark.svg);
+}
+
+.jp-ShareIcon {
+  background-image: url(share.svg);
+}

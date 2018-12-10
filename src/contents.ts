@@ -7,15 +7,11 @@ import { PathExt } from '@jupyterlab/coreutils';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
-import { ModelDB } from '@jupyterlab/observables';
-
 import { Contents, ServerConnection } from '@jupyterlab/services';
-
-import { GoogleModelDB } from '../realtime/modeldb';
 
 import * as drive from './drive';
 
-import { makeError, realtimeLoaded } from '../gapi';
+import { makeError } from './gapi';
 
 /**
  * A contents manager that passes file operations to the server.
@@ -50,27 +46,6 @@ export class GoogleDrive implements Contents.IDrive {
    */
   get name(): 'GDrive' {
     return 'GDrive';
-  }
-
-  /**
-   * Getter for the IModelDB factory.
-   */
-  get modelDBFactory(): ModelDB.IFactory {
-    if (realtimeLoaded) {
-      return {
-        createNew: (path: string) => {
-          return new GoogleModelDB({ filePath: path });
-        }
-      };
-    } else {
-      return {
-        // If the realtime APIs have not been loaded,
-        // make a new in-memory ModelDB.
-        createNew: (path: string) => {
-          return new ModelDB();
-        }
-      };
-    }
   }
 
   /**

@@ -1,4 +1,4 @@
-# Advanced Setup
+# Setup
 
 The JupyterLab Google Drive extension makes authenticated requests to Google's servers,
 and as such, must be configured to have the correct credentials.
@@ -31,7 +31,7 @@ which should be considered authoritative.
 6.  Under **Authorized Javascript Origins**, provide a list of URLs that will be accessing the APIs (e.g., `http://localhost:8888` or `https://www.myawsesomedeployment.org`).
     ![Web application](images/webapp.png)
 7.  The console will now show a **Client ID** field under the **Credentials** panel. This is the ID that will be used in the settings for the `@jupyterlab/google-drive` extension.
-8.  In the **API Manager** sidebar, select **Library**. This will provide an interface for enabling different Google APIs for the application. You will need to enable two APIs for the extension to work: **Google Drive API** and **Google Picker API** (previously this list included the **Google Realtime API**, which has been [deprecated](https://developers.google.com/google-apps/realtime/deprecation) by Google).
+8.  In the **API Manager** sidebar, select **Library**. This will provide an interface for enabling different Google APIs for the application. You will need to enable two APIs for the extension to work: **Google Drive API** and **Google Picker API**.
     ![Searching API library](images/library.png)
     The Dashboard panel should now show be showing those APIs:
     ![Dashboard](images/dashboard.png)
@@ -39,25 +39,6 @@ which should be considered authoritative.
 Once these steps have been completed, you will be able to use these credentials in the extension.
 In the `jupyterlab.google-drive` settings of the settings registry, set the **clientID** field to be the client id provided by the developer console. If everything is configured properly, you should be able to use the application with your new credentials.
 ![Client ID](images/clientid.png)
-
-### Realtime API
-
-On November 28th, 2017, Google [deprecated](https://developers.google.com/google-apps/realtime/deprecation) their realtime API.
-Existing applications that use the realtime API will continue to work until December, 2018.
-If you have already set up a client application using this API, you can set
-
-```json
-{
-  "realtime": true
-}
-```
-
-in the JupyterLab settings editor, and
-the plugin will enable realtime editing.
-If you are setting up a _new_ client application,
-you should set this value to `false`,
-and realtime editing will not be enabled
-until the core of JupyterLab itself supports it.
 
 ### Seeding JupyterLab images with Google credentials
 

@@ -16,9 +16,8 @@ import {
   driveApiRequest,
   gapiAuthorized,
   gapiInitialized,
-  handleRealtimeError,
   makeError
-} from '../gapi';
+} from './gapi';
 
 /**
  * Fields to request for File resources.
@@ -600,56 +599,6 @@ export function createPermissions(
   // Submit the batch request.
   return driveApiRequest<any>(createRequest).then(() => {
     return void 0;
-  });
-}
-
-/**
- * Create a new document for realtime collaboration.
- * This file is not associated with a particular filetype,
- * and is not downloadable/readable.  Realtime documents
- * may also be associated with other, more readable documents.
- *
- * @returns a promise fulfilled with the fileId of the
- *   newly-created realtime document.
- */
-export function createRealtimeDocument(): Promise<string> {
-  const createRequest = () => {
-    return gapi.client.drive.files.create({
-      resource: {
-        mimeType: RT_MIMETYPE,
-        name: 'jupyterlab_realtime_file'
-      }
-    });
-  };
-  return driveApiRequest<FileResource>(createRequest).then(result => {
-    return result.id!;
-  });
-}
-
-/**
- * Load the realtime document associated with a file.
- *
- * @param fileId - the ID of the realtime file on Google Drive.
- *
- * @returns a promise fulfilled with the realtime document model.
- */
-export function loadRealtimeDocument(
-  resource: FileResource,
-  picked: boolean = false
-): Promise<gapi.drive.realtime.Document> {
-  return new Promise((resolve, reject) => {
-    gapiAuthorized.promise.then(() => {
-      gapi.drive.realtime.load(
-        resource.id!,
-        (doc: gapi.drive.realtime.Document) => {
-          resolve(doc);
-        },
-        (model: gapi.drive.realtime.Model) => {
-          /* no-op initializer */
-        },
-        handleRealtimeError
-      );
-    });
   });
 }
 

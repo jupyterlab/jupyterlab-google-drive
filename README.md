@@ -4,25 +4,11 @@
 
 ## Cloud storage for JupyterLab through Google Drive.
 
-**_As of November 28th, 2017, Google has [deprecated](https://developers.google.com/google-apps/realtime/deprecation) their Realtime API.
-Existing realtime applications (such as those you may have set up according to [these](docs/setup.md) instructions) will still work until December 2018, but new applications will not be able to use the Realtime API.
-See the discussions [here](https://github.com/jupyterlab/jupyterlab-google-drive/issues/108) and [here](docs/setup.md#Realtime-API) for more information._**
-
 **NOTE: this is beta software and is rapidly changing.**
-**Files stored on Google Drive using this plugin should still be backed-up elsewhere.**
 
 This extension adds a Google Drive filebrowser to the left sidepanel of JupyterLab.
 When you are logged into your Google account, you will have the
 files stored in it available to JupyterLab.
-Notebooks and text files may be shared and edited with collaborators
-in real-time, and all users will see the same changes.
-
-To see the extension in action, click on our live demo from PyData Seattle:
-
-[![PyData Seattle Talk](http://img.youtube.com/vi/dSjvK-Z3o3U/0.jpg)](https://youtu.be/dSjvK-Z3o3U?t=13m17s)
-
-For the time-being, all users running a notebook have independent kernels for
-code execution, and the outputs from running cells will reflect that.
 
 If you run into troubles, see if the [troubleshooting guide](docs/troubleshooting.md) has a solution for you.
 

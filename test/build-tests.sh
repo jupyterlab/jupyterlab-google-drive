@@ -21,4 +21,3 @@ fi
 
 tsc
 webpack --config webpack.config.js
-webpack --config webpack-auth.config.js

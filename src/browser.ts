@@ -21,7 +21,7 @@ import {
   signIn,
   signOut,
   getCurrentUserProfile
-} from '../gapi';
+} from './gapi';
 
 /**
  * Google Drive filebrowser plugin state namespace.

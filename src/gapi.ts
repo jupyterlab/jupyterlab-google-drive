@@ -5,15 +5,7 @@ import { PromiseDelegate } from '@phosphor/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { clearCache } from './drive/drive';
-
-/**
- * Default Client ID to let the Google Servers know who
- * we are. These can be changed to ones linked to a particular
- * user if they so desire.
- */
-export const DEFAULT_CLIENT_ID =
-  '625147942732-t30t8vnn43fl5mvg1qde5pl84603dr6s.apps.googleusercontent.com';
+import { clearCache } from './drive';
 
 /**
  * Scope for the permissions needed for this extension.
@@ -53,19 +45,11 @@ export const gapiInitialized = new PromiseDelegate<void>();
 export let gapiAuthorized = new PromiseDelegate<void>();
 
 /**
- * A boolean that is set if the deprecated realtime APIs
- * have been loaded onto the page.
- */
-export let realtimeLoaded = false;
-
-/**
  * Load the gapi scripts onto the page.
- *
- * @param realtime - whether to load the (deprecated) realtime libraries.
  *
  * @returns a promise that resolves when the gapi scripts are loaded.
  */
-export function loadGapi(realtime: boolean): Promise<void> {
+export function loadGapi(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     // Get the gapi script from Google.
     const gapiScript = document.createElement('script');
@@ -76,13 +60,8 @@ export function loadGapi(realtime: boolean): Promise<void> {
     // Load overall API scripts onto the page.
     gapiScript.onload = () => {
       // Load the specific client libraries we need.
-      const libs = realtime
-        ? 'client:auth2,drive-realtime,drive-share'
-        : 'client:auth2';
+      const libs = 'client:auth2';
       gapi.load(libs, () => {
-        if (realtime) {
-          realtimeLoaded = true;
-        }
         gapiLoaded.resolve(void 0);
         resolve(void 0);
       });
@@ -115,7 +94,7 @@ export function initializeGapi(clientId: string): Promise<boolean> {
       gapi.client
         .init({
           discoveryDocs: DISCOVERY_DOCS,
-          clientId: clientId || DEFAULT_CLIENT_ID,
+          clientId: clientId,
           scope: DRIVE_SCOPE
         })
         .then(
@@ -124,10 +103,6 @@ export function initializeGapi(clientId: string): Promise<boolean> {
             // authomatically authorized.
             const googleAuth = gapi.auth2.getAuthInstance();
             if (googleAuth.isSignedIn.get()) {
-              // Manually set the auth token so that the realtime
-              // API can pick it up, then listen for changes to the auth.
-              Private.setAuthToken();
-              googleAuth.currentUser.listen(Private.onAuthRefreshed);
               // Resolve the relevant promises.
               gapiAuthorized.resolve(void 0);
               gapiInitialized.resolve(void 0);
@@ -261,20 +236,12 @@ export function signIn(): Promise<boolean> {
       const googleAuth = gapi.auth2.getAuthInstance();
       if (!googleAuth.isSignedIn.get()) {
         googleAuth.signIn({ prompt: 'select_account' }).then(() => {
-          // Manually set the auth token so that the realtime
-          // API can pick it up, then listen for refreshes.
-          Private.setAuthToken();
-          googleAuth.currentUser.listen(Private.onAuthRefreshed);
           // Resolve the exported promise.
           gapiAuthorized.resolve(void 0);
           resolve(true);
         });
       } else {
         // Otherwise we are already signed in.
-        // Manually set the auth token so that the realtime
-        // API can pick it up, then listen for refreshes.
-        Private.setAuthToken();
-        googleAuth.currentUser.listen(Private.onAuthRefreshed);
         gapiAuthorized.resolve(void 0);
         resolve(true);
       }
@@ -319,55 +286,9 @@ export function makeError(
 }
 
 /**
- * Handle an error thrown by a realtime file,
- * if possible.
- *
- * @param err - the realtime error.
- */
-export function handleRealtimeError(err: gapi.drive.realtime.Error): void {
-  if (err.type === gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
-    // gapi.auth2 automatically refreshes the token,
-    // but due to a bug in the drive realtime client,
-    // this is not automatically picked up by the
-    // realtime system. If we get a TOKEN_REFRESH_REQUIRED,
-    // it may be enough to manually set the token that
-    // has already been refreshed.
-    Private.refreshAuthToken();
-  } else if (err.isFatal === false) {
-    // If we can recover, do nothing.
-    return void 0;
-  } else {
-    throw err;
-  }
-}
-
-/**
  * A namespace for private functions and values.
  */
 namespace Private {
-  /**
-   * Set authorization token for Google APIs.
-   *
-   * #### Notes
-   * Importantly, this calls `gapi.auth.setToken`.
-   * Without this step, the realtime API will not pick
-   * up the OAuth token, and it will not work. This step is
-   * completely undocumented, but without it we cannot
-   * use the newer, better documented, undeprecated `gapi.auth2`
-   * authorization API.
-   */
-  export function setAuthToken(): void {
-    const googleAuth = gapi.auth2.getAuthInstance();
-    const user = googleAuth.currentUser.get();
-    const authResponse = user.getAuthResponse();
-    gapi.auth.setToken({
-      access_token: authResponse.access_token,
-      expires_in: String(authResponse.expires_in),
-      error: '',
-      state: authResponse.scope
-    });
-  }
-
   /**
    * Try to manually refresh the authorization if we run
    * into credential problems.
@@ -378,25 +299,13 @@ namespace Private {
       const user = googleAuth.currentUser.get();
       user.reloadAuthResponse().then(
         authResponse => {
-          setAuthToken();
           resolve(void 0);
         },
         err => {
           console.error('gapi: Error on refreshing authorization!');
-          setAuthToken();
           reject(err);
         }
       );
     });
-  }
-
-  /**
-   * If the current user state has changed, there has either
-   * been a log in/out, or the auth has automatically refreshed.
-   * Manually reset the auth token so that the realtime API can
-   * pick it up.
-   */
-  export function onAuthRefreshed(): void {
-    setAuthToken();
   }
 }
