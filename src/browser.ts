@@ -21,7 +21,7 @@ import {
   signIn,
   signOut,
   getCurrentUserProfile
-} from '../gapi';
+} from './gapi';
 
 /**
  * Google Drive filebrowser plugin state namespace.
@@ -194,6 +194,12 @@ export class GoogleDriveLogin extends Widget {
     // will need to login explicitly.
     settingsPromise.then(settings => {
       this._clientId = settings.get('clientId').composite as string;
+      if (!this._clientId) {
+        console.warn(
+          'Warning: no Client ID found. The Google Drive plugin will not work until the Client ID has been set, and the page refreshed.'
+        );
+        return;
+      }
       initializeGapi(this._clientId)
         .then(loggedIn => {
           if (!loggedIn) {

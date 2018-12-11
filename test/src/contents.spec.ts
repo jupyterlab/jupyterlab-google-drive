@@ -11,7 +11,7 @@ import { Contents } from '@jupyterlab/services';
 
 import { UUID } from '@phosphor/coreutils';
 
-import { GoogleDrive } from '../../lib/drive/contents';
+import { GoogleDrive } from '../../lib/contents';
 
 import { authorizeGapiTesting, expectFailure, expectAjaxError } from './util';
 
@@ -45,7 +45,7 @@ describe('GoogleDrive', () => {
 
   before(done => {
     registry = new DocumentRegistry();
-    loadGapi(true).then(() => {
+    loadGapi().then(() => {
       authorizeGapiTesting()
         .then(() => {
           done();
