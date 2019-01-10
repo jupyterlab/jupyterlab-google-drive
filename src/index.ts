@@ -117,7 +117,7 @@ function activateFileBrowser(
   app.shell.addToLeftArea(browser, { rank: 101 });
 
   // Share files with another Google Drive user.
-  const shareFiles = (paths: string[]): Promise<void> => {
+  const shareFiles = async (paths: string[]): Promise<void> => {
     // Only share files in Google Drive.
     const toShare = paths.filter(path => {
       if (manager.services.contents.driveName(path) !== drive.name) {
@@ -128,33 +128,31 @@ function activateFileBrowser(
       return true;
     });
     if (toShare.length === 0) {
-      return Promise.resolve(void 0);
+      return;
     }
 
     // Otherwise open the sharing dialog and share the files.
     const name =
       toShare.length === 1 ? `"${PathExt.basename(toShare[0])}"` : 'files';
-    return showDialog({
+    const result = await showDialog({
       title: `Share ${name}`,
       body: new Private.EmailAddressWidget(),
       focusNodeSelector: 'input',
       buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'SHARE' })]
-    }).then(result => {
-      if (result.button.accept) {
-        return Promise.all(
-          toShare.map(path => {
-            // Get the file resource for the path and create
-            // permissions for the valid email addresses.
-            const addresses = result.value!;
-            const localPath = manager.services.contents.localPath(path);
-            return getResourceForPath(localPath!).then(resource => {
-              createPermissions(resource, addresses);
-            });
-          })
-        ).then(() => void 0);
-      }
-      return Promise.resolve(void 0);
     });
+    if (result.button.accept) {
+      await Promise.all(
+        toShare.map(async path => {
+          // Get the file resource for the path and create
+          // permissions for the valid email addresses.
+          const addresses = result.value!;
+          const localPath = manager.services.contents.localPath(path);
+          const resource = await getResourceForPath(localPath!);
+          await createPermissions(resource, addresses);
+        })
+      );
+    }
+    return;
   };
 
   // Add the share-current command to the command registry.

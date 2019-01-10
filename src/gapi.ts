@@ -89,36 +89,35 @@ export function loadGapi(): Promise<void> {
  *   the user was automatically signed in by the initialization.
  */
 export function initializeGapi(clientId: string): Promise<boolean> {
-  return new Promise<boolean>((resolve, reject) => {
-    gapiLoaded.promise.then(() => {
-      gapi.client
-        .init({
-          discoveryDocs: DISCOVERY_DOCS,
-          clientId: clientId,
-          scope: DRIVE_SCOPE
-        })
-        .then(
-          () => {
-            // Check if the user is logged in and we are
-            // authomatically authorized.
-            const googleAuth = gapi.auth2.getAuthInstance();
-            if (googleAuth.isSignedIn.get()) {
-              // Resolve the relevant promises.
-              gapiAuthorized.resolve(void 0);
-              gapiInitialized.resolve(void 0);
-              resolve(true);
-            } else {
-              gapiInitialized.resolve(void 0);
-              resolve(false);
-            }
-          },
-          (err: any) => {
-            gapiInitialized.reject(err);
-            // A useful error message is in err.details.
-            reject(err.details);
+  return new Promise<boolean>(async (resolve, reject) => {
+    await gapiLoaded.promise;
+    gapi.client
+      .init({
+        discoveryDocs: DISCOVERY_DOCS,
+        clientId: clientId,
+        scope: DRIVE_SCOPE
+      })
+      .then(
+        () => {
+          // Check if the user is logged in and we are
+          // authomatically authorized.
+          const googleAuth = gapi.auth2.getAuthInstance();
+          if (googleAuth.isSignedIn.get()) {
+            // Resolve the relevant promises.
+            gapiAuthorized.resolve(void 0);
+            gapiInitialized.resolve(void 0);
+            resolve(true);
+          } else {
+            gapiInitialized.resolve(void 0);
+            resolve(false);
           }
-        );
-    });
+        },
+        (err: any) => {
+          gapiInitialized.reject(err);
+          // A useful error message is in err.details.
+          reject(err.details);
+        }
+      );
   });
 }
 
@@ -151,73 +150,74 @@ export function driveApiRequest<T>(
   attemptNumber: number = 0
 ): Promise<T> {
   if (attemptNumber === MAX_API_REQUESTS) {
-    return Promise.reject('Maximum number of API retries reached.');
+    throw Error('Maximum number of API retries reached.');
   }
-  return new Promise<T>((resolve, reject) => {
-    gapiAuthorized.promise.then(() => {
-      const request = createRequest();
-      request.then(
-        response => {
-          if (response.status !== successCode) {
-            // Handle an HTTP error.
-            let result: any = response.result;
-            reject(makeError(result.error.code, result.error.message));
+  return new Promise<T>(async (resolve, reject) => {
+    await gapiAuthorized.promise;
+    const request = createRequest();
+    request.then(
+      response => {
+        if (response.status !== successCode) {
+          // Handle an HTTP error.
+          let result: any = response.result;
+          reject(makeError(result.error.code, result.error.message));
+        } else {
+          // If the response is note JSON-able, then `response.result`
+          // will be `false`, and the raw data will be in `response.body`.
+          // This happens, e.g., in the case of downloading raw image
+          // data. This fix is a bit of a hack, but seems to work.
+          if ((response.result as any) !== false) {
+            resolve(response.result);
           } else {
-            // If the response is note JSON-able, then `response.result`
-            // will be `false`, and the raw data will be in `response.body`.
-            // This happens, e.g., in the case of downloading raw image
-            // data. This fix is a bit of a hack, but seems to work.
-            if ((response.result as any) !== false) {
-              resolve(response.result);
-            } else {
-              resolve(response.body as any);
-            }
-          }
-        },
-        response => {
-          // Some error happened.
-          if (
-            response.status === BACKEND_ERROR ||
-            (response.status === FORBIDDEN_ERROR &&
-              (response.result.error as any).errors[0].reason ===
-                RATE_LIMIT_REASON)
-          ) {
-            // If we are being rate limited, or if there is a backend error,
-            // attempt exponential backoff.
-            console.warn(
-              `gapi: ${response.status} error, exponential ` +
-                `backoff attempt number ${attemptNumber}...`
-            );
-            window.setTimeout(() => {
-              // Try again after a delay.
-              driveApiRequest<T>(
-                createRequest,
-                successCode,
-                attemptNumber + 1
-              ).then(result => {
-                resolve(result);
-              });
-            }, INITIAL_DELAY * Math.pow(BACKOFF_FACTOR, attemptNumber));
-          } else if (response.status === INVALID_CREDENTIALS_ERROR) {
-            // If we have invalid credentials, try to refresh
-            // the authorization, then retry the request.
-            Private.refreshAuthToken().then(() => {
-              driveApiRequest<T>(createRequest, successCode, attemptNumber + 1)
-                .then(result => {
-                  resolve(result);
-                })
-                .catch(err => {
-                  let result: any = response.result;
-                  reject(makeError(result.error.code, result.error.message));
-                });
-            });
-          } else {
-            let result: any = response.result;
-            reject(makeError(result.error.code, result.error.message));
+            resolve(response.body as any);
           }
         }
-      );
-    });
+      },
+      async response => {
+        // Some error happened.
+        if (
+          response.status === BACKEND_ERROR ||
+          (response.status === FORBIDDEN_ERROR &&
+            (response.result.error as any).errors[0].reason ===
+              RATE_LIMIT_REASON)
+        ) {
+          // If we are being rate limited, or if there is a backend error,
+          // attempt exponential backoff.
+          console.warn(
+            `gapi: ${response.status} error, exponential ` +
+              `backoff attempt number ${attemptNumber}...`
+          );
+          window.setTimeout(() => {
+            // Try again after a delay.
+            driveApiRequest<T>(
+              createRequest,
+              successCode,
+              attemptNumber + 1
+            ).then(result => {
+              resolve(result);
+            });
+          }, INITIAL_DELAY * Math.pow(BACKOFF_FACTOR, attemptNumber));
+        } else if (response.status === INVALID_CREDENTIALS_ERROR) {
+          // If we have invalid credentials, try to refresh
+          // the authorization, then retry the request.
+          await Private.refreshAuthToken();
+          try {
+            const result = await driveApiRequest<T>(
+              createRequest,
+              successCode,
+              attemptNumber + 1
+            );
+            resolve(result);
+          } catch (err) {
+            let result: any = response.result;
+            reject(makeError(result.error.code, result.error.message));
+          }
+        } else {
+          let result: any = response.result;
+          reject(makeError(result.error.code, result.error.message));
+        }
+      }
+    );
   });
 }
 
@@ -230,22 +230,21 @@ export function driveApiRequest<T>(
  * @returns: a promise that resolves with a boolean for whether permission
  *   has been granted.
  */
-export function signIn(): Promise<boolean> {
-  return new Promise<boolean>((resolve, reject) => {
-    gapiInitialized.promise.then(() => {
-      const googleAuth = gapi.auth2.getAuthInstance();
-      if (!googleAuth.isSignedIn.get()) {
-        googleAuth.signIn({ prompt: 'select_account' }).then(() => {
-          // Resolve the exported promise.
-          gapiAuthorized.resolve(void 0);
-          resolve(true);
-        });
-      } else {
-        // Otherwise we are already signed in.
+export async function signIn(): Promise<boolean> {
+  return new Promise<boolean>(async (resolve, reject) => {
+    await gapiInitialized.promise;
+    const googleAuth = gapi.auth2.getAuthInstance();
+    if (!googleAuth.isSignedIn.get()) {
+      googleAuth.signIn({ prompt: 'select_account' }).then(() => {
+        // Resolve the exported promise.
         gapiAuthorized.resolve(void 0);
         resolve(true);
-      }
-    });
+      });
+    } else {
+      // Otherwise we are already signed in.
+      gapiAuthorized.resolve(void 0);
+      resolve(true);
+    }
   });
 }
 
@@ -254,13 +253,12 @@ export function signIn(): Promise<boolean> {
  *
  * @returns a promise resolved when sign-out is complete.
  */
-export function signOut(): Promise<void> {
+export async function signOut(): Promise<void> {
   const googleAuth = gapi.auth2.getAuthInstance();
   // Invalidate the gapiAuthorized promise and set up a new one.
   gapiAuthorized = new PromiseDelegate<void>();
-  return googleAuth.signOut().then(() => {
-    clearCache();
-  });
+  await googleAuth.signOut();
+  clearCache();
 }
 
 /**
