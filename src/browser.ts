@@ -131,7 +131,7 @@ export class GoogleDriveFileBrowser extends Widget {
 
     // Change to the root directory, so an invalid path
     // is not cached, then sign out.
-    this._browser.model.cd('/').then(() => {
+    this._browser.model.cd('/').then(async () => {
       // Swap out the file browser for the login screen.
       this._browser.parent = null;
       (this.layout as PanelLayout).addWidget(this._loginScreen);
@@ -139,14 +139,12 @@ export class GoogleDriveFileBrowser extends Widget {
       this._logoutButton.dispose();
 
       // Do the actual sign-out.
-      signOut().then(() => {
-        // After sign-out, set up a new listener
-        // for authorization, should the user log
-        // back in.
-        gapiAuthorized.promise.then(() => {
-          this._createBrowser();
-        });
-      });
+      await signOut();
+      // After sign-out, set up a new listener
+      // for authorization, should the user log
+      // back in.
+      await gapiAuthorized.promise;
+      this._createBrowser();
     });
   }
 
@@ -192,7 +190,7 @@ export class GoogleDriveLogin extends Widget {
     // a popup dialog. If the user is logged into the browser with
     // a Google account, this will likely succeed. Otherwise, they
     // will need to login explicitly.
-    settingsPromise.then(settings => {
+    settingsPromise.then(async settings => {
       this._clientId = settings.get('clientId').composite as string;
       if (!this._clientId) {
         console.warn(
@@ -200,25 +198,23 @@ export class GoogleDriveLogin extends Widget {
         );
         return;
       }
-      initializeGapi(this._clientId)
-        .then(loggedIn => {
-          if (!loggedIn) {
-            this._button.style.visibility = 'visible';
-          } else {
-            gapiAuthorized.promise.then(() => {
-              // Set the button style to visible in the
-              // eventuality that the user logs out.
-              this._button.style.visibility = 'visible';
-            });
-          }
-        })
-        .catch((err: any) => {
-          showDialog({
-            title: 'Google API Error',
-            body: err,
-            buttons: [Dialog.okButton({ label: 'OK' })]
-          });
+      try {
+        const loggedIn = await initializeGapi(this._clientId);
+        if (!loggedIn) {
+          this._button.style.visibility = 'visible';
+        } else {
+          await gapiAuthorized.promise;
+          // Set the button style to visible in the
+          // eventuality that the user logs out.
+          this._button.style.visibility = 'visible';
+        }
+      } catch (err) {
+        showDialog({
+          title: 'Google API Error',
+          body: err,
+          buttons: [Dialog.okButton({ label: 'OK' })]
         });
+      }
     });
   }
 
