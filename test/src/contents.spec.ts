@@ -99,26 +99,6 @@ describe('GoogleDrive', () => {
       expect(contents.type).to.be('directory');
       expect(contents.writable).to.be(false);
     });
-
-    it('should fail for an incorrect model', async () => {
-      let id = UUID.uuid4();
-      let contents = {
-        ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name + String(id),
-        path: DEFAULT_TEXT_FILE.path + String(id)
-      };
-      delete contents.format;
-      await drive
-        .save(contents.path, contents)
-        .catch(err => {
-          /* */
-        })
-        .then(() => {
-          let getter = drive.get(contents.path);
-          return expectFailure(getter);
-        });
-      await drive.delete(contents.path);
-    });
   });
 
   describe('#save()', () => {
@@ -154,19 +134,6 @@ describe('GoogleDrive', () => {
       drive.fileChanged.disconnect(onFileChanged);
       await drive.delete(model.path);
       expect(called).to.be(true);
-    });
-
-    it('should fail for an incorrect model', async () => {
-      let id = UUID.uuid4();
-      let contents = {
-        ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name + String(id),
-        path: DEFAULT_TEXT_FILE.path + String(id)
-      };
-      delete contents.format;
-      let save = drive.save(contents.path, contents);
-      await expectFailure(save);
-      await drive.delete(contents.path);
     });
   });
 
@@ -354,28 +321,6 @@ describe('GoogleDrive', () => {
       await drive.delete(model.path);
       expect(called).to.be(true);
     });
-
-    it('should fail for an incorrect model', async () => {
-      let id1 = UUID.uuid4();
-      let id2 = UUID.uuid4();
-      let path2 = DEFAULT_TEXT_FILE.path + id2;
-      let contents = {
-        ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name + id1,
-        path: DEFAULT_TEXT_FILE.path + id1
-      };
-      delete contents.format;
-      await drive
-        .save(contents.path, contents)
-        .catch(err => {
-          /* */
-        })
-        .then(() => {
-          let renamer = drive.rename(contents.path, path2);
-          return expectFailure(renamer);
-        });
-      await drive.delete(path2);
-    });
   });
 
   describe('#copy()', () => {
@@ -421,29 +366,6 @@ describe('GoogleDrive', () => {
       let second = drive.delete(model.path);
       await Promise.all([first, second]);
       expect(called).to.be(true);
-    });
-
-    it('should fail for an incorrect model', async () => {
-      let id = UUID.uuid4();
-      let contents = {
-        ...DEFAULT_TEXT_FILE,
-        name: DEFAULT_TEXT_FILE.name + id,
-        path: DEFAULT_TEXT_FILE.path + id
-      };
-      delete contents.format;
-      let path2 = DEFAULT_TEXT_FILE.path + id + '-Copy';
-      await drive
-        .save(contents.path, contents)
-        .catch(() => {
-          /* */
-        })
-        .then(() => {
-          let copier = drive.copy(contents.path, DEFAULT_DIRECTORY.path);
-          return expectFailure(copier);
-        });
-      let first = drive.delete(contents.path);
-      let second = drive.delete(path2);
-      await Promise.all([first, second]);
     });
   });
 
