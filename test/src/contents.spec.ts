@@ -43,17 +43,14 @@ describe('GoogleDrive', () => {
   let registry: DocumentRegistry;
   let drive: GoogleDrive;
 
-  before(done => {
-    registry = new DocumentRegistry();
-    loadGapi().then(() => {
-      authorizeGapiTesting()
-        .then(() => {
-          done();
-        })
-        .catch(err => {
-          console.error(err);
-        });
-    });
+  before(async () => {
+    try {
+      registry = new DocumentRegistry();
+      await loadGapi();
+      await authorizeGapiTesting();
+    } catch (err) {
+      console.error(err);
+    }
   });
 
   beforeEach(() => {
@@ -79,37 +76,31 @@ describe('GoogleDrive', () => {
   });
 
   describe('#get()', () => {
-    it('should get the contents of the pseudo-root', done => {
-      drive.get('').then(contents => {
-        expect(contents.name).to.be('');
-        expect(contents.format).to.be('json');
-        expect(contents.type).to.be('directory');
-        expect(contents.writable).to.be(false);
-        done();
-      });
+    it('should get the contents of the pseudo-root', async () => {
+      const contents = await drive.get('');
+      expect(contents.name).to.be('');
+      expect(contents.format).to.be('json');
+      expect(contents.type).to.be('directory');
+      expect(contents.writable).to.be(false);
     });
 
-    it('should get the contents of `My Drive`', done => {
-      drive.get('My Drive').then(contents => {
-        expect(contents.name).to.be('My Drive');
-        expect(contents.format).to.be('json');
-        expect(contents.type).to.be('directory');
-        expect(contents.writable).to.be(true);
-        done();
-      });
+    it('should get the contents of `My Drive`', async () => {
+      const contents = await drive.get('My Drive');
+      expect(contents.name).to.be('My Drive');
+      expect(contents.format).to.be('json');
+      expect(contents.type).to.be('directory');
+      expect(contents.writable).to.be(true);
     });
 
-    it('should get the contents of `Shared with me`', done => {
-      drive.get('Shared with me').then(contents => {
-        expect(contents.name).to.be('Shared with me');
-        expect(contents.format).to.be('json');
-        expect(contents.type).to.be('directory');
-        expect(contents.writable).to.be(false);
-        done();
-      });
+    it('should get the contents of `Shared with me`', async () => {
+      const contents = await drive.get('Shared with me');
+      expect(contents.name).to.be('Shared with me');
+      expect(contents.format).to.be('json');
+      expect(contents.type).to.be('directory');
+      expect(contents.writable).to.be(false);
     });
 
-    it('should fail for an incorrect model', done => {
+    it('should fail for an incorrect model', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -117,38 +108,34 @@ describe('GoogleDrive', () => {
         path: DEFAULT_TEXT_FILE.path + String(id)
       };
       delete contents.format;
-      const finish = () => {
-        drive.delete(contents.path).then(done);
-      };
-      drive
+      await drive
         .save(contents.path, contents)
         .catch(err => {
           /* */
         })
         .then(() => {
           let getter = drive.get(contents.path);
-
-          expectFailure(getter, finish);
+          return expectFailure(getter);
         });
+      await drive.delete(contents.path);
     });
   });
 
   describe('#save()', () => {
-    it('should save a file', done => {
+    it('should save a file', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
         path: DEFAULT_TEXT_FILE.path + String(id)
       };
-      drive.save(contents.path, contents).then(model => {
-        expect(model.name).to.be(contents.name);
-        expect(model.content).to.be(contents.content);
-        drive.delete(model.path).then(done);
-      });
+      const model = await drive.save(contents.path, contents);
+      expect(model.name).to.be(contents.name);
+      expect(model.content).to.be(contents.content);
+      await drive.delete(model.path);
     });
 
-    it('should emit the fileChanged signal', done => {
+    it('should emit the fileChanged signal', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -163,19 +150,13 @@ describe('GoogleDrive', () => {
         called = true;
       };
       drive.fileChanged.connect(onFileChanged);
-      drive
-        .save(contents.path, contents)
-        .then(model => {
-          drive.fileChanged.disconnect(onFileChanged);
-          return drive.delete(model.path);
-        })
-        .then(() => {
-          expect(called).to.be(true);
-          done();
-        });
+      const model = await drive.save(contents.path, contents);
+      drive.fileChanged.disconnect(onFileChanged);
+      await drive.delete(model.path);
+      expect(called).to.be(true);
     });
 
-    it('should fail for an incorrect model', done => {
+    it('should fail for an incorrect model', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -183,16 +164,14 @@ describe('GoogleDrive', () => {
         path: DEFAULT_TEXT_FILE.path + String(id)
       };
       delete contents.format;
-      const finish = () => {
-        drive.delete(contents.path).then(done);
-      };
       let save = drive.save(contents.path, contents);
-      expectFailure(save, finish);
+      await expectFailure(save);
+      await drive.delete(contents.path);
     });
   });
 
   describe('#fileChanged', () => {
-    it('should be emitted when a file changes', done => {
+    it('should be emitted when a file changes', async () => {
       let called = false;
       const onFileChanged = (sender, args) => {
         expect(sender).to.be(drive);
@@ -202,19 +181,13 @@ describe('GoogleDrive', () => {
         called = true;
       };
       drive.fileChanged.connect(onFileChanged);
-      drive
-        .newUntitled({
-          path: DEFAULT_DIRECTORY.path,
-          type: 'file'
-        })
-        .then(model => {
-          drive.fileChanged.disconnect(onFileChanged);
-          return drive.delete(model.path);
-        })
-        .then(() => {
-          expect(called).to.be(true);
-          done();
-        });
+      const model = await drive.newUntitled({
+        path: DEFAULT_DIRECTORY.path,
+        type: 'file'
+      });
+      drive.fileChanged.disconnect(onFileChanged);
+      await drive.delete(model.path);
+      expect(called).to.be(true);
     });
   });
 
@@ -239,64 +212,56 @@ describe('GoogleDrive', () => {
   describe('#getDownloadUrl()', () => {
     let contents: Contents.IModel;
 
-    before(done => {
+    before(async () => {
       let id = UUID.uuid4();
       contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
         path: DEFAULT_TEXT_FILE.path + String(id)
       };
-      drive.save(contents.path, contents).then(() => {
-        done();
-      });
+      await drive.save(contents.path, contents);
     });
 
-    after(done => {
-      drive.delete(contents.path).then(done);
+    after(async () => {
+      await drive.delete(contents.path);
     });
 
-    it('should get the url of a file', done => {
-      drive.getDownloadUrl(contents.path).then(url => {
-        expect(url.length > 0).to.be(true);
-        done();
-      });
+    it('should get the url of a file', async () => {
+      const url = await drive.getDownloadUrl(contents.path);
+      expect(url.length > 0).to.be(true);
     });
 
-    it('should not handle relative paths', done => {
+    it('should not handle relative paths', async () => {
       let url = drive.getDownloadUrl('My Drive/../' + contents.path);
-      expectFailure(url, done);
+      await expectFailure(url);
     });
   });
 
   describe('#newUntitled()', () => {
-    it('should create a file', done => {
-      drive
-        .newUntitled({
-          path: DEFAULT_DIRECTORY.path,
-          type: 'file',
-          ext: 'test'
-        })
-        .then(model => {
-          expect(model.path).to.be(DEFAULT_DIRECTORY.path + '/' + model.name);
-          expect(model.name.indexOf('untitled') === -1).to.be(false);
-          expect(model.name.indexOf('test') === -1).to.be(false);
-          drive.delete(model.path).then(done);
-        });
+    it('should create a file', async () => {
+      const model = await drive.newUntitled({
+        path: DEFAULT_DIRECTORY.path,
+        type: 'file',
+        ext: 'test'
+      });
+      expect(model.path).to.be(DEFAULT_DIRECTORY.path + '/' + model.name);
+      expect(model.name.indexOf('untitled') === -1).to.be(false);
+      expect(model.name.indexOf('test') === -1).to.be(false);
+      await drive.delete(model.path);
     });
 
-    it('should create a directory', done => {
+    it('should create a directory', async () => {
       let options: Contents.ICreateOptions = {
         path: DEFAULT_DIRECTORY.path,
         type: 'directory'
       };
-      drive.newUntitled(options).then(model => {
-        expect(model.path).to.be(DEFAULT_DIRECTORY.path + '/' + model.name);
-        expect(model.name.indexOf('Untitled Folder') === -1).to.be(false);
-        drive.delete(model.path).then(done);
-      });
+      const model = await drive.newUntitled(options);
+      expect(model.path).to.be(DEFAULT_DIRECTORY.path + '/' + model.name);
+      expect(model.name.indexOf('Untitled Folder') === -1).to.be(false);
+      await drive.delete(model.path);
     });
 
-    it('should emit the fileChanged signal', done => {
+    it('should emit the fileChanged signal', async () => {
       let called = false;
       const onFileChanged = (sender, args) => {
         expect(args.type).to.be('new');
@@ -309,56 +274,47 @@ describe('GoogleDrive', () => {
         called = true;
       };
       drive.fileChanged.connect(onFileChanged);
-      drive
-        .newUntitled({
-          type: 'file',
-          ext: 'test',
-          path: DEFAULT_DIRECTORY.path
-        })
-        .then(model => {
-          drive.fileChanged.disconnect(onFileChanged);
-          return drive.delete(model.path);
-        })
-        .then(() => {
-          expect(called).to.be(true);
-          done();
-        });
+      const model = await drive.newUntitled({
+        type: 'file',
+        ext: 'test',
+        path: DEFAULT_DIRECTORY.path
+      });
+      drive.fileChanged.disconnect(onFileChanged);
+      await drive.delete(model.path);
+      expect(called).to.be(true);
     });
   });
 
   describe('#delete()', () => {
-    it('should delete a file', done => {
+    it('should delete a file', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
         path: DEFAULT_TEXT_FILE.path + String(id)
       };
-      drive.save(contents.path, contents).then(model => {
-        drive.delete(model.path).then(done);
-      });
+      const model = await drive.save(contents.path, contents);
+      await drive.delete(model.path);
     });
 
-    it('should emit the fileChanged signal', done => {
+    it('should emit the fileChanged signal', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + String(id),
         path: DEFAULT_TEXT_FILE.path + String(id)
       };
-      drive.save(contents.path, contents).then(model => {
-        drive.fileChanged.connect((sender, args) => {
-          expect(args.type).to.be('delete');
-          expect(args.oldValue.path).to.be(contents.path);
-          done();
-        });
-        drive.delete(contents.path).catch(done);
+      const model = await drive.save(contents.path, contents);
+      drive.fileChanged.connect((sender, args) => {
+        expect(args.type).to.be('delete');
+        expect(args.oldValue.path).to.be(contents.path);
       });
+      await drive.delete(contents.path);
     });
   });
 
   describe('#rename()', () => {
-    it('should rename a file', done => {
+    it('should rename a file', async () => {
       let id1 = UUID.uuid4();
       let id2 = UUID.uuid4();
       let path2 = DEFAULT_TEXT_FILE.path + id2;
@@ -367,17 +323,15 @@ describe('GoogleDrive', () => {
         name: DEFAULT_TEXT_FILE.name + id1,
         path: DEFAULT_TEXT_FILE.path + id1
       };
-      drive.save(contents.path, contents).then(() => {
-        drive.rename(contents.path, path2).then(model => {
-          expect(model.name).to.be(DEFAULT_TEXT_FILE.name + id2);
-          expect(model.path).to.be(path2);
-          expect(model.content).to.be(contents.content);
-          drive.delete(model.path).then(done);
-        });
-      });
+      await drive.save(contents.path, contents);
+      const model = await drive.rename(contents.path, path2);
+      expect(model.name).to.be(DEFAULT_TEXT_FILE.name + id2);
+      expect(model.path).to.be(path2);
+      expect(model.content).to.be(contents.content);
+      await drive.delete(model.path);
     });
 
-    it('should emit the fileChanged signal', done => {
+    it('should emit the fileChanged signal', async () => {
       let id1 = UUID.uuid4();
       let id2 = UUID.uuid4();
       let path2 = DEFAULT_TEXT_FILE.path + id2;
@@ -393,23 +347,15 @@ describe('GoogleDrive', () => {
         expect(args.newValue.path).to.be(path2);
         called = true;
       };
-      drive
-        .save(contents.path, contents)
-        .then(() => {
-          drive.fileChanged.connect(onFileChanged);
-          return drive.rename(contents.path, path2);
-        })
-        .then(model => {
-          drive.fileChanged.disconnect(onFileChanged);
-          return drive.delete(model.path);
-        })
-        .then(() => {
-          expect(called).to.be(true);
-          done();
-        });
+      await drive.save(contents.path, contents);
+      drive.fileChanged.connect(onFileChanged);
+      const model = await drive.rename(contents.path, path2);
+      drive.fileChanged.disconnect(onFileChanged);
+      await drive.delete(model.path);
+      expect(called).to.be(true);
     });
 
-    it('should fail for an incorrect model', done => {
+    it('should fail for an incorrect model', async () => {
       let id1 = UUID.uuid4();
       let id2 = UUID.uuid4();
       let path2 = DEFAULT_TEXT_FILE.path + id2;
@@ -419,46 +365,39 @@ describe('GoogleDrive', () => {
         path: DEFAULT_TEXT_FILE.path + id1
       };
       delete contents.format;
-      const finish = () => {
-        drive.delete(path2).then(done);
-      };
-      drive
+      await drive
         .save(contents.path, contents)
         .catch(err => {
           /* */
         })
         .then(() => {
           let renamer = drive.rename(contents.path, path2);
-
-          expectFailure(renamer, finish);
+          return expectFailure(renamer);
         });
+      await drive.delete(path2);
     });
   });
 
   describe('#copy()', () => {
-    it('should copy a file', done => {
+    it('should copy a file', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
         path: DEFAULT_TEXT_FILE.path + id
       };
-      drive.save(contents.path, contents).then(() => {
-        drive.copy(contents.path, DEFAULT_DIRECTORY.path).then(model => {
-          expect(model.name.indexOf(contents.name) === -1).to.be(false);
-          expect(model.name.indexOf('Copy') === -1).to.be(false);
-          expect(model.content).to.be(contents.content);
+      await drive.save(contents.path, contents);
+      const model = await drive.copy(contents.path, DEFAULT_DIRECTORY.path);
+      expect(model.name.indexOf(contents.name) === -1).to.be(false);
+      expect(model.name.indexOf('Copy') === -1).to.be(false);
+      expect(model.content).to.be(contents.content);
 
-          let first = drive.delete(contents.path);
-          let second = drive.delete(model.path);
-          Promise.all([first, second]).then(() => {
-            done();
-          });
-        });
-      });
+      let first = drive.delete(contents.path);
+      let second = drive.delete(model.path);
+      await Promise.all([first, second]);
     });
 
-    it('should emit the fileChanged signal', done => {
+    it('should emit the fileChanged signal', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -474,25 +413,17 @@ describe('GoogleDrive', () => {
         expect(args.newValue.name.indexOf('Copy') === -1).to.be(false);
         called = true;
       };
-      drive
-        .save(contents.path, contents)
-        .then(() => {
-          drive.fileChanged.connect(onFileChanged);
-          return drive.copy(contents.path, DEFAULT_DIRECTORY.path);
-        })
-        .then(model => {
-          drive.fileChanged.disconnect(onFileChanged);
-          let first = drive.delete(contents.path);
-          let second = drive.delete(model.path);
-          return Promise.all([first, second]);
-        })
-        .then(() => {
-          expect(called).to.be(true);
-          done();
-        });
+      await drive.save(contents.path, contents);
+      drive.fileChanged.connect(onFileChanged);
+      const model = await drive.copy(contents.path, DEFAULT_DIRECTORY.path);
+      drive.fileChanged.disconnect(onFileChanged);
+      let first = drive.delete(contents.path);
+      let second = drive.delete(model.path);
+      await Promise.all([first, second]);
+      expect(called).to.be(true);
     });
 
-    it('should fail for an incorrect model', done => {
+    it('should fail for an incorrect model', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -501,66 +432,55 @@ describe('GoogleDrive', () => {
       };
       delete contents.format;
       let path2 = DEFAULT_TEXT_FILE.path + id + '-Copy';
-      drive
+      await drive
         .save(contents.path, contents)
         .catch(() => {
           /* */
         })
         .then(() => {
           let copier = drive.copy(contents.path, DEFAULT_DIRECTORY.path);
-          const finish = () => {
-            let first = drive.delete(contents.path);
-            let second = drive.delete(path2);
-            Promise.all([first, second]).then(() => {
-              done();
-            });
-          };
-          expectFailure(copier, finish);
+          return expectFailure(copier);
         });
+      let first = drive.delete(contents.path);
+      let second = drive.delete(path2);
+      await Promise.all([first, second]);
     });
   });
 
   describe('#createCheckpoint()', () => {
-    it('should create a checkpoint', done => {
+    it('should create a checkpoint', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
         path: DEFAULT_TEXT_FILE.path + id
       };
-      drive.save(contents.path, contents).then(() => {
-        drive.createCheckpoint(contents.path).then(cp => {
-          expect(cp.last_modified.length > 0).to.be(true);
-          expect(cp.id.length > 0).to.be(true);
-          drive.delete(contents.path).then(done);
-        });
-      });
+      await drive.save(contents.path, contents);
+      const cp = await drive.createCheckpoint(contents.path);
+      expect(cp.last_modified.length > 0).to.be(true);
+      expect(cp.id.length > 0).to.be(true);
+      await drive.delete(contents.path);
     });
   });
 
   describe('#listCheckpoints()', () => {
-    it('should list the checkpoints', done => {
+    it('should list the checkpoints', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
         path: DEFAULT_TEXT_FILE.path + id
       };
-      let cp: Contents.ICheckpointModel;
-      drive.save(contents.path, contents).then(() => {
-        drive.createCheckpoint(contents.path).then(checkpoint => {
-          cp = checkpoint;
-          drive.listCheckpoints(contents.path).then(cps => {
-            expect(cps.filter(c => c.id === cp.id).length === 0).to.be(false);
-            drive.delete(contents.path).then(done);
-          });
-        });
-      });
+      await drive.save(contents.path, contents);
+      const cp = await drive.createCheckpoint(contents.path);
+      const cps = await drive.listCheckpoints(contents.path);
+      expect(cps.filter(c => c.id === cp.id).length === 0).to.be(false);
+      await drive.delete(contents.path);
     });
   });
 
   describe('#restoreCheckpoint()', () => {
-    it('should restore a checkpoint', done => {
+    it('should restore a checkpoint', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -571,60 +491,31 @@ describe('GoogleDrive', () => {
         ...contents,
         content: 'This is some new text'
       };
-      let cp: Contents.ICheckpointModel;
 
-      drive
-        .save(contents.path, contents)
-        .then(() => {
-          return drive.createCheckpoint(contents.path);
-        })
-        .then(checkpoint => {
-          cp = checkpoint;
-          return drive.save(contents.path, newContents);
-        })
-        .then(model => {
-          expect(model.content).to.be(newContents.content);
-          return drive.restoreCheckpoint(contents.path, cp.id);
-        })
-        .then(() => {
-          done();
-          return drive.get(contents.path);
-        })
-        .then(oldModel => {
-          expect(oldModel.content).to.be(contents.content);
-          return drive.delete(contents.path);
-        })
-        .then(done);
+      await drive.save(contents.path, contents);
+      const cp = await drive.createCheckpoint(contents.path);
+      const model = await drive.save(contents.path, newContents);
+      expect(model.content).to.be(newContents.content);
+      await drive.restoreCheckpoint(contents.path, cp.id);
+      const oldModel = await drive.get(contents.path);
+      expect(oldModel.content).to.be(contents.content);
+      await drive.delete(contents.path);
     });
   });
 
   describe('#deleteCheckpoint()', () => {
-    it('should delete a checkpoint', done => {
+    it('should delete a checkpoint', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
         name: DEFAULT_TEXT_FILE.name + id,
         path: DEFAULT_TEXT_FILE.path + id
       };
-      let cp: Contents.ICheckpointModel;
-
-      drive
-        .save(contents.path, contents)
-        .then(() => {
-          return drive.createCheckpoint(contents.path);
-        })
-        .then(checkpoint => {
-          cp = checkpoint;
-          return drive.deleteCheckpoint(contents.path, cp.id);
-        })
-        .then(() => {
-          return drive.listCheckpoints(contents.path);
-        })
-        .then(cps => {
-          expect(cps.filter(c => c.id === cp.id).length === 0).to.be(true);
-          return drive.delete(contents.path);
-        })
-        .then(done);
+      await drive.save(contents.path, contents);
+      const cp = await drive.createCheckpoint(contents.path);
+      await drive.deleteCheckpoint(contents.path, cp.id);
+      const cps = await drive.listCheckpoints(contents.path);
+      expect(cps.filter(c => c.id === cp.id).length === 0).to.be(true);
     });
   });
 });

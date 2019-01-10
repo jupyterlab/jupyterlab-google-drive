@@ -74,21 +74,18 @@ export function authorizeGapiTesting(): Promise<void> {
  */
 export function expectFailure(
   promise: Promise<any>,
-  done: () => void,
   message?: string
 ): Promise<any> {
-  return promise
-    .then(
-      (msg: any) => {
-        throw Error('Expected failure did not occur');
-      },
-      (error: Error) => {
-        if (message && error.message.indexOf(message) === -1) {
-          throw Error(`Error "${message}" not in: "${error.message}"`);
-        }
+  return promise.then(
+    (msg: any) => {
+      throw Error('Expected failure did not occur');
+    },
+    (error: Error) => {
+      if (message && error.message.indexOf(message) === -1) {
+        throw Error(`Error "${message}" not in: "${error.message}"`);
       }
-    )
-    .then(done, done);
+    }
+  );
 }
 
 /**
