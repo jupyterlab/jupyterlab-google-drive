@@ -13,7 +13,7 @@ module.exports = {
     loaders: [
       { test: /\.css$/, loader: 'style-loader!css-loader' },
       { test: /\.md$/, loader: 'raw-loader' },
-      { test: /\.(jpg|png|gif)$/, use: 'file-loader' },
+      { test: /\.(jpg|png|gif|eot|woff|ttf)$/, use: 'file-loader' },
       { test: /\.html$/, loader: 'file-loader?name=[name].[ext]' },
       { test: /\.ipynb$/, loader: 'json-loader' },
       { test: /\.json$/, loader: 'json-loader' },
