@@ -14,7 +14,7 @@ If you run into troubles, see if the [troubleshooting guide](docs/troubleshootin
 
 ## Prerequisites
 
-- JupyterLab 0.35
+- JupyterLab 1.0
 - A Google Drive account
 
 ## Setting up credentials with Google

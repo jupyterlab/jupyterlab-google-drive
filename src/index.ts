@@ -9,8 +9,8 @@ import { map, toArray } from '@phosphor/algorithm';
 
 import {
   ILayoutRestorer,
-  JupyterLab,
-  JupyterLabPlugin
+  JupyterFrontEnd,
+  JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
 import { showDialog, Dialog, ICommandPalette } from '@jupyterlab/apputils';
@@ -43,7 +43,7 @@ namespace CommandIDs {
 /**
  * The JupyterLab plugin for the Google Drive Filebrowser.
  */
-const fileBrowserPlugin: JupyterLabPlugin<void> = {
+const fileBrowserPlugin: JupyterFrontEndPlugin<void> = {
   id: '@jupyterlab/google-drive:drive',
   requires: [
     ICommandPalette,
@@ -61,7 +61,7 @@ const fileBrowserPlugin: JupyterLabPlugin<void> = {
  * Activate the file browser.
  */
 function activateFileBrowser(
-  app: JupyterLab,
+  app: JupyterFrontEnd,
   palette: ICommandPalette,
   manager: IDocumentManager,
   factory: IFileBrowserFactory,
@@ -114,7 +114,7 @@ function activateFileBrowser(
 
   // Add the file browser widget to the application restorer.
   restorer.add(browser, NAMESPACE);
-  app.shell.addToLeftArea(browser, { rank: 101 });
+  app.shell.add(browser, 'left', { rank: 101 });
 
   // Share files with another Google Drive user.
   const shareFiles = async (paths: string[]): Promise<void> => {
@@ -232,7 +232,7 @@ function activateFileBrowser(
 /**
  * Export the plugins as default.
  */
-const plugins: JupyterLabPlugin<any>[] = [fileBrowserPlugin];
+const plugins: JupyterFrontEndPlugin<any>[] = [fileBrowserPlugin];
 export default plugins;
 
 /**

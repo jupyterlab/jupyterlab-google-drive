@@ -66,7 +66,6 @@ export class GoogleDriveFileBrowser extends Widget {
 
     // Keep references to the createFileBrowser arguments for
     // when we need to construct it.
-    this._commands = commands;
     this._factory = factory;
     this._driveName = driveName;
 
@@ -100,7 +99,6 @@ export class GoogleDriveFileBrowser extends Widget {
   private _createBrowser(): void {
     // Create the file browser
     this._browser = this._factory.createFileBrowser(NAMESPACE, {
-      commands: this._commands,
       driveName: this._driveName
     });
 
@@ -152,7 +150,6 @@ export class GoogleDriveFileBrowser extends Widget {
   private _browser: FileBrowser;
   private _loginScreen: GoogleDriveLogin;
   private _logoutButton: ToolbarButton;
-  private _commands: CommandRegistry;
   private _factory: IFileBrowserFactory;
   private _driveName: string;
   private _hasOpenDocuments: () => boolean;
