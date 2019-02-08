@@ -19,6 +19,8 @@ import {
   makeError
 } from './gapi';
 
+import * as base64js from 'base64-js';
+
 /**
  * Fields to request for File resources.
  */
@@ -369,10 +371,10 @@ export async function contentsModelFromFileResource(
     if (includeContents) {
       const result: any = await downloadResource(resource);
       let content = result;
-      if (contents.format === 'base64') {
-        content = btoa(result);
-      } else if (resource.mimeType === 'application/json') {
-        content = JSON.stringify(result, null, 2);
+      if (contents.format === 'json') {
+        content = JSON.parse(result);
+      } else if (contents.format === 'base64') {
+        content = Private.b64EncodeUTF8(result);
       }
       return { ...contents, content };
     } else {
@@ -1369,14 +1371,18 @@ async function downloadResource(
   picked: boolean = false
 ): Promise<any> {
   await gapiInitialized.promise;
-  const createRequest = () => {
-    return gapi.client.drive.files.get({
-      fileId: resource.id!,
-      alt: 'media',
-      supportsTeamDrives: !!resource.teamDriveId
-    });
-  };
-  return driveApiRequest<any>(createRequest);
+  const token = gapi.auth.getToken().access_token;
+  const url = `https://www.googleapis.com/drive/v3/files/${
+    resource.id
+  }?alt=media`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  const data = await response.text();
+  return data;
 }
 
 namespace Private {
@@ -1431,5 +1437,16 @@ namespace Private {
         Private.resourceCache.set(filePath, resource);
       }
     }
+  }
+
+  const encoder = new TextEncoder();
+  /**
+   * Encode a utf-8 string into base-64.
+   *
+   * See https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#Solution_3_%E2%80%93_rewrite_the_DOMs_atob()_and_btoa()_using_JavaScript's_TypedArrays_and_UTF-8
+   */
+  export function b64EncodeUTF8(str: string) {
+    const bytes = encoder.encode(str);
+    return base64js.fromByteArray(bytes);
   }
 }
