@@ -369,13 +369,12 @@ export async function contentsModelFromFileResource(
     };
     // Download the contents from the server if necessary.
     if (includeContents) {
-      const result: any = await downloadResource(resource);
+      const result: any = await downloadResource(
+        resource,
+        false,
+        contents.format
+      );
       let content = result;
-      if (contents.format === 'json') {
-        content = JSON.parse(result);
-      } else if (contents.format === 'base64') {
-        content = Private.b64EncodeUTF8(result);
-      }
       return { ...contents, content };
     } else {
       return contents;
@@ -1368,21 +1367,36 @@ export async function getResourceForPath(path: string): Promise<FileResource> {
  */
 async function downloadResource(
   resource: FileResource,
-  picked: boolean = false
+  picked: boolean = false,
+  format: Contents.FileFormat
 ): Promise<any> {
   await gapiInitialized.promise;
-  const token = gapi.auth.getToken().access_token;
-  const url = `https://www.googleapis.com/drive/v3/files/${
-    resource.id
-  }?alt=media`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  const data = await response.text();
-  return data;
+
+  if (format !== 'base64') {
+    const token = gapi.auth.getToken().access_token;
+    const url = `https://www.googleapis.com/drive/v3/files/${
+      resource.id
+    }?alt=media&supportsTeamDrives=${!!resource.teamDriveId}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const data = await response.text();
+    return format === 'text' ? data : JSON.parse(data);
+  } else {
+    const createRequest = () => {
+      return gapi.client.drive.files.get({
+        fileId: resource.id!,
+        alt: 'media',
+        supportsTeamDrives: !!resource.teamDriveId
+      });
+    };
+    return driveApiRequest<any>(createRequest).then(result => {
+      return btoa(result);
+    });
+  }
 }
 
 namespace Private {
