@@ -491,7 +491,7 @@ describe('GoogleDrive', () => {
   });
 
   describe('#restoreCheckpoint()', () => {
-    it('should restore a checkpoint', async () => {
+    it('should restore a text file from a checkpoint', async () => {
       let id = UUID.uuid4();
       let contents = {
         ...DEFAULT_TEXT_FILE,
@@ -510,6 +510,28 @@ describe('GoogleDrive', () => {
       await drive.restoreCheckpoint(contents.path, cp.id);
       const oldModel = await drive.get(contents.path);
       expect(oldModel.content).to.be(contents.content);
+      await drive.delete(contents.path);
+    });
+
+    it('should restore a notebook from a checkpoint', async () => {
+      let id = UUID.uuid4();
+      let contents = {
+        ...DEFAULT_NOTEBOOK,
+        name: DEFAULT_NOTEBOOK.name + id,
+        path: DEFAULT_NOTEBOOK.path + id
+      };
+      let newContents = {
+        ...contents,
+        content: 'This is some new text'
+      };
+
+      await drive.save(contents.path, contents);
+      const cp = await drive.createCheckpoint(contents.path);
+      const model = await drive.save(contents.path, newContents);
+      expect(model.content).to.be(newContents.content);
+      await drive.restoreCheckpoint(contents.path, cp.id);
+      const oldModel = await drive.get(contents.path);
+      expect(JSONExt.deepEqual(oldModel.content, contents.content)).to.be(true);
       await drive.delete(contents.path);
     });
   });
