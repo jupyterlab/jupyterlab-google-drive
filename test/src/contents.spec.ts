@@ -9,7 +9,7 @@ import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 import { Contents } from '@jupyterlab/services';
 
-import { UUID } from '@phosphor/coreutils';
+import { JSONExt, UUID } from '@phosphor/coreutils';
 
 import { GoogleDrive } from '../../lib/contents';
 
@@ -35,8 +35,56 @@ const DEFAULT_TEXT_FILE: Contents.IModel = {
   last_modified: 'today',
   writable: false,
   mimetype: '',
-  content: 'This is a text file',
+  content: 'This is a text file with unicode: 클래스의 정의한 함수',
   format: 'text'
+};
+
+const DEFAULT_NOTEBOOK: Contents.IModel = {
+  name: 'jupyterlab_test_notebook_',
+  path: 'My Drive/jupyterlab_test_directory/jupyterlab_test_notebook_',
+  type: 'notebook',
+  created: 'yesterday',
+  last_modified: 'today',
+  writable: false,
+  mimetype: '',
+  content: {
+    cells: [
+      {
+        cell_type: 'markdown',
+        metadata: {},
+        source: ['Here is some content. 클래스의 정의한 함수']
+      },
+      {
+        cell_type: 'code',
+        execution_count: 1,
+        metadata: {},
+        outputs: [
+          {
+            name: 'stdout',
+            output_type: 'stream',
+            text: ['3\n']
+          }
+        ],
+        source: ['print(1+2)']
+      }
+    ],
+    metadata: {
+      kernelspec: {
+        display_name: 'Python 3',
+        language: 'python',
+        name: 'python3'
+      },
+      language_info: {
+        codemirror_mode: {
+          name: 'ipython',
+          version: 3
+        }
+      }
+    },
+    nbformat: 4,
+    nbformat_minor: 2
+  },
+  format: 'json'
 };
 
 describe('GoogleDrive', () => {
@@ -112,6 +160,47 @@ describe('GoogleDrive', () => {
       const model = await drive.save(contents.path, contents);
       expect(model.name).to.be(contents.name);
       expect(model.content).to.be(contents.content);
+      await drive.delete(model.path);
+    });
+
+    it('should be able to get an identical file back', async () => {
+      let id = UUID.uuid4();
+      let contents = {
+        ...DEFAULT_TEXT_FILE,
+        name: DEFAULT_TEXT_FILE.name + String(id),
+        path: DEFAULT_TEXT_FILE.path + String(id)
+      };
+      await drive.save(contents.path, contents);
+      const model = await drive.get(contents.path);
+      expect(model.name).to.be(contents.name);
+      expect(model.content).to.be(contents.content);
+      await drive.delete(model.path);
+    });
+
+    it('should save a notebook', async () => {
+      let id = UUID.uuid4();
+      let contents = {
+        ...DEFAULT_NOTEBOOK,
+        name: DEFAULT_NOTEBOOK.name + String(id),
+        path: DEFAULT_NOTEBOOK.path + String(id)
+      };
+      const model = await drive.save(contents.path, contents);
+      expect(model.name).to.be(contents.name);
+      expect(JSONExt.deepEqual(model.content, contents.content)).to.be(true);
+      await drive.delete(model.path);
+    });
+
+    it('should be able to get an identical notebook back', async () => {
+      let id = UUID.uuid4();
+      let contents = {
+        ...DEFAULT_NOTEBOOK,
+        name: DEFAULT_NOTEBOOK.name + String(id),
+        path: DEFAULT_NOTEBOOK.path + String(id)
+      };
+      await drive.save(contents.path, contents);
+      const model = await drive.get(contents.path);
+      expect(model.name).to.be(contents.name);
+      expect(JSONExt.deepEqual(model.content, contents.content)).to.be(true);
       await drive.delete(model.path);
     });
 
