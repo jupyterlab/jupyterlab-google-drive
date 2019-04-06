@@ -1015,22 +1015,11 @@ export async function revertToRevision(
 ): Promise<void> {
   // Get the correct file resource.
   const revisionResource = await getResourceForPath(path);
-  // Construct the request for a specific revision to the file.
-  const createRequest = () => {
-    return gapi.client.drive.revisions.get({
-      fileId: revisionResource.id!,
-      revisionId: revisionId,
-      alt: 'media'
-    });
-  };
-  // Make the request.
-  const result = await driveApiRequest<any>(createRequest);
-  let content: any = result;
-  if (fileType.fileFormat === 'base64') {
-    content = btoa(result);
-  } else if (revisionResource.mimeType === 'application/json') {
-    content = JSON.stringify(result, null, 2);
-  }
+  const content = await downloadRevision(
+    revisionResource,
+    revisionId,
+    fileType.fileFormat
+  );
   const contents: Contents.IModel = {
     name: revisionResource.name!,
     path: path,
@@ -1363,6 +1352,8 @@ export async function getResourceForPath(path: string): Promise<FileResource> {
  *
  * @param resource - the files resource metadata object.
  *
+ * @param format - the format of the file ('json', 'text', or 'base64')
+ *
  * @returns a promise fulfilled with the contents of the file.
  */
 async function downloadResource(
@@ -1391,6 +1382,51 @@ async function downloadResource(
         fileId: resource.id!,
         alt: 'media',
         supportsTeamDrives: !!resource.teamDriveId
+      });
+    };
+    return driveApiRequest<any>(createRequest).then(result => {
+      return btoa(result);
+    });
+  }
+}
+
+/**
+ * Download a revision of a file from Google Drive.
+ *
+ * @param resource - the files resource metadata object.
+ *
+ * @param revisionId - the id of the revision to download.
+ *
+ * @param format - the format of the file ('json', 'text', or 'base64')
+ *
+ * @returns a promise fulfilled with the contents of the file.
+ */
+async function downloadRevision(
+  resource: FileResource,
+  revisionId: string,
+  format: Contents.FileFormat
+): Promise<any> {
+  await gapiInitialized.promise;
+
+  if (format !== 'base64') {
+    const token = gapi.auth.getToken().access_token;
+    const url = `https://www.googleapis.com/drive/v3/files/${
+      resource.id
+    }/revisions/${revisionId}?alt=media`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const data = await response.text();
+    return format === 'text' ? data : JSON.parse(data);
+  } else {
+    const createRequest = () => {
+      return gapi.client.drive.revisions.get({
+        fileId: resource.id!,
+        revisionId: revisionId,
+        alt: 'media'
       });
     };
     return driveApiRequest<any>(createRequest).then(result => {
