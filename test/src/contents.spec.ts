@@ -201,7 +201,6 @@ describe('GoogleDrive', () => {
       };
       await drive.save(contents.path, contents);
       const model = await drive.get(contents.path);
-      console.warn(typeof model.content, typeof contents.content);
       expect(model.name).to.be(contents.name);
       expect(JSONExt.deepEqual(model.content, contents.content)).to.be(true);
       await drive.delete(model.path);
@@ -535,7 +534,6 @@ describe('GoogleDrive', () => {
       expect(model.content).to.be(newContents.content);
       await drive.restoreCheckpoint(contents.path, cp.id);
       const oldModel = await drive.get(contents.path);
-      console.warn(typeof oldModel.content, typeof contents.content);
       expect(JSONExt.deepEqual(oldModel.content, contents.content)).to.be(true);
       await drive.delete(contents.path);
     });
