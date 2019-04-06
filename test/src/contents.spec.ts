@@ -179,10 +179,11 @@ describe('GoogleDrive', () => {
 
     it('should save a notebook', async () => {
       let id = UUID.uuid4();
+      // Note, include .ipynb to interpret the result as a notebook.
       let contents = {
         ...DEFAULT_NOTEBOOK,
-        name: DEFAULT_NOTEBOOK.name + String(id),
-        path: DEFAULT_NOTEBOOK.path + String(id)
+        name: DEFAULT_NOTEBOOK.name + String(id) + '.ipynb',
+        path: DEFAULT_NOTEBOOK.path + String(id) + '.ipynb'
       };
       const model = await drive.save(contents.path, contents);
       expect(model.name).to.be(contents.name);
@@ -192,10 +193,11 @@ describe('GoogleDrive', () => {
 
     it('should be able to get an identical notebook back', async () => {
       let id = UUID.uuid4();
+      // Note, include .ipynb to interpret the result as a notebook.
       let contents = {
         ...DEFAULT_NOTEBOOK,
-        name: DEFAULT_NOTEBOOK.name + String(id),
-        path: DEFAULT_NOTEBOOK.path + String(id)
+        name: DEFAULT_NOTEBOOK.name + String(id) + '.ipynb',
+        path: DEFAULT_NOTEBOOK.path + String(id) + '.ipynb'
       };
       await drive.save(contents.path, contents);
       const model = await drive.get(contents.path);
@@ -516,10 +518,11 @@ describe('GoogleDrive', () => {
 
     it('should restore a notebook from a checkpoint', async () => {
       let id = UUID.uuid4();
+      // Note, include .ipynb to interpret the result as a notebook.
       let contents = {
         ...DEFAULT_NOTEBOOK,
-        name: DEFAULT_NOTEBOOK.name + id,
-        path: DEFAULT_NOTEBOOK.path + id
+        name: DEFAULT_NOTEBOOK.name + String(id) + '.ipynb',
+        path: DEFAULT_NOTEBOOK.path + String(id) + '.ipynb'
       };
       let newContents = {
         ...contents,
