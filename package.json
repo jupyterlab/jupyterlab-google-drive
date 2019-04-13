@@ -1,6 +1,6 @@
 {
   "name": "@jupyterlab/google-drive",
-  "version": "1.0.0-pre",
+  "version": "1.0.0-pre.1",
   "description": "Cloud storage with JupyterLab through Google Drive",
   "keywords": [
     "google drive",
