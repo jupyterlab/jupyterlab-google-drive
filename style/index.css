@@ -48,10 +48,10 @@
 /**
  * Choose the google drive icon depending on the theme.
  */
-[data-theme-light='true'] .jp-GoogleDrive-icon {
+[data-jp-theme-light='true'] .jp-GoogleDrive-icon {
   background-image: url(drive_light.png);
 }
-[data-theme-light='false'] .jp-GoogleDrive-icon {
+[data-jp-theme-light='false'] .jp-GoogleDrive-icon {
   background-image: url(drive_dark.png);
 }
 
