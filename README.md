@@ -86,7 +86,7 @@ page and see your changes.
 - Click on Google Drive tab (on left side) in JupyterLab interface and login to
   your Google Drive account.
 
-- Have someone share a notebook or markdown file with you.
+- Have someone share a notebook or markdown file withyou.
 
 - You should now see the file in the **Shared with Me** folder in the file browser.
   Open it, and begin editing!
