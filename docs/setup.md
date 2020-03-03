@@ -2,8 +2,7 @@
 
 The JupyterLab Google Drive extension makes authenticated requests to Google's servers,
 and as such, must be configured to have the correct credentials.
-In particular, the application must be registered with Google at the
-[Google Developers Console](https://console.developers.google.com),
+In particular, the application must be registered with Google
 and the origin of the API requests must be pre-specified.
 By default, the `@jupyterlab/google-drive` package uses a registered web application
 that is configured to accept requests from `http://localhost`, ports `8888` through `8899`.
@@ -13,28 +12,66 @@ but if you are accessing the application from other origins
 or if you are using the extension extensively,
 you will likely want to set up your own credentials with Google.
 
-### Setup instructions
+### Google OAuth2 Setup instructions
 
-These instructions follow the ones outlined [here](https://developers.google.com/identity/sign-in/web/devconsole-project),
-which should be considered authoritative.
+1. Login to Google [Cloud Console](https://http://console.cloud.google.com)  
+2. Click on the Project drop-down  
+![header with selected project](images/1.open.projects.png)
+3. Click: New Project (if you already have a project created, skip to step 6)  
+![new project link](images/2.new.project.png)
+4. Fill in project details and click Create  
+![new project form](images/3.create.project.png)
+5. Click the Project drop-down to show the list  
+![header with project drop-down](images/4.open.projects.png)
+6. Click the project name from the list  
+![project listing](images/5.activate.project.png)
+7. Open the API Library  
+![navigation bar](images/6.apis.services.library.png)
+8. Activate the search  
+![search area](images/7.apis.library.search.png)
+9. Search for `drive` and click `Google Drive API`  
+![search results for drive](images/8.apis.library.search.drive.png)
+10. Click the `Enable` button  
+![google drive api details page](images/9.apis.library.drive.enable.png)
+11. Open the API Library  
+![navigation bar](images/6.apis.services.library.png)
+12. Activate the search  
+![search area](images/7.apis.library.search.png)
+13. Search for `realtime` and click `Realtime API`  
+![search results for realtime](images/12.apis.library.search.realtime.png)
+14. Click the `Enable` button  
+![realtime api details page](images/13.apis.library.realtime.enable.png)
+15.  Open the API Library  
+![navigation bar](images/6.apis.services.library.png)
+16. Activate the search  
+![search area](images/7.apis.library.search.png)
+17. Search for `picker` and click on `Google Picker API`  
+![search results for picker](images/16.apis.library.search.picker.png)
+18. Click the `Enable` button  
+![google picker api details page](images/17.apis.library.enable.picker.png)
+19. Navigate to the `OAuth consent screen`  
+![oauth consent screen navigation location](images/18.apis.services.oauth.consent.png)
+20. Set the `Application Name`  
+![application name section of the form](images/19.oauth.app.name.png)
+21. Click the `Add scope` button  
+![oauth scope section of form](images/20.auth.add.scopes.png)
+22. Search `drive`, select the `../auth/drive` scope and then click `Add`  
+![scope selection pop-up with scope selected](images/21.oauth.add.drive.scope.png)
+23. Confirm the scope has been added  
+![oauth form with new scope added](images/22.oauth.drive.scope.added.png)
+24. Provide Domain and Policy links and then click Save  
+![oauth form domain and policy section with xip.io for IP based pseudo-domain](images/23.oauth.domain.policy.png)
+25. Click `Create credentials`  
+![empty credentials list with create credentials button](images/24.create.credentials.png)
+26. Click `OAuth client ID`  
+![credentials type selection list](images/25.create.credentials.type.png)
+27. Select the Application type of `Web application`  
+![credentails application type](images/26.web.app.credentials.png)
+28. Define name and restriction domains / paths  
+![credential usage restrctions](images/27.web.app.restrictions.png)
+29. Capture your `Client ID` and `Secret` (you will need the Client ID to configure JupyterLab)  
+![oauth credential client id and secret](images/28.oauth.client.secret.png)
 
-1.  Go to the [API Console](https://console.developers.google.com/projectselector/apis/library),
-    and select `Create` to create a new project.
-    ![Starting point](images/start.png)
-2.  Choose a name for the project.
-    ![Choose a name](images/name.png)
-3.  In the **API Manager** sidebar, select **Credentials**, then select **OAuth client ID** from the **Create credentials** dropdown.
-    ![Create credentials](images/credentials.png)
-4.  Click the **Configure consent screen** button and fill out the form. This configures the Google OAuth popup that will ask users for consent to use their account.
-    ![Configure consent](images/consent.png)
-5.  Select **Web application** for the application type, and provide a name for the application.
-6.  Under **Authorized Javascript Origins**, provide a list of URLs that will be accessing the APIs (e.g., `http://localhost:8888` or `https://www.myawsesomedeployment.org`).
-    ![Web application](images/webapp.png)
-7.  The console will now show a **Client ID** field under the **Credentials** panel. This is the ID that will be used in the settings for the `@jupyterlab/google-drive` extension.
-8.  In the **API Manager** sidebar, select **Library**. This will provide an interface for enabling different Google APIs for the application. You will need to enable two APIs for the extension to work: **Google Drive API** and **Google Picker API**.
-    ![Searching API library](images/library.png)
-    The Dashboard panel should now show be showing those APIs:
-    ![Dashboard](images/dashboard.png)
 
 Once these steps have been completed, you will be able to use these credentials in the extension.
 In the `jupyterlab.google-drive` settings of the settings registry, set the **clientID** field to be the client id provided by the developer console. If everything is configured properly, you should be able to use the application with your new credentials.
