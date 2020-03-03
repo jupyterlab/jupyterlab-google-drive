@@ -3,10 +3,6 @@
 
 import '../style/index.css';
 
-import { Widget } from '@phosphor/widgets';
-
-import { map, toArray } from '@phosphor/algorithm';
-
 import {
   ILayoutRestorer,
   JupyterFrontEnd,
@@ -15,13 +11,19 @@ import {
 
 import { showDialog, Dialog, ICommandPalette } from '@jupyterlab/apputils';
 
-import { ISettingRegistry, PathExt } from '@jupyterlab/coreutils';
+import { PathExt } from '@jupyterlab/coreutils';
 
 import { IDocumentManager } from '@jupyterlab/docmanager';
 
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 
 import { IMainMenu } from '@jupyterlab/mainmenu';
+
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
+
+import { map, toArray } from '@lumino/algorithm';
+
+import { Widget } from '@lumino/widgets';
 
 import { GoogleDriveFileBrowser, NAMESPACE } from './browser';
 

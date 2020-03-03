@@ -4,7 +4,7 @@
 // tslint:disable-next-line
 /// <reference path="./gapi.client.drive.d.ts" />
 
-import { map, filter, toArray } from '@phosphor/algorithm';
+import { map, filter, toArray } from '@lumino/algorithm';
 
 import { Contents } from '@jupyterlab/services';
 
@@ -1408,9 +1408,7 @@ async function downloadRevision(
 
   if (format !== 'base64') {
     const token = gapi.auth.getToken().access_token;
-    const url = `https://www.googleapis.com/drive/v3/files/${
-      resource.id
-    }/revisions/${revisionId}?alt=media`;
+    const url = `https://www.googleapis.com/drive/v3/files/${resource.id}/revisions/${revisionId}?alt=media`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
