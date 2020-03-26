@@ -6,11 +6,11 @@
 
 **NOTE: this is beta software and is rapidly changing.**
 
-This extension adds a Google Drive filebrowser to the left sidepanel of JupyterLab.
+This extension adds a Google Drive file browser to the left sidebar of JupyterLab.
 When you are logged into your Google account, you will have the
-files stored in it available to JupyterLab.
+files stored in your GDrive available to JupyterLab.
 
-If you run into troubles, see if the [troubleshooting guide](docs/troubleshooting.md) has a solution for you.
+If you run into trouble, see if the [troubleshooting guide](docs/troubleshooting.md) has a solution for you.
 
 ## Prerequisites
 
@@ -83,10 +83,10 @@ page and see your changes.
   jupyter lab
   ```
 
-- Click on Google Drive tab (on left side) in JupyterLab interface and login to
-  your Google Drive account.
+- Click on the Google Drive tab in the left sidebar in the JupyterLab interface
+  and log in to your Google Drive account.
 
 - Have someone share a notebook or markdown file with you.
 
 - You should now see the file in the **Shared with Me** folder in the file browser.
-  Open it, and begin editing!
+  Double-click to open the file and begin editing!
