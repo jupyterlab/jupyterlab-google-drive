@@ -1,13 +1,13 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { Widget, PanelLayout } from '@phosphor/widgets';
+import { Widget, PanelLayout } from '@lumino/widgets';
 
-import { CommandRegistry } from '@phosphor/commands';
+import { CommandRegistry } from '@lumino/commands';
 
 import { showDialog, Dialog, ToolbarButton } from '@jupyterlab/apputils';
 
-import { ISettingRegistry } from '@jupyterlab/coreutils';
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import { IDocumentManager } from '@jupyterlab/docmanager';
 
@@ -109,7 +109,7 @@ export class GoogleDriveFileBrowser extends Widget {
         this._onLogoutClicked();
       },
       tooltip: `Sign Out (${userProfile.getEmail()})`,
-      iconClassName: 'jp-GoogleUserBadge jp-Icon jp-Icon-16'
+      iconClass: 'jp-GoogleUserBadge jp-Icon jp-Icon-16'
     });
 
     this._browser.toolbar.addItem('logout', this._logoutButton);

@@ -4,7 +4,7 @@
 // tslint:disable-next-line
 /// <reference path="./gapi.client.drive.d.ts" />
 
-import { map, filter, toArray } from '@phosphor/algorithm';
+import { map, filter, toArray } from '@lumino/algorithm';
 
 import { Contents } from '@jupyterlab/services';
 
