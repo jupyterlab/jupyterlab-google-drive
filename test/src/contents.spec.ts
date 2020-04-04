@@ -9,7 +9,7 @@ import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 import { Contents } from '@jupyterlab/services';
 
-import { JSONExt, UUID } from '@phosphor/coreutils';
+import { JSONExt, UUID } from '@lumino/coreutils';
 
 import { GoogleDrive } from '../../lib/contents';
 
