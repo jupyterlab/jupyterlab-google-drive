@@ -72,6 +72,7 @@
     "expect.js": "^0.3.1",
     "file-loader": "^4.0.0",
     "husky": "^2.4.1",
+    "json-loader": "^0.5.7",
     "karma": "^4.1.0",
     "karma-chrome-launcher": "^2.2.0",
     "karma-firefox-launcher": "^1.1.0",
