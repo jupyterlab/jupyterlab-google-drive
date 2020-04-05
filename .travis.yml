@@ -2,6 +2,8 @@ language: node_js
 node_js:
   - 'lts/*'
 sudo: false
+services:
+  - xvfb
 addons:
   firefox: latest
 notifications:
@@ -17,6 +19,5 @@ install:
 before_script:
   - jlpm run build:test
   - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
 script:
   - jlpm test
