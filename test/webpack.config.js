@@ -16,7 +16,6 @@ module.exports = {
       { test: /\.(jpg|png|gif|eot|woff|ttf)$/, use: 'file-loader' },
       { test: /\.html$/, loader: 'file-loader?name=[name].[ext]' },
       { test: /\.ipynb$/, loader: 'json-loader' },
-      { test: /\.json$/, loader: 'json-loader' },
       { test: /\.js.map$/, loader: 'file-loader' },
       {
         test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
