@@ -14,7 +14,7 @@ you will likely want to set up your own credentials with Google.
 
 ### Google OAuth2 Setup instructions
 
-1. Login to Google [Cloud Console](https://http://console.cloud.google.com)  
+1. Login to Google [Cloud Console](http://console.cloud.google.com)  
 2. Click on the Project drop-down  
 ![header with selected project](images/1.open.projects.png)
 3. Click: New Project (if you already have a project created, skip to step 6)  
