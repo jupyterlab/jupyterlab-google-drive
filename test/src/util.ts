@@ -1,7 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { UUID } from '@phosphor/coreutils';
+import { UUID } from '@lumino/coreutils';
 
 import {
   TextModelFactory,
@@ -20,7 +20,7 @@ import {
 
 import { ServiceManager, ServerConnection } from '@jupyterlab/services';
 
-import { PromiseDelegate } from '@phosphor/coreutils';
+import { PromiseDelegate } from '@lumino/coreutils';
 
 import { gapiAuthorized, gapiInitialized } from '../../lib/gapi';
 

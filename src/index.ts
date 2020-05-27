@@ -3,9 +3,9 @@
 
 import '../style/index.css';
 
-import { Widget } from '@phosphor/widgets';
+import { Widget } from '@lumino/widgets';
 
-import { map, toArray } from '@phosphor/algorithm';
+import { map, toArray } from '@lumino/algorithm';
 
 import {
   ILayoutRestorer,
@@ -15,7 +15,9 @@ import {
 
 import { showDialog, Dialog, ICommandPalette } from '@jupyterlab/apputils';
 
-import { ISettingRegistry, PathExt } from '@jupyterlab/coreutils';
+import { PathExt } from '@jupyterlab/coreutils';
+
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import { IDocumentManager } from '@jupyterlab/docmanager';
 

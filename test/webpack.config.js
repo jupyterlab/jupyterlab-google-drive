@@ -10,7 +10,7 @@ module.exports = {
   bail: true,
   devtool: 'inline-source-map',
   module: {
-    loaders: [
+    rules: [
       { test: /\.css$/, loader: 'style-loader!css-loader' },
       { test: /\.md$/, loader: 'raw-loader' },
       { test: /\.(jpg|png|gif|eot|woff|ttf)$/, use: 'file-loader' },
