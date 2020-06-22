@@ -90,3 +90,17 @@ page and see your changes.
 
 - You should now see the file in the **Shared with Me** folder in the file browser.
   Double-click to open the file and begin editing!
+
+### Using Zero to JupyterHub (Z2JH)
+When using Zero to JupyterHub to deploy a containerized environment, you can minimize the need to sign into JupyterHub and Google Drive. If you are using Google OAuth to autenticate users for JupyterHub, you can simply add the additional scopes to to the `auth` block:
+
+```
+auth:
+    type: google
+    google:
+      callbackUrl: "<your-url>/hub/oauth_callback"
+    scopes:
+      - "openid"
+      - "email"
+      - "https://www.googleapis.com/auth/drive"
+```
