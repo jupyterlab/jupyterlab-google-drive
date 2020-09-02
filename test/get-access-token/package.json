@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "googleapis": "^21.3.0"
+    "googleapis": "^59.0.0"
   },
   "repository": {
     "type": "git",
