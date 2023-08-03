@@ -1,3 +1,5 @@
+**This project has been archived by lack of maintainers.**
+
 # jupyterlab-google-drive
 
 [![Build Status](https://travis-ci.org/jupyterlab/jupyterlab-google-drive.svg?branch=master)](https://travis-ci.org/jupyterlab/jupyterlab-google-drive)
